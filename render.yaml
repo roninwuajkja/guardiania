@@ -1,0 +1,81 @@
+# Despliegue de demostración en Render (plan free).
+#
+# ENVIRONMENT=dev es deliberado: el modo production exige SMTP real, correo
+# verificado y SEED_DEMO=false, y prohíbe SQLite. Eso eliminaría la cuenta demo
+# que se usa en la defensa. Este servicio es público y de datos ficticios:
+# debe apagarse al terminar la demostración.
+services:
+  - type: web
+    name: guardiania
+    runtime: python
+    plan: free
+    region: virginia
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/v1/health
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.10
+
+      # --- Entorno -----------------------------------------------------------
+      - key: ENVIRONMENT
+        value: dev
+      - key: DOCS_ENABLED
+        value: "false"
+      - key: SEED_DEMO
+        value: "true"
+      - key: TRUST_PROXY_HEADERS
+        value: "true"
+      - key: COOKIE_SECURE
+        value: "true"
+      - key: COOKIE_SAMESITE
+        value: lax
+      - key: REQUIRE_EMAIL_VERIFICATION
+        value: "false"
+      - key: EMAIL_DELIVERY
+        value: console
+
+      # --- Motor de IA (Groq) ------------------------------------------------
+      - key: AI_ENABLED
+        value: "true"
+      - key: AI_SEND_SNIPPET
+        value: "false"
+      - key: AI_PROVIDER
+        value: groq
+      - key: AI_PRIMARY_TIMEOUT_MS
+        value: "2500"
+      - key: AI_FALLBACK_TIMEOUT_MS
+        value: "450"
+      - key: AI_TOTAL_TIMEOUT_MS
+        value: "3000"
+      - key: GROQ_MODEL
+        value: openai/gpt-oss-20b
+      - key: GROQ_REASONING_EFFORT
+        value: low
+      - key: GROQ_BASE_URL
+        value: https://api.groq.com/openai/v1
+
+      # --- Secretos: se completan en el dashboard, nunca en el repo ----------
+      - key: DATABASE_URL
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: PAIRING_PEPPER
+        sync: false
+      - key: AUDIT_PEPPER
+        sync: false
+      - key: JWT_PRIVATE_KEY_PEM
+        sync: false
+
+      # --- Dependen de la URL final del servicio -----------------------------
+      # Se completan después del primer despliegue, cuando Render asigna el
+      # dominio. Mientras estén vacíos el panel abre, pero el WebSocket en
+      # tiempo real queda bloqueado por la CSP.
+      - key: PUBLIC_BASE_URL
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
+      - key: TRUSTED_HOSTS
+        sync: false

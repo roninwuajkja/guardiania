@@ -50,12 +50,22 @@ class Base(DeclarativeBase):
     metadata = MetaData(naming_convention=NAMING_CONVENTION)
 
 
-_connect_args = {"check_same_thread": False} if settings.database_url.startswith("sqlite") else {}
-engine = create_async_engine(settings.database_url, echo=False, connect_args=_connect_args)
+_IS_SQLITE = settings.database_url.startswith("sqlite")
+_connect_args = {"check_same_thread": False} if _IS_SQLITE else {}
+# Postgres gestionado (Neon, Render) cierra conexiones ociosas y suspende el
+# cómputo: pool_pre_ping descarta las muertas y pool_recycle las renueva antes
+# de que el proveedor las corte.
+engine = create_async_engine(
+    settings.database_url,
+    echo=False,
+    connect_args=_connect_args,
+    pool_pre_ping=not _IS_SQLITE,
+    **({} if _IS_SQLITE else {"pool_recycle": 300}),
+)
 SessionFactory = async_sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
 
 
-if settings.database_url.startswith("sqlite"):
+if _IS_SQLITE:
 
     @event.listens_for(engine.sync_engine, "connect")
     def _enable_sqlite_foreign_keys(dbapi_connection, _record):  # pragma: no cover - driver hook
