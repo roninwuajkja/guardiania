@@ -1,12 +1,22 @@
 import logging
+import os
 from functools import lru_cache
 from pathlib import Path
 
-from pydantic import field_validator
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 logger = logging.getLogger("guardiania.config")
+
+
+def _default_public_base_url() -> str:
+    """URL pública del servicio.
+
+    Render inyecta RENDER_EXTERNAL_URL con el dominio real asignado, así que el
+    despliegue no necesita escribirla a mano ni redeployar para corregirla.
+    """
+    return os.environ.get("RENDER_EXTERNAL_URL", "http://127.0.0.1:8000").rstrip("/")
 
 
 class Settings(BaseSettings):
@@ -18,7 +28,7 @@ class Settings(BaseSettings):
 
     app_name: str = "IA Guardian"
     environment: str = "dev"
-    public_base_url: str = "http://127.0.0.1:8000"
+    public_base_url: str = Field(default_factory=_default_public_base_url)
     database_url: str = f"sqlite+aiosqlite:///{(BASE_DIR / 'guardiania.db').as_posix()}"
 
     jwt_issuer: str = "https://api.guardiania.cl"
