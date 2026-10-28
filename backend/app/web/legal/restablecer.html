@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="es-CL" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Restablecer contraseña · IA Guardian</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/fonts.css">
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body class="legal-page" data-legal-page="reset">
+  <main class="legal-doc legal-doc--narrow">
+    <p class="eyebrow">Seguridad de la cuenta</p>
+    <h1>Restablecer contraseña</h1>
+    <p class="legal-lead">Crea una contraseña nueva de al menos 12 caracteres. Al guardarla se cerrarán todas tus sesiones.</p>
+    <form id="reset-form" class="stack">
+      <label class="field"><span>Contraseña nueva</span><input type="password" name="password" autocomplete="new-password" minlength="12" required></label>
+      <label class="field"><span>Repite la contraseña</span><input type="password" name="password2" autocomplete="new-password" minlength="12" required></label>
+      <p class="form-error" id="legal-error" role="alert"></p>
+      <button class="btn btn-primary" type="submit">Guardar contraseña</button>
+    </form>
+    <div id="legal-status" class="legal-status" role="status"></div>
+    <p><a href="/">Ir al panel</a></p>
+  </main>
+  <script src="/static/legal.js" defer></script>
+</body>
+</html>

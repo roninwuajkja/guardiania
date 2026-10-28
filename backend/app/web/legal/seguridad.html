@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="es-CL" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Seguridad · IA Guardian</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/fonts.css">
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body class="legal-page">
+  <main class="legal-doc">
+    <nav class="legal-nav"><a href="/">← Volver al panel</a><span>Versión 2026-10-22</span></nav>
+    <div class="legal-banner" role="note"><strong>Estado de seguridad.</strong> Los controles descritos están implementados en el código, pero la auditoría independiente y el endurecimiento de infraestructura son una compuerta de lanzamiento. No afirmamos que exista una certificación de seguridad externa.</div>
+    <p class="eyebrow">Transparencia</p>
+    <h1>Seguridad y respuesta a incidentes</h1>
+    <p class="legal-lead">Protegemos datos de menores con minimización, cifrado y trazabilidad. También explicamos los límites para que puedas evaluar el riesgo.</p>
+
+    <h2>1. Controles implementados</h2>
+    <ul>
+      <li>Contraseñas con Argon2id; nunca se almacenan en claro.</li>
+      <li>Sesiones de tutor con access token breve, refresh token rotatorio y revocación por sesión.</li>
+      <li>Cookies HttpOnly/SameSite para la web y protección CSRF de doble envío.</li>
+      <li>Tokens de dispositivo separados, con refresh y revocación inmediata.</li>
+      <li>Limitación de tasa, bloqueo temporal por intentos fallidos y respuestas genéricas de autenticación.</li>
+      <li>Validación estricta de esquemas: el servidor rechaza campos no previstos, incluido texto crudo.</li>
+      <li>Cabeceras CSP, HSTS en producción, nosniff, frame-ancestors y política de permisos.</li>
+      <li>Auditoría de acciones sensibles con hash de IP y user-agent, sin contenido conversacional.</li>
+      <li>Retención automática y borrado/anonimización de cuenta con exportación previa.</li>
+      <li>Validación de configuración de producción: falla al iniciar si falta HTTPS, PostgreSQL, secretos o verificación de correo.</li>
+    </ul>
+
+    <h2>2. Límites y compuertas</h2>
+    <p>Antes de producción con datos reales se requiere: auditoría independiente de seguridad, prueba de penetración, revisión de configuración del proveedor de nube, gestión de secretos (KMS/HSM), copias cifradas y probadas, monitoreo con alertas, plan de continuidad, pinning o attestation de la app Android si se usa, y revisión legal de esta documentación. El detalle y responsables están en <code>docs/compliance/compuerta-lanzamiento.md</code>.</p>
+
+    <h2>3. Datos en el dispositivo</h2>
+    <p>La app Android guarda credenciales y señales pendientes en SQLCipher. El texto de notificaciones se procesa en memoria y no se persiste ni se registra. La captura requiere permisos explícitos de acceso a uso y notificaciones; puedes revocarlos en Ajustes de Android.</p>
+
+    <h2>4. Reportar una vulnerabilidad</h2>
+    <p>Escribe a <a href="mailto:seguridad@guardiania.cl">seguridad@guardiania.cl</a> con pasos de reproducción y el menor dato personal posible. Confirma el reporte en 3 días hábiles, investiga y coordina la divulgación. No accedas a datos de otras personas, no interrumpas el servicio y no publiques detalles antes de la corrección.</p>
+
+    <h2>5. Incidentes</h2>
+    <p>Clasificamos severidad, contenemos, preservamos evidencia, notificamos a responsables y titulares cuando corresponda y documentamos la causa raíz. Los plazos legales de notificación se aplicarán según la normativa vigente y los contratos con encargados. El procedimiento operativo está en <code>docs/compliance/incidentes.md</code>.</p>
+
+    <h2>6. Contacto</h2>
+    <p>Seguridad: <a href="mailto:seguridad@guardiania.cl">seguridad@guardiania.cl</a>. Privacidad: <a href="mailto:privacidad@guardiania.cl">privacidad@guardiania.cl</a>.</p>
+
+    <footer class="legal-foot"><a href="/legal/privacidad">Privacidad</a><a href="/legal/terminos">Términos</a><a href="/legal/retencion">Retención</a></footer>
+  </main>
+</body>
+</html>

@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="es-CL" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Política de privacidad · IA Guardian</title>
+  <meta name="description" content="Política de privacidad de IA Guardian: control parental con señales derivadas y sin lectura de conversaciones.">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/fonts.css">
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body class="legal-page">
+  <main class="legal-doc">
+    <nav class="legal-nav" aria-label="Documentos legales">
+      <a href="/">← Volver al panel</a>
+      <span>Versión 2026-10-22</span>
+    </nav>
+
+    <div class="legal-banner" role="note">
+      <strong>Documento listo para revisión legal.</strong>
+      Esta versión implementa los controles técnicos descritos, pero no constituye certificación jurídica.
+      Antes de tratar datos reales de niñas, niños y adolescentes, debe ser revisada y aprobada por un/a abogado/a
+      habilitado/a en Chile. Ver el registro de decisiones y la compuerta de lanzamiento en <code>docs/compliance/</code>.
+    </div>
+
+    <p class="eyebrow">IA Guardian</p>
+    <h1>Política de privacidad</h1>
+    <p class="legal-lead">Explicamos qué datos tratamos, para qué, con qué base de licitud y cómo puedes ejercer tus derechos. IA Guardian está diseñada para recibir señales derivadas, no conversaciones.</p>
+
+    <h2>1. Responsable del tratamiento</h2>
+    <p>El responsable es la persona natural o jurídica que despliegue IA Guardian y determine los fines del tratamiento. Para esta versión de referencia: <strong>IA Guardian</strong>, correo de privacidad <a href="mailto:privacidad@guardiania.cl">privacidad@guardiania.cl</a>, correo de seguridad <a href="mailto:seguridad@guardiania.cl">seguridad@guardiania.cl</a>. El domicilio y la razón social definitivos deben completarse antes del lanzamiento.</p>
+
+    <h2>2. Qué datos tratamos</h2>
+    <table>
+      <thead><tr><th>Categoría</th><th>Ejemplos</th><th>Finalidad</th></tr></thead>
+      <tbody>
+        <tr><td>Cuenta del tutor</td><td>Correo, alias, hash de contraseña, sesiones, versión de consentimiento</td><td>Autenticar, proteger la cuenta y acreditar consentimiento</td></tr>
+        <tr><td>Dispositivo del menor</td><td>Alias, modelo, nivel de API, identificador de instalación hasheado, última conexión</td><td>Vincular, sincronizar y permitir revocación</td></tr>
+        <tr><td>Señales derivadas</td><td>Categoría de uso, duración, conteos de indicadores léxicos, contacto hasheado, ventana temporal</td><td>Generar alertas explicables y resúmenes de bienestar</td></tr>
+        <tr><td>Alertas</td><td>Severidad, reglas activadas, resumen generado, estado de revisión</td><td>Permitir una conversación informada del tutor</td></tr>
+        <tr><td>Seguridad y auditoría</td><td>Acción, fecha, identificadores, hash de IP y de user-agent, resultado</td><td>Prevenir abuso, investigar incidentes y demostrar trazabilidad</td></tr>
+        <tr><td>Soporte</td><td>Mensajes que envíes voluntariamente a soporte</td><td>Resolver solicitudes</td></tr>
+      </tbody>
+    </table>
+    <p><strong>No tratamos el texto de notificaciones, mensajes, fotos, audio, ubicación precisa ni listas de contactos en claro.</strong> La captura ocurre en el dispositivo del menor y se transforma localmente antes de cualquier envío. El servidor no está diseñado para recibir contenido conversacional; los esquemas rechazan campos adicionales.</p>
+
+    <h2>3. Datos de niñas, niños y adolescentes</h2>
+    <p>La cuenta pertenece a una persona adulta que declara ejercer la patria potestad, tutela o cuidado personal. La vinculación exige una declaración expresa de tutoría y un asentimiento comprensible de la persona menor en su propio dispositivo. El asentimiento no reemplaza la autorización del representante legal; ambos quedan registrados con versión y fecha.</p>
+    <p>El principio rector es la minimización: el panel muestra señales y explicaciones, no vigilancia de contenido. La persona menor puede pedir al tutor revisar o revocar la vinculación, y la revocación se ejecuta de inmediato desde el panel.</p>
+
+    <h2>4. Bases de licitud</h2>
+    <ul>
+      <li><strong>Ejecución del contrato</strong> para crear la cuenta, vincular dispositivos y prestar el servicio.</li>
+      <li><strong>Consentimiento</strong> para el tratamiento de datos del menor, el asentimiento y comunicaciones opcionales. Puede retirarse, sin afectar la licitud del tratamiento previo.</li>
+      <li><strong>Interés legítimo</strong> en seguridad, prevención de fraude, auditoría y mejora acotada, sujeto a evaluación de impacto y salvaguardas.</li>
+      <li><strong>Obligación legal</strong> cuando corresponda conservar información para responder a autoridades competentes.</li>
+    </ul>
+
+    <h2>5. Finalidades y no finalidades</h2>
+    <p>Usamos los datos para prestar el panel, generar alertas, proteger cuentas, atender derechos, cumplir obligaciones y mejorar la calidad del servicio con métricas agregadas. <strong>No vendemos datos, no creamos perfiles publicitarios y no usamos contenido de menores para entrenar modelos de terceros.</strong></p>
+
+    <h2>6. Destinatarios y encargados</h2>
+    <p>El alojamiento, el envío de correo transaccional y el monitoreo de errores pueden ser prestados por encargados que actúan por instrucción. Cada encargado debe tener contrato de tratamiento, medidas de seguridad y, cuando implique transferencia internacional, cláusulas contractuales y evaluación de país destino. El registro de encargados vigentes se mantiene en <code>docs/compliance/encargados.md</code> y debe actualizarse antes de producción.</p>
+    <p>No compartimos señales con terceros con fines comerciales. Podemos divulgar información ante requerimiento legal válido, con revisión de la orden y registro de auditoría, informando al titular cuando sea jurídicamente posible.</p>
+
+    <h2>7. Conservación</h2>
+    <p>Las señales y alertas se conservan por el plazo configurado, por defecto 90 días. La auditoría de seguridad se conserva por 365 días. Los tokens de verificación y restablecimiento se eliminan al usarse o vencer. Los datos de una cuenta eliminada se borran o anonimizan, salvo la constancia mínima necesaria para acreditar el cumplimiento. El detalle está en la <a href="/legal/retencion">política de retención</a>.</p>
+
+    <h2>8. Seguridad</h2>
+    <p>Aplicamos mínimo privilegio, cifrado en tránsito, cookies HttpOnly/SameSite, protección CSRF, hash Argon2id de contraseñas, rotación de sesiones, bloqueo por intentos, limitación de tasa, auditoría sin datos crudos y borrado por retención. El cifrado en reposo debe ser provisto por el proveedor de base de datos y el disco. Las medidas y sus límites se documentan en <a href="/legal/seguridad">Seguridad</a>. Ningún sistema es infalible; si detectas una vulnerabilidad, escribe a <a href="mailto:seguridad@guardiania.cl">seguridad@guardiania.cl</a>.</p>
+
+    <h2>9. Tus derechos</h2>
+    <p>Puedes solicitar acceso, rectificación, cancelación, oposición, portabilidad y revocación del consentimiento. Desde el panel puedes descargar tus datos en JSON y eliminar la cuenta. También puedes escribir a <a href="mailto:privacidad@guardiania.cl">privacidad@guardiania.cl</a>. Responderemos dentro de los plazos legales y podremos verificar tu identidad sin pedir más datos de los necesarios.</p>
+    <p>Si consideras que no dimos respuesta adecuada, puedes reclamar ante la Agencia de Protección de Datos Personales de Chile cuando entre en operación, o ante la autoridad que la reemplace.</p>
+
+    <h2>10. Cookies</h2>
+    <p>Usamos cookies estrictamente necesarias: sesión de acceso y refresco en HttpOnly, y un token CSRF legible por el panel para proteger formularios. No usamos cookies publicitarias ni píxeles de seguimiento. Puedes borrar las cookies desde el navegador, lo que cerrará tu sesión.</p>
+
+    <h2>11. Menores y cambios</h2>
+    <p>Si detectamos que una cuenta no corresponde a un tutor legal, podemos suspenderla y solicitar acreditación. Publicaremos cambios materiales con al menos 15 días de aviso y nueva versión de consentimiento cuando corresponda. La fecha y versión aparecen al inicio de este documento.</p>
+
+    <h2>12. Contacto y reclamos</h2>
+    <p>Privacidad: <a href="mailto:privacidad@guardiania.cl">privacidad@guardiania.cl</a>. Seguridad: <a href="mailto:seguridad@guardiania.cl">seguridad@guardiania.cl</a>. Soporte: <a href="mailto:soporte@guardiania.cl">soporte@guardiania.cl</a>.</p>
+
+    <footer class="legal-foot">
+      <a href="/legal/terminos">Términos</a>
+      <a href="/legal/consentimiento">Consentimiento</a>
+      <a href="/legal/retencion">Retención</a>
+      <a href="/legal/seguridad">Seguridad</a>
+    </footer>
+  </main>
+</body>
+</html>

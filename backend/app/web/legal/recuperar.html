@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="es-CL" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recuperar acceso · IA Guardian</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/fonts.css">
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body class="legal-page" data-legal-page="recover">
+  <main class="legal-doc legal-doc--narrow">
+    <p class="eyebrow">Seguridad de la cuenta</p>
+    <h1>Recuperar acceso</h1>
+    <p class="legal-lead">Escribe el correo de tu cuenta. Si existe, enviaremos un enlace para crear una contraseña nueva. También puedes pedir un nuevo enlace de verificación.</p>
+    <form id="recover-form" class="stack">
+      <label class="field"><span>Correo</span><input type="email" name="email" autocomplete="email" required placeholder="tu@correo.cl"></label>
+      <p class="form-error" id="legal-error" role="alert"></p>
+      <div class="dialog-actions dialog-actions--start">
+        <button class="btn btn-primary" type="submit">Enviar enlace de contraseña</button>
+        <button class="btn btn-secondary" id="resend-verification" type="button">Reenviar verificación</button>
+      </div>
+    </form>
+    <div id="legal-status" class="legal-status" role="status"></div>
+    <p><a href="/">Volver al panel</a> · <a href="/legal/privacidad">Privacidad</a></p>
+  </main>
+  <script src="/static/legal.js" defer></script>
+</body>
+</html>

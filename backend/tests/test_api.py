@@ -1,0 +1,598 @@
+import os
+import uuid
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
+
+DB_PATH = Path(__file__).resolve().parent / "test_guardiania.db"
+if DB_PATH.exists():
+    DB_PATH.unlink()
+
+os.environ["DATABASE_URL"] = f"sqlite+aiosqlite:///{DB_PATH.as_posix()}"
+os.environ["SEED_DEMO"] = "false"
+os.environ["RATE_LIMIT_ENABLED"] = "false"
+os.environ["ENVIRONMENT"] = "test"
+
+import pytest
+from fastapi.testclient import TestClient
+from starlette.websockets import WebSocketDisconnect
+
+from app.main import app
+
+
+@pytest.fixture(scope="session")
+def client():
+    with TestClient(app) as test_client:
+        yield test_client
+
+
+@pytest.fixture
+def tutor(client):
+    email = f"tutor-{uuid.uuid4().hex[:8]}@guardiania.cl"
+    response = client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": email,
+            "password": "ClaveSegura2026",
+            "alias": "Tutora de prueba",
+            "consent": True,
+        },
+    )
+    assert response.status_code == 201, response.text
+    data = response.json()
+    return {"email": email, "token": data["access_token"], "id": data["tutor"]["id"]}
+
+
+@pytest.fixture
+def auth_headers(tutor):
+    return {"Authorization": f"Bearer {tutor['token']}"}
+
+
+def device_payload(install_id: uuid.UUID | None = None) -> dict:
+    return {
+        "platform": "ANDROID",
+        "api_level": 34,
+        "model_family": "Pixel 8",
+        "install_id": str(install_id or uuid.uuid4()),
+        "attestation_token": None,
+    }
+
+
+def generate_pairing(client, headers, etiqueta="Sofía"):
+    response = client.post(
+        "/api/v1/pairing/generate",
+        json={"etiqueta_menor": etiqueta, "ttl_seconds": 600, "tutor_declara_tutoria": True},
+        headers=headers,
+    )
+    assert response.status_code == 201, response.text
+    return response.json()
+
+
+def verify_manual(client, code, install_id=None):
+    return client.post(
+        "/api/v1/pairing/verify",
+        json={"manual_code": code.replace(" ", ""), "device": device_payload(install_id), "child_assent": True},
+    )
+
+
+def test_health(client):
+    response = client.get("/api/v1/health")
+    assert response.status_code == 200
+    assert response.json()["status"] == "ok"
+
+
+def test_pairing_full_flow(client, auth_headers):
+    generated = generate_pairing(client, auth_headers)
+    assert len(generated["manual_code"].replace(" ", "")) == 6
+    assert generated["qr_payload"].startswith("guardiania://pair?v=1&t=")
+    assert generated["qr_svg"].startswith("<svg")
+
+    install_id = uuid.uuid4()
+    verified = verify_manual(client, generated["manual_code"], install_id)
+    assert verified.status_code == 200, verified.text
+    body = verified.json()
+    assert body["status"] == "ACTIVO"
+    assert body["expires_in"] == 900
+    assert body["device_alias"] == "Sofía"
+
+    status = client.get(f"/api/v1/pairing/{generated['session_id']}", headers=auth_headers)
+    assert status.status_code == 200
+    assert status.json()["estado"] == "VERIFICADA"
+    assert status.json()["vinculacion_estado"] == "ACTIVO"
+
+    reuse = verify_manual(client, generated["manual_code"], install_id)
+    # Se responde genérico para no confirmar que el código existió.
+    assert reuse.status_code == 422
+
+
+def test_qr_token_cannot_be_reused(client, auth_headers):
+    generated = generate_pairing(client, auth_headers)
+    qr_token = generated["qr_payload"].split("t=", 1)[1]
+    first = client.post("/api/v1/pairing/verify", json={"qr_token": qr_token, "device": device_payload(), "child_assent": True})
+    assert first.status_code == 200
+    second = client.post("/api/v1/pairing/verify", json={"qr_token": qr_token, "device": device_payload(), "child_assent": True})
+    assert second.status_code == 409
+
+
+def test_pairing_rejects_unknown_code(client):
+    response = verify_manual(client, "000000")
+    assert response.status_code == 422
+
+
+def test_pairing_qr_flow_and_ws_event(client, auth_headers):
+    generated = generate_pairing(client, auth_headers, etiqueta="Matías")
+    ws_path = generated["ws_url"]
+
+    with client.websocket_connect(
+        ws_path,
+        subprotocols=["guardiania", generated["ws_ticket"]],
+    ) as websocket:
+        ready = websocket.receive_json()
+        assert ready["type"] == "pairing_ready"
+        assert ready["data"]["estado"] == "PENDIENTE"
+
+        response = client.post(
+            "/api/v1/pairing/verify",
+            json={"qr_token": generated["qr_payload"].split("t=", 1)[1], "device": device_payload(), "child_assent": True},
+        )
+        assert response.status_code == 200, response.text
+
+        success = websocket.receive_json()
+        assert success["type"] == "pairing_success"
+        assert success["data"]["device_alias"] == "Matías"
+
+
+def test_pairing_ws_rejects_ticket_in_query_string(client, auth_headers):
+    generated = generate_pairing(client, auth_headers, etiqueta="Ticket en URL")
+    with pytest.raises(WebSocketDisconnect) as exc:
+        with client.websocket_connect(
+            f"{generated['ws_url']}?ticket={generated['ws_ticket']}"
+        ) as websocket:
+            websocket.receive_json()
+    assert exc.value.code == 4401
+
+
+def test_capture_sync_is_idempotent_and_rejects_extra_fields(client, auth_headers):
+    generated = generate_pairing(client, auth_headers)
+    verified = verify_manual(client, generated["manual_code"]).json()
+    device_id = verified["device_id"]
+    headers = {"Authorization": f"Bearer {verified['access_token']}"}
+    event_id = str(uuid.uuid4())
+
+    payload = {
+        "schema_version": 1,
+        "batch_id": str(uuid.uuid4()),
+        "device_clock": "2026-10-22T12:00:00Z",
+        "captures": [
+            {
+                "schema_version": 1,
+                "event_id": event_id,
+                "device_id": device_id,
+                "time_window": {
+                    "start": "2026-10-22T11:30:00Z",
+                    "end": "2026-10-22T11:45:00Z",
+                    "tz_offset_minutes": -180,
+                },
+                "category": "social",
+                "lexical_flag_count": 1,
+                "flags": ["unknown_contact"],
+                "hashed_contact_id": "ZGVtby1jb250YWN0by1kZW1v",
+                "usage_duration_minutes": 15,
+                "integrity": {"attestation_ok": True, "app_version": "1.0.0"},
+            }
+        ],
+    }
+
+    first = client.post("/api/v1/captures/sync", json=payload, headers=headers)
+    assert first.status_code == 200, first.text
+    assert first.json()["accepted"] == 1
+    assert first.json()["duplicates"] == 0
+
+    second = client.post("/api/v1/captures/sync", json=payload, headers=headers)
+    assert second.status_code == 200
+    assert second.json()["accepted"] == 0
+    assert second.json()["duplicates"] == 1
+
+    unsafe = {**payload, "captures": [{**payload["captures"][0], "raw_text": "hola mamá"}]}
+    rejected = client.post("/api/v1/captures/sync", json=unsafe, headers=headers)
+    assert rejected.status_code == 422
+
+    mismatch = {
+        **payload,
+        "captures": [
+            {**payload["captures"][0], "event_id": str(uuid.uuid4()), "device_id": str(uuid.uuid4())}
+        ],
+    }
+    bad_device = client.post("/api/v1/captures/sync", json=mismatch, headers=headers)
+    assert bad_device.status_code == 200
+    assert bad_device.json()["rejected"][0]["code"] == "DEVICE_MISMATCH"
+
+
+def test_revoke_device_blocks_sync(client, auth_headers):
+    generated = generate_pairing(client, auth_headers)
+    verified = verify_manual(client, generated["manual_code"]).json()
+    headers = {"Authorization": f"Bearer {verified['access_token']}"}
+
+    devices = client.get("/api/v1/devices", headers=auth_headers).json()
+    binding_id = next(d["vinculacion_id"] for d in devices if d["id"] == verified["device_id"])
+    revoked = client.post(f"/api/v1/devices/{binding_id}/revoke", headers=auth_headers)
+    assert revoked.status_code == 204
+
+    sync = client.post(
+        "/api/v1/captures/sync",
+        json={"schema_version": 1, "batch_id": str(uuid.uuid4()), "device_clock": "2026-10-22T12:00:00Z", "captures": []},
+        headers=headers,
+    )
+    assert sync.status_code == 410
+
+
+def test_device_refresh_exchanges_token_and_revocation_invalidates_it(client, auth_headers):
+    generated = generate_pairing(client, auth_headers)
+    verified = verify_manual(client, generated["manual_code"]).json()
+
+    refreshed = client.post("/api/v1/devices/refresh", json={"refresh_token": verified["refresh_token"]})
+    assert refreshed.status_code == 200, refreshed.text
+    body = refreshed.json()
+    assert body["token_type"] == "bearer"
+    assert body["expires_in"] == 900
+
+    sync = client.post(
+        "/api/v1/captures/sync",
+        json={"schema_version": 1, "batch_id": str(uuid.uuid4()), "device_clock": "2026-10-22T12:00:00Z", "captures": []},
+        headers={"Authorization": f"Bearer {body['access_token']}"},
+    )
+    assert sync.status_code == 200, sync.text
+
+    assert client.post("/api/v1/devices/refresh", json={"refresh_token": "x" * 48}).status_code == 401
+
+    devices = client.get("/api/v1/devices", headers=auth_headers).json()
+    binding_id = next(d["vinculacion_id"] for d in devices if d["id"] == verified["device_id"])
+    assert client.post(f"/api/v1/devices/{binding_id}/revoke", headers=auth_headers).status_code == 204
+
+    blocked = client.post("/api/v1/devices/refresh", json={"refresh_token": verified["refresh_token"]})
+    assert blocked.status_code == 401
+
+
+def test_cookie_session_and_csrf(client):
+    client.cookies.clear()
+    email = f"cookie-{uuid.uuid4().hex[:8]}@guardiania.cl"
+    csrf = client.get("/api/v1/auth/csrf").json()["csrf_token"]
+    response = client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": email,
+            "password": "ClaveSegura2026",
+            "alias": "Tutora cookie",
+            "consent": True,
+        },
+        headers={"X-CSRF-Token": csrf},
+    )
+    assert response.status_code == 201, response.text
+    assert "guardiania_access" in client.cookies
+    assert client.get("/api/v1/overview").status_code == 200
+
+    # Cookie-authenticated writes require the double-submit CSRF header.
+    assert client.post("/api/v1/auth/logout").status_code == 403
+    csrf = client.cookies.get("guardiania_csrf")
+    assert client.post("/api/v1/auth/logout", headers={"X-CSRF-Token": csrf}).status_code == 204
+    assert client.get("/api/v1/overview").status_code == 401
+    client.cookies.clear()
+
+
+def test_tutor_refresh_rotates_and_invalidates_old_token(client):
+    client.cookies.clear()
+    email = f"refresh-{uuid.uuid4().hex[:8]}@guardiania.cl"
+    response = client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": email,
+            "password": "ClaveSegura2026",
+            "alias": "Tutora refresh",
+            "consent": True,
+        },
+    )
+    assert response.status_code == 201, response.text
+    old_refresh = response.json()["refresh_token"]
+    rotated = client.post("/api/v1/auth/refresh", json={"refresh_token": old_refresh})
+    assert rotated.status_code == 200, rotated.text
+    new_refresh = rotated.json()["refresh_token"]
+    assert new_refresh and new_refresh != old_refresh
+    assert client.post("/api/v1/auth/refresh", json={"refresh_token": old_refresh}).status_code == 401
+
+
+def test_pairing_requires_tutor_declaration_and_child_assent(client, auth_headers):
+    missing_declaration = client.post(
+        "/api/v1/pairing/generate",
+        json={"etiqueta_menor": "Sin declaración", "ttl_seconds": 600},
+        headers=auth_headers,
+    )
+    assert missing_declaration.status_code == 422
+
+    generated = generate_pairing(client, auth_headers)
+    missing_assent = client.post(
+        "/api/v1/pairing/verify",
+        json={
+            "manual_code": generated["manual_code"].replace(" ", ""),
+            "device": device_payload(),
+            "child_assent": False,
+        },
+    )
+    assert missing_assent.status_code == 422
+
+
+def test_account_export_and_deletion(client):
+    client.cookies.clear()
+    email = f"delete-{uuid.uuid4().hex[:8]}@guardiania.cl"
+    password = "ClaveSegura2026"
+    registered = client.post(
+        "/api/v1/auth/register",
+        json={"email": email, "password": password, "alias": "Cuenta borrable", "consent": True},
+    )
+    assert registered.status_code == 201
+    headers = {"Authorization": f"Bearer {registered.json()['access_token']}"}
+
+    exported = client.get("/api/v1/account/export", headers=headers)
+    assert exported.status_code == 200, exported.text
+    assert exported.headers["content-disposition"].startswith("attachment;")
+    assert exported.json()["tutor"]["email"] == email
+
+    wrong = client.post(
+        "/api/v1/account/delete",
+        json={"password": password, "confirmation": "NO ELIMINAR"},
+        headers=headers,
+    )
+    assert wrong.status_code == 400
+
+    deleted = client.post(
+        "/api/v1/account/delete",
+        json={"password": password, "confirmation": "ELIMINAR MI CUENTA"},
+        headers=headers,
+    )
+    assert deleted.status_code == 204, deleted.text
+    assert client.post("/api/v1/auth/login", json={"email": email, "password": password}).status_code == 401
+
+
+def test_password_reset_uses_fragment_and_revokes_sessions(client, monkeypatch):
+    client.cookies.clear()
+    email = f"reset-{uuid.uuid4().hex[:8]}@guardiania.cl"
+    old_password = "ClaveSegura2026"
+    new_password = "ClaveNuevaSegura2026"
+    registered = client.post(
+        "/api/v1/auth/register",
+        json={"email": email, "password": old_password, "alias": "Cuenta recuperable", "consent": True},
+    )
+    assert registered.status_code == 201, registered.text
+    old_refresh = registered.json()["refresh_token"]
+
+    sent = []
+
+    async def fake_send(to, subject, body):
+        sent.append({"to": to, "subject": subject, "body": body})
+
+    monkeypatch.setattr("app.services.accounts.send_email", fake_send)
+
+    forgot = client.post("/api/v1/auth/password/forgot", json={"email": email})
+    assert forgot.status_code == 202
+    assert len(sent) == 1
+    assert "/restablecer#token=" in sent[0]["body"]
+    assert "?token=" not in sent[0]["body"]
+    token = sent[0]["body"].split("/restablecer#token=", 1)[1].split(None, 1)[0]
+
+    unknown = client.post("/api/v1/auth/password/forgot", json={"email": f"nadie-{uuid.uuid4().hex[:8]}@guardiania.cl"})
+    assert unknown.status_code == 202
+    assert unknown.json()["message"] == forgot.json()["message"]
+    assert len(sent) == 1
+
+    reset = client.post("/api/v1/auth/password/reset", json={"token": token, "new_password": new_password})
+    assert reset.status_code == 204, reset.text
+    assert client.post("/api/v1/auth/login", json={"email": email, "password": old_password}).status_code == 401
+
+    relogin = client.post("/api/v1/auth/login", json={"email": email, "password": new_password})
+    assert relogin.status_code == 200, relogin.text
+    assert client.post("/api/v1/auth/refresh", json={"refresh_token": old_refresh}).status_code == 401
+    assert client.post(
+        "/api/v1/auth/password/reset",
+        json={"token": token, "new_password": "OtraClaveSegura2026"},
+    ).status_code == 400
+
+
+def test_email_verification_link_and_single_use(client, monkeypatch):
+    from app.config import settings
+
+    client.cookies.clear()
+    monkeypatch.setattr(settings, "require_email_verification", True)
+    email = f"verify-{uuid.uuid4().hex[:8]}@guardiania.cl"
+    password = "ClaveSegura2026"
+
+    sent = []
+
+    async def fake_send(to, subject, body):
+        sent.append({"to": to, "subject": subject, "body": body})
+
+    monkeypatch.setattr("app.services.accounts.send_email", fake_send)
+
+    registered = client.post(
+        "/api/v1/auth/register",
+        json={"email": email, "password": password, "alias": "Cuenta por verificar", "consent": True},
+    )
+    assert registered.status_code == 202, registered.text
+    assert len(sent) == 1
+    assert "/verificar-correo#token=" in sent[0]["body"]
+    token = sent[0]["body"].split("/verificar-correo#token=", 1)[1].split(None, 1)[0]
+
+    assert client.post("/api/v1/auth/login", json={"email": email, "password": password}).status_code == 403
+    verified = client.post("/api/v1/auth/verify-email", json={"token": token})
+    assert verified.status_code == 200, verified.text
+    assert verified.json()["email_verified"] is True
+    assert client.post("/api/v1/auth/verify-email", json={"token": token}).status_code == 400
+    assert client.post("/api/v1/auth/login", json={"email": email, "password": password}).status_code == 200
+
+
+def test_overview_requires_authentication(client):
+    client.cookies.clear()
+    assert client.get("/api/v1/overview").status_code == 401
+
+
+# ---------------------------------------------------------------------------
+# IA 1.2.0: evaluación, alertas y stream del tutor
+# ---------------------------------------------------------------------------
+
+
+def evaluate_payload(device_id, *, flags=("self_harm",), event_id=None, age_minutes=15):
+    now = datetime.now(timezone.utc).replace(microsecond=0)
+    start = now - timedelta(minutes=age_minutes)
+    return {
+        "schema_version": 1,
+        "event_id": str(event_id or uuid.uuid4()),
+        "device_id": device_id,
+        "time_window": {
+            "start": start.isoformat(),
+            "end": now.isoformat(),
+            "tz_offset_minutes": 0,
+        },
+        "category": "social",
+        "lexical_flag_count": len(flags),
+        "flags": list(flags),
+        "usage_duration_minutes": 15,
+        "integrity": {"attestation_ok": True, "app_version": "1.2.0"},
+    }
+
+
+def test_capture_evaluate_notifies_tutor_over_ws(client, auth_headers, monkeypatch):
+    from app.services import evaluation as evaluation_module
+    from app.services.ai_evaluator import AIEvaluatorService, HeuristicProvider
+
+    monkeypatch.setattr(
+        evaluation_module,
+        "ai_evaluator",
+        AIEvaluatorService(heuristic=HeuristicProvider(), total_timeout_ms=500),
+    )
+
+    generated = generate_pairing(client, auth_headers, etiqueta="Diego")
+    verified = verify_manual(client, generated["manual_code"]).json()
+    device_headers = {"Authorization": f"Bearer {verified['access_token']}"}
+
+    ticket = client.post("/api/v1/realtime/ticket", headers=auth_headers)
+    assert ticket.status_code == 200, ticket.text
+    stream = ticket.json()
+    assert stream["ws_url"] == "/ws/tutor"
+    assert stream["expires_in"] > 0
+
+    with client.websocket_connect(
+        stream["ws_url"], subprotocols=["guardiania", stream["ws_ticket"]]
+    ) as websocket:
+        ready = websocket.receive_json()
+        assert ready["type"] == "tutor_ready"
+        assert ready["data"]["alerts_subscribed"] is True
+
+        response = client.post(
+            "/api/v1/captures/evaluate",
+            json=evaluate_payload(verified["device_id"]),
+            headers=device_headers,
+        )
+        assert response.status_code == 200, response.text
+        body = response.json()
+        assert body["evaluation"]["nivel_riesgo"] == "ALTO"
+        assert body["evaluation"]["categoria"] == "Conducta_Riesgo"
+        assert body["provider"] == "heuristic"
+        assert body["cached"] is False
+        assert body["alert_id"]
+        assert body["notified"] is True
+        assert body["latency_ms"] < 3000
+
+        event = websocket.receive_json()
+        assert event["type"] == "risk_alert"
+        assert event["data"]["alert_id"] == body["alert_id"]
+        assert event["data"]["severidad"] == "CRITICA"
+        assert "raw" not in event["data"]
+
+
+def test_capture_evaluate_dedupes_and_rejects_raw_text(client, auth_headers, monkeypatch):
+    from app.services import evaluation as evaluation_module
+    from app.services.ai_evaluator import AIEvaluatorService, HeuristicProvider
+
+    monkeypatch.setattr(
+        evaluation_module,
+        "ai_evaluator",
+        AIEvaluatorService(heuristic=HeuristicProvider(), total_timeout_ms=500),
+    )
+
+    generated = generate_pairing(client, auth_headers)
+    verified = verify_manual(client, generated["manual_code"]).json()
+    device_headers = {"Authorization": f"Bearer {verified['access_token']}"}
+    payload = evaluate_payload(verified["device_id"])
+
+    first = client.post("/api/v1/captures/evaluate", json=payload, headers=device_headers)
+    assert first.status_code == 200
+    assert first.json()["alert_id"]
+
+    second = client.post("/api/v1/captures/evaluate", json=payload, headers=device_headers)
+    assert second.status_code == 200
+    assert second.json()["alert_id"] is None
+    assert second.json()["notified"] is False
+
+    unsafe = {**payload, "raw_text": "mensaje privado del menor"}
+    assert client.post("/api/v1/captures/evaluate", json=unsafe, headers=device_headers).status_code == 422
+
+    mismatch = {**payload, "device_id": str(uuid.uuid4())}
+    assert client.post("/api/v1/captures/evaluate", json=mismatch, headers=device_headers).status_code == 409
+
+    old = evaluate_payload(verified["device_id"], age_minutes=8 * 24 * 60)
+    assert client.post("/api/v1/captures/evaluate", json=old, headers=device_headers).status_code == 422
+
+
+def test_tutor_stream_rejects_wrong_scope_and_query_ticket(client, auth_headers):
+    generated = generate_pairing(client, auth_headers)
+
+    with pytest.raises(WebSocketDisconnect) as exc:
+        with client.websocket_connect(
+            "/ws/tutor", subprotocols=["guardiania", generated["ws_ticket"]]
+        ) as websocket:
+            websocket.receive_json()
+    assert exc.value.code == 4403
+
+    ticket = client.post("/api/v1/realtime/ticket", headers=auth_headers).json()
+    with pytest.raises(WebSocketDisconnect) as exc:
+        with client.websocket_connect(f"/ws/tutor?ticket={ticket['ws_ticket']}") as websocket:
+            websocket.receive_json()
+    assert exc.value.code == 4401
+
+
+def test_push_tokens_are_registered_without_echoing_them(client, auth_headers):
+    token = "fcm-" + "x" * 120
+    created = client.post(
+        "/api/v1/push/tokens",
+        json={"token": token, "plataforma": "ANDROID", "device_label": "Pixel del tutor"},
+        headers=auth_headers,
+    )
+    assert created.status_code == 201, created.text
+    body = created.json()
+    assert "token" not in body
+    assert body["activo"] is True
+    assert body["device_label"] == "Pixel del tutor"
+
+    listed = client.get("/api/v1/push/tokens", headers=auth_headers)
+    assert listed.status_code == 200
+    assert any(item["id"] == body["id"] for item in listed.json())
+    assert all("token" not in item for item in listed.json())
+
+    removed = client.post(
+        "/api/v1/push/tokens/unregister",
+        json={"token": token},
+        headers=auth_headers,
+    )
+    assert removed.status_code == 204
+    listed_after = client.get("/api/v1/push/tokens", headers=auth_headers).json()
+    assert next(item for item in listed_after if item["id"] == body["id"])["activo"] is False
+
+
+def test_push_token_rejects_jwt_shaped_credentials(client, auth_headers):
+    """Un access token de sesión no es un token de entrega y no debe guardarse."""
+
+    jwt_like = "eyJhbGciOiJFZERTQSJ9.eyJzdWIiOiJkZW1vIn0.firma"
+    response = client.post(
+        "/api/v1/push/tokens",
+        json={"token": jwt_like, "plataforma": "ANDROID"},
+        headers=auth_headers,
+    )
+    assert response.status_code == 422
+    assert "FCM" in response.text

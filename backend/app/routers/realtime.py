@@ -1,0 +1,109 @@
+from fastapi import APIRouter, Depends, Response, status
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from ..config import settings
+from ..db import get_db
+from ..deps import current_tutor
+from ..models import PushToken, User
+from ..ratelimit import enforce
+from ..schemas import PushTokenOut, PushTokenRequest, RealtimeTicketResponse
+from ..security import create_alert_ws_ticket
+
+router = APIRouter(tags=["Tiempo real"])
+
+
+def _ws_url() -> str:
+    # Ruta relativa, igual que /ws/pairing: el cliente la resuelve contra su
+    # base y el túnel/dominio no queda incrustado en la respuesta.
+    return "/ws/tutor"
+
+
+@router.post("/realtime/ticket", response_model=RealtimeTicketResponse)
+async def realtime_ticket(
+    tutor: User = Depends(current_tutor),
+):
+    """Emite un ticket efímero para el stream de alertas del tutor.
+
+    El ticket viaja en ``Sec-WebSocket-Protocol``; nunca en la URL, porque los
+    proxies y logs de acceso guardan la query string.
+    """
+
+    await enforce(f"realtime:ticket:{tutor.id}", 60, 60)
+    return RealtimeTicketResponse(
+        ws_url=_ws_url(),
+        ws_ticket=create_alert_ws_ticket(tutor.id),
+        expires_in=settings.ws_ticket_seconds,
+    )
+
+
+def _token_out(row: PushToken) -> PushTokenOut:
+    return PushTokenOut(
+        id=row.id,
+        plataforma=row.plataforma,
+        activo=row.activo,
+        device_label=row.device_label,
+        creado_en=row.creado_en,
+        actualizado_en=row.actualizado_en,
+    )
+
+
+@router.get("/push/tokens", response_model=list[PushTokenOut])
+async def list_tokens(
+    tutor: User = Depends(current_tutor),
+    db: AsyncSession = Depends(get_db),
+):
+    rows = (
+        await db.execute(
+            select(PushToken).where(PushToken.usuario_id == tutor.id).order_by(PushToken.creado_en.desc())
+        )
+    ).scalars()
+    return [_token_out(row) for row in rows]
+
+
+@router.post("/push/tokens", response_model=PushTokenOut, status_code=status.HTTP_201_CREATED)
+async def register_token(
+    body: PushTokenRequest,
+    tutor: User = Depends(current_tutor),
+    db: AsyncSession = Depends(get_db),
+):
+    """Registra o reasigna un token FCM al tutor autenticado.
+
+    Reasignar importa: si otra persona inicia sesión en el mismo teléfono, el
+    token deja de pertenecer al tutor anterior para no filtrar alertas.
+    """
+
+    await enforce(f"push:register:{tutor.id}", 30, 3600)
+    row = await db.scalar(select(PushToken).where(PushToken.token == body.token))
+    if row is None:
+        row = PushToken(
+            usuario_id=tutor.id,
+            token=body.token,
+            plataforma=body.plataforma,
+            device_label=body.device_label,
+            activo=True,
+        )
+        db.add(row)
+    else:
+        row.usuario_id = tutor.id
+        row.plataforma = body.plataforma
+        row.device_label = body.device_label or row.device_label
+        row.activo = True
+    await db.commit()
+    await db.refresh(row)
+    return _token_out(row)
+
+
+@router.post("/push/tokens/unregister", status_code=status.HTTP_204_NO_CONTENT)
+async def unregister_token(
+    body: PushTokenRequest,
+    tutor: User = Depends(current_tutor),
+    db: AsyncSession = Depends(get_db),
+):
+    row = await db.scalar(
+        select(PushToken).where(PushToken.token == body.token, PushToken.usuario_id == tutor.id)
+    )
+    if row is not None:
+        row.activo = False
+        await db.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

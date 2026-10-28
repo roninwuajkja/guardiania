@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="es-CL" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Retención y eliminación · IA Guardian</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/fonts.css">
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body class="legal-page">
+  <main class="legal-doc">
+    <nav class="legal-nav"><a href="/">← Volver al panel</a><span>Versión 2026-10-22</span></nav>
+    <div class="legal-banner" role="note"><strong>Plazos configurables.</strong> Los valores por defecto son 90 días para señales y 365 días para auditoría. El responsable debe ajustarlos a su base de licitud y documentar el cambio.</div>
+    <p class="eyebrow">Ciclo de vida</p>
+    <h1>Retención, exportación y eliminación</h1>
+    <p class="legal-lead">Conservamos solo lo necesario para prestar el servicio, proteger la cuenta y cumplir obligaciones. La retención se ejecuta automáticamente.</p>
+
+    <table>
+      <thead><tr><th>Dato</th><th>Plazo por defecto</th><th>Qué ocurre al vencer</th></tr></thead>
+      <tbody>
+        <tr><td>Señales derivadas y capturas</td><td>90 días</td><td>Borrado físico por el trabajo de retención</td></tr>
+        <tr><td>Alertas y resúmenes</td><td>90 días</td><td>Borrado físico</td></tr>
+        <tr><td>Sesiones revocadas o vencidas</td><td>30 días</td><td>Borrado físico</td></tr>
+        <tr><td>Tokens de verificación/restablecimiento</td><td>24 h / 1 h, o al usarse</td><td>Borrado al usar o vencer; limpieza periódica</td></tr>
+        <tr><td>Auditoría de seguridad</td><td>365 días</td><td>Borrado físico; no contiene texto conversacional</td></tr>
+        <tr><td>Cuenta eliminada</td><td>Inmediato</td><td>Anonimización del perfil y borrado de dispositivos, alertas, capturas y consentimientos</td></tr>
+      </tbody>
+    </table>
+
+    <h2>1. Exportación</h2>
+    <p>Desde <strong>Privacidad y datos → Descargar mis datos</strong> obtienes un JSON con perfil, consentimientos, dispositivos, vinculaciones, alertas, señales y auditoría reciente. La descarga requiere sesión autenticada y queda auditada.</p>
+
+    <h2>2. Eliminación de cuenta</h2>
+    <p>La eliminación exige contraseña y la frase <strong>ELIMINAR MI CUENTA</strong>. Revoca sesiones y dispositivos, borra alertas, capturas y consentimientos, y anonimiza el perfil. Se conserva una constancia mínima de la eliminación sin identificar a la persona, para demostrar cumplimiento.</p>
+
+    <h2>3. Excepciones legales</h2>
+    <p>Podemos conservar información específica si una ley, una orden judicial o una investigación de seguridad lo exige. En ese caso limitamos el acceso, documentamos la base y eliminamos en cuanto cesa la obligación.</p>
+
+    <h2>4. Copias de seguridad</h2>
+    <p>Las copias deben cifrarse y tener retención máxima de 35 días. Una eliminación se propaga a las copias en el siguiente ciclo; no se restauran datos eliminados salvo para recuperar el servicio, con nuevo plazo acotado.</p>
+
+    <h2>5. Verificación</h2>
+    <p>El trabajo de retención registra conteos agregados, no identificadores. Los ensayos de restauración y borrado se documentan en <code>docs/compliance/retencion.md</code>.</p>
+
+    <footer class="legal-foot"><a href="/legal/privacidad">Privacidad</a><a href="/legal/terminos">Términos</a><a href="/legal/seguridad">Seguridad</a></footer>
+  </main>
+</body>
+</html>

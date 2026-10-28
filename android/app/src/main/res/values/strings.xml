@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">IA Guardian</string>
+    <string name="notification_service_label">IA Guardian · análisis local</string>
+    <string name="accessibility_service_label">IA Guardian · contexto de pantalla (opcional)</string>
+    <string name="accessibility_service_description">Opcional. Registra solo el nombre de la app en primer plano para mejorar el contexto de uso. No lee textos, contraseñas ni contenido de la pantalla.</string>
+    <string name="alert_channel_name">Alertas de riesgo</string>
+    <string name="alert_channel_description">Avisos cuando IA Guardian detecta una señal que requiere tu atención.</string>
+    <string name="sync_channel_name">Sincronización</string>
+    <string name="sync_channel_description">Avisos breves cuando se envía una señal prioritaria al panel.</string>
+</resources>

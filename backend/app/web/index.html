@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="es-CL" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="IA Guardian: control parental con privacidad por diseño. Vincula el teléfono de tu hijo o hija y recibe señales claras, nunca el contenido de sus mensajes.">
+  <meta name="theme-color" content="#081B17">
+  <title>IA Guardian · Panel del tutor</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/fonts.css">
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+  <a class="skip-link" href="#view">Saltar al contenido</a>
+
+  <div id="auth" class="auth" hidden>
+    <section class="auth-brand">
+      <div class="brand brand--light">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 32 32" fill="none"><path d="M5.5 22.5c0-7.2 4.7-12.5 10.5-12.5s10.5 5.3 10.5 12.5" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><circle cx="16" cy="22.5" r="3.1" fill="currentColor"/><path d="M3.5 27.5h25" stroke="currentColor" stroke-width="1.1" opacity=".45"/></svg>
+        </span>
+        <span class="brand-text"><strong>IA Guardian</strong><small>privacidad por diseño</small></span>
+      </div>
+
+      <div class="auth-pitch">
+        <p class="eyebrow eyebrow--light">Control parental · Chile</p>
+        <h1>Saber que está bien.<br>Sin leer sus mensajes.</h1>
+        <p class="auth-lede">El teléfono analiza en local y envía solo señales derivadas. Ni textos, ni fotos, ni nombres de contacto salen del dispositivo.</p>
+        <ol class="auth-steps">
+          <li><span class="step-n">01</span><div><strong>Vincula el teléfono</strong><p>Un QR o un código de 6 dígitos, con el tutor presente.</p></div></li>
+          <li><span class="step-n">02</span><div><strong>Se analiza en local</strong><p>Uso y notificaciones se convierten en conteos, no en texto.</p></div></li>
+          <li><span class="step-n">03</span><div><strong>Recibes señales claras</strong><p>Alertas explicadas para conversar, no capturas para vigilar.</p></div></li>
+        </ol>
+      </div>
+
+      <div class="auth-visual" aria-hidden="true">
+        <div class="auth-visual-head">
+          <span>Guardia de hoy</span>
+          <span class="mono">00 — 24 h</span>
+        </div>
+        <svg viewBox="0 0 520 132" class="auth-strip" role="presentation">
+          <rect x="0" y="18" width="130" height="64" fill="rgba(255,255,255,.055)"/>
+          <g stroke="rgba(233,241,236,.16)" stroke-width="1">
+            <path d="M0 18v64M65 18v64M130 18v64M195 18v64M260 18v64M325 18v64M390 18v64M455 18v64M520 18v64"/>
+          </g>
+          <path d="M0 82h520" stroke="rgba(233,241,236,.28)" stroke-width="1"/>
+          <g>
+            <rect x="164" y="38" width="4" height="44" rx="2" fill="#A9C6B8"/>
+            <rect x="276" y="30" width="4" height="52" rx="2" fill="#D9A15B"/>
+            <rect x="352" y="46" width="3" height="36" rx="2" fill="#A9C6B8"/>
+            <rect x="441" y="34" width="4" height="48" rx="2" fill="#D9A15B"/>
+            <circle cx="278" cy="24" r="4" fill="#D9A15B"/>
+            <circle cx="443" cy="28" r="4" fill="#D9A15B"/>
+          </g>
+          <g fill="rgba(233,241,236,.6)" font-family="Spline Sans Mono, monospace" font-size="10">
+            <text x="0" y="106">00</text><text x="122" y="106">06</text><text x="252" y="106">12</text><text x="382" y="106">18</text><text x="506" y="106">24</text>
+          </g>
+          <g fill="rgba(233,241,236,.5)" font-family="Archivo, sans-serif" font-size="11">
+            <text x="0" y="126">descanso</text><text x="130" y="126">colegio</text><text x="260" y="126">tarde</text><text x="390" y="126">noche</text>
+          </g>
+        </svg>
+        <p class="auth-caption">Una guardia de 24 horas, no una grabación.</p>
+      </div>
+
+      <p class="auth-foot">IA Guardian · Ley N.° 21.719 · <a href="/legal/privacidad">Privacidad</a> · <a href="/legal/terminos">Términos</a></p>
+    </section>
+
+    <section class="auth-panel">
+      <div class="auth-card">
+        <p class="eyebrow">Panel del tutor</p>
+        <h2 id="auth-title">Entrar</h2>
+        <p class="muted" id="auth-sub">Tu panel de tutor. Sin contenido de conversaciones.</p>
+
+        <div class="segmented" role="tablist" aria-label="Entrar o crear cuenta">
+          <button role="tab" aria-selected="true" data-auth-mode="login">Entrar</button>
+          <button role="tab" aria-selected="false" data-auth-mode="register">Crear cuenta</button>
+        </div>
+
+        <form id="auth-form" novalidate>
+          <label class="field">
+            <span>Correo</span>
+            <input type="email" name="email" autocomplete="email" inputmode="email" required placeholder="tu@correo.cl">
+          </label>
+          <label class="field">
+            <span>Contraseña</span>
+            <input type="password" name="password" autocomplete="current-password" required minlength="12" placeholder="Mínimo 12 caracteres">
+          </label>
+          <label class="field" id="alias-field" hidden>
+            <span>Tu nombre</span>
+            <input type="text" name="alias" autocomplete="name" maxlength="60" placeholder="Cómo quieres aparecer">
+          </label>
+          <label class="check" id="consent-field" hidden>
+            <input type="checkbox" name="consent">
+            <span>Acepto los <a href="/legal/terminos" target="_blank" rel="noopener">Términos</a> y la <a href="/legal/privacidad" target="_blank" rel="noopener">Política de privacidad</a>, y declaro que ejerzo la patria potestad, tutela o cuidado personal del menor.</span>
+          </label>
+          <p class="form-error" id="auth-error" role="alert"></p>
+          <button class="btn btn-primary btn-block" type="submit" id="auth-submit">Entrar</button>
+        </form>
+
+        <div class="auth-divider"><span>o</span></div>
+        <button class="btn btn-secondary btn-block" id="demo-login" type="button">Entrar con la cuenta demo</button>
+        <p class="fine">La cuenta demo trae dos dispositivos y alertas de ejemplo. Todo es sintético.</p>
+      </div>
+      <p class="auth-legal">Puedes exportar o eliminar tus datos desde Privacidad. <a href="/recuperar">Recuperar acceso</a> · <a href="/legal/consentimiento">Consentimiento informado</a> · <a href="/legal/retencion">Retención</a>.</p>
+    </section>
+  </div>
+
+  <div id="shell" class="shell" hidden>
+    <aside class="rail">
+      <a class="brand brand--light" href="#/resumen" aria-label="IA Guardian, ir al resumen">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 32 32" fill="none"><path d="M5.5 22.5c0-7.2 4.7-12.5 10.5-12.5s10.5 5.3 10.5 12.5" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><circle cx="16" cy="22.5" r="3.1" fill="currentColor"/><path d="M3.5 27.5h25" stroke="currentColor" stroke-width="1.1" opacity=".45"/></svg>
+        </span>
+        <span class="brand-text"><strong>IA Guardian</strong><small>privacidad por diseño</small></span>
+      </a>
+
+      <nav class="nav" aria-label="Principal">
+        <a href="#/resumen" data-route="resumen"><span class="nav-ico" data-icon="overview"></span><span>Resumen</span></a>
+        <a href="#/vincular" data-route="vincular"><span class="nav-ico" data-icon="link"></span><span>Vincular</span></a>
+        <a href="#/dispositivos" data-route="dispositivos"><span class="nav-ico" data-icon="device"></span><span>Dispositivos</span></a>
+        <a href="#/alertas" data-route="alertas"><span class="nav-ico" data-icon="bell"></span><span>Alertas</span><span class="nav-badge" id="nav-alert-count" hidden>0</span></a>
+      </nav>
+
+      <div class="rail-note">
+        <span class="rail-note-ico" data-icon="lock"></span>
+        <p>Nunca recibimos el texto de los mensajes. Solo señales derivadas.</p>
+      </div>
+
+      <div class="rail-footer">
+        <div class="tutor-chip">
+          <span class="avatar" id="tutor-avatar">CR</span>
+          <span class="tutor-meta"><strong id="tutor-name">—</strong><small id="tutor-email">—</small></span>
+        </div>
+        <div class="rail-utils">
+          <button class="icon-btn" id="privacy-open" type="button" aria-label="Privacidad y datos" title="Privacidad y datos"><span data-icon="shield"></span></button>
+          <button class="icon-btn" id="theme-toggle" type="button" aria-label="Cambiar tema" title="Cambiar tema"><span data-icon="moon"></span></button>
+          <button class="icon-btn" id="logout" type="button" aria-label="Cerrar sesión" title="Cerrar sesión"><span data-icon="logout"></span></button>
+        </div>
+        <p class="demo-tag"><span class="dot"></span> Demo · datos sintéticos</p>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div class="topbar-title">
+          <p class="eyebrow" id="top-eyebrow">Miércoles 22 de octubre</p>
+          <h1 id="top-title">Hola</h1>
+        </div>
+        <div class="top-actions">
+          <span class="sync-chip" id="sync-chip"><span class="dot"></span><span>—</span></span>
+          <button class="btn btn-primary" id="pair-shortcut" type="button"><span data-icon="plus"></span> Vincular dispositivo</button>
+        </div>
+      </header>
+
+      <div id="view" tabindex="-1"></div>
+
+      <footer class="foot">
+        <span data-icon="lock"></span>
+        <p>GuardianIA procesa en el teléfono y envía solo un vector de señales. Sin texto, sin fotos, sin contactos en claro.</p>
+        <button class="link-button" type="button" data-action="open-privacy">Privacidad y datos</button>
+      </footer>
+    </main>
+
+    <nav class="tabbar" aria-label="Principal móvil">
+      <a href="#/resumen" data-route="resumen"><span data-icon="overview"></span><span>Resumen</span></a>
+      <a href="#/vincular" data-route="vincular"><span data-icon="link"></span><span>Vincular</span></a>
+      <a href="#/dispositivos" data-route="dispositivos"><span data-icon="device"></span><span>Equipos</span></a>
+      <a href="#/alertas" data-route="alertas"><span data-icon="bell"></span><span>Alertas</span><span class="tab-badge" id="tab-alert-count" hidden>0</span></a>
+    </nav>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <dialog id="privacy-dialog" class="dialog dialog--wide">
+    <form method="dialog" class="dialog-head">
+      <div>
+        <p class="eyebrow">Tus derechos</p>
+        <h2>Privacidad y datos</h2>
+      </div>
+      <button class="icon-btn" value="close" aria-label="Cerrar">×</button>
+    </form>
+    <div class="privacy-body">
+      <section>
+        <h3>Cuenta</h3>
+        <p class="muted"><strong id="privacy-email">—</strong> · <span id="privacy-verified" class="privacy-status">—</span></p>
+        <div class="dialog-actions dialog-actions--start">
+          <button class="btn btn-secondary" id="export-data" type="button">Descargar mis datos</button>
+          <button class="btn btn-secondary" id="view-consents" type="button">Ver consentimientos</button>
+        </div>
+        <div id="consent-list" class="consent-list"></div>
+      </section>
+
+      <section>
+        <h3>Cambiar contraseña</h3>
+        <form id="password-form" class="stack">
+          <label class="field"><span>Contraseña actual</span><input type="password" name="current_password" autocomplete="current-password" required></label>
+          <label class="field"><span>Contraseña nueva</span><input type="password" name="new_password" autocomplete="new-password" minlength="12" required placeholder="Mínimo 12 caracteres"></label>
+          <p class="form-error" id="password-error" role="alert"></p>
+          <button class="btn btn-secondary" type="submit">Actualizar contraseña</button>
+        </form>
+      </section>
+
+      <section class="danger-zone">
+        <h3>Eliminar cuenta</h3>
+        <p class="muted">Borra tu perfil, dispositivos, alertas, capturas y consentimientos. La acción es irreversible.</p>
+        <form id="delete-form" class="stack">
+          <label class="field"><span>Contraseña</span><input type="password" name="password" autocomplete="current-password" required></label>
+          <label class="field"><span>Escribe ELIMINAR MI CUENTA</span><input type="text" name="confirmation" autocomplete="off" required></label>
+          <p class="form-error" id="delete-error" role="alert"></p>
+          <button class="btn btn-danger" type="submit">Eliminar mi cuenta y mis datos</button>
+        </form>
+      </section>
+
+      <section>
+        <h3>Documentos</h3>
+        <p class="legal-links">
+          <a href="/legal/privacidad" target="_blank" rel="noopener">Política de privacidad</a>
+          <a href="/legal/terminos" target="_blank" rel="noopener">Términos de uso</a>
+          <a href="/legal/consentimiento" target="_blank" rel="noopener">Consentimiento informado</a>
+          <a href="/legal/seguridad" target="_blank" rel="noopener">Seguridad</a>
+          <a href="/legal/retencion" target="_blank" rel="noopener">Retención</a>
+        </p>
+      </section>
+    </div>
+  </dialog>
+
+  <dialog id="confirm-dialog" class="dialog">
+    <form method="dialog">
+      <h2 id="confirm-title">¿Revocar acceso?</h2>
+      <p id="confirm-text" class="muted"></p>
+      <div class="dialog-actions">
+        <button class="btn btn-secondary" value="cancel">Cancelar</button>
+        <button class="btn btn-danger" value="confirm" id="confirm-ok">Revocar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="/static/app.js" defer></script>
+</body>
+</html>

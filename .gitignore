@@ -1,0 +1,52 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.env
+backend/.data/
+backend/guardiania.db
+backend/tests/test_guardiania.db
+
+# Secretos de Firebase (nunca versionar)
+backend/secrets/*
+!backend/secrets/*.example.json
+!backend/secrets/README.md
+android/app/google-services.json
+
+# Android / Gradle
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/.idea/
+*.iml
+*.apk
+*.aab
+
+# Herramientas de desarrollo y capturas temporales
+node_modules/
+package.json
+package-lock.json
+.tools/
+shots/
+.impeccable/
+
+# Variantes de entorno (los .example sí se versionan)
+.env.*
+!**/.env.example
+
+# Firma de la app: las claves nunca entran al repo
+*.jks
+*.keystore
+*.p12
+
+# Logs locales del backend
+backend-server.log
+backend-server.log.old
+backend-server.err
+backend-server.err.old
+
+# Sistema
+.DS_Store
+Thumbs.db
