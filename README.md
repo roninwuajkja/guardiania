@@ -232,6 +232,19 @@ Las pruebas backend cubren auth por cookies/CSRF, rotación de refresh, verifica
 
 El push FCM se verificó de punta a punta en un emulador `Pixel_8_Pro_API_35` con un proyecto Firebase real: token registrado, `messages:send` con HTTP 200, alerta recibida por WebSocket con el aviso local suprimido, notificación mostrada en segundo plano y también tras cerrar la app, y apertura de la pestaña **Alertas** al tocar el aviso. La ruta de IA se verificó contra Groq real con vectores sintéticos (`--repeat 5`: 5/5 JSON válido, P50 765 ms, P95 1000 ms con `openai/gpt-oss-20b`), de punta a punta desde el emulador (`ai_eval provider=groq latency_ms=812`, una sola alerta con narrativa) y también desde un teléfono físico Samsung SM-S948B con Android 16 (`HTTP 200`, `provider=groq`, 733 ms y una sola alerta persistida). Antes se había verificado el camino con Gemini (`provider=gemini`, 11,6 s). El free tier de Groq puede responder 429 al agotar cuota; en ese caso el sistema degrada a heurística.
 
+## Demo en la nube (gratuita)
+
+La demo de la defensa corre sin PC: backend y panel en Render Free + PostgreSQL
+en Neon Free, con el teléfono como dispositivo del menor y una APK release
+firmada. URL: <https://guardiania-74l4.onrender.com>
+
+Los límites son reales y conviene decirlos en voz alta: la instancia de Render
+duerme a los 15 minutos y tarda ~50 s en despertar, el plan free da 750 horas de
+instancia al mes y Neon 100 CU-horas. No se mantiene despierta 24/7 con un
+pinger: se abre el panel unos minutos antes de la demo. El detalle operativo,
+las variables de entorno, el checklist y la verificación de punta a punta están
+en [`docs/despliegue-gratuito.md`](docs/despliegue-gratuito.md).
+
 ## Producción
 
 El arranque en `ENVIRONMENT=production` **falla** si falta cualquiera de estas condiciones:
@@ -267,6 +280,7 @@ Diseñado para **Ley N.° 21.719** (Chile), principios de Privacy by Design e IS
 - [`docs/architecture.md`](docs/architecture.md) — diagramas y contratos de la base.
 - [`docs/arquitectura-ia.md`](docs/arquitectura-ia.md) — flujo de IA, presupuesto de latencia, push y degradación.
 - [`docs/firebase-setup.md`](docs/firebase-setup.md) — configuración de FCM y diagnóstico.
+- [`docs/despliegue-gratuito.md`](docs/despliegue-gratuito.md) — despliegue en Render + Neon, límites del plan free y checklist de demo.
 - [`android/README.md`](android/README.md) — build, permisos, roles y operación.
 - [`docs/compliance/`](docs/compliance/README.md) — ROPA, DPIA, retención, incidentes y compuerta.
 - [`PRODUCT.md`](PRODUCT.md) — brief de producto y principios.

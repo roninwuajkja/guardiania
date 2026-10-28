@@ -17,8 +17,11 @@ object ApiFactory {
 
     private val client = OkHttpClient.Builder()
         .connectTimeout(12, TimeUnit.SECONDS)
-        .readTimeout(20, TimeUnit.SECONDS)
-        .writeTimeout(20, TimeUnit.SECONDS)
+        // El hosting gratuito duerme la instancia sin tráfico y el primer
+        // request puede tardar ~50 s en despertarla. Un readTimeout corto
+        // hacía fallar la sincronización justo en ese arranque en frío.
+        .readTimeout(75, TimeUnit.SECONDS)
+        .writeTimeout(30, TimeUnit.SECONDS)
         .build()
 
     fun normalizeBaseUrl(raw: String): String {
