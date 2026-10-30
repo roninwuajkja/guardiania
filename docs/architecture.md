@@ -159,6 +159,7 @@ Reglas:
 - El código se guarda como `HMAC-SHA256(pepper, código)`; el índice único solo aplica a sesiones `PENDIENTE`.
 - Máximo 5 intentos por sesión; el incremento ocurre antes de validar para evitar carreras.
 - Un código reutilizado responde **422 genérico**. Un QR reutilizado responde **409**.
+- El QR lleva `guardiania://pair?v=1&t=<uuid>.<hmac>`: 59 caracteres y **37×37 módulos**. Antes era un JWT de ~330 caracteres (89×89 módulos) y no se podía leer en una pantalla a distancia normal: verificado con ML Kit, zxing-cpp y OpenCV sobre una foto real del panel. El token corto es el id de sesión más un `HMAC-SHA256` truncado a 16 bytes con `PAIRING_PEPPER`; el JWT anterior se sigue aceptando para no romper QRs ya generados.
 - Un código **nuevo** del tutor revincula el mismo teléfono: si el `install_id` ya tenía una vinculación `ACTIVA`, se revoca con sus tokens (`motivo_revocacion="Revinculación desde el mismo teléfono"`), se registra `binding_revoked` en el historial y se crea la nueva. Un `install_id` repetido no responde `409`: el tutor que emite el código es la autorización.
 - El ticket WS dura 60 s y viaja en `Sec-WebSocket-Protocol`, nunca en la query string. El servidor acepta el subprotocolo `guardiania` y rechaza con `4401` si el ticket falta o llega en la URL.
 - El evento WebSocket se publica desde el outbox **después del commit**; un fallo de red no deja una vinculación fantasma.
