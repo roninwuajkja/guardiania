@@ -31,6 +31,12 @@ const state = {
   devices: [],
   pairing: null,
   socket: null,
+  stream: null,
+  streamTimer: null,
+  streamRetries: 0,
+  autoTimer: null,
+  signature: '',
+  lastRefreshAt: 0,
   poll: null,
   ticker: null,
   filter: 'TODAS',
@@ -262,6 +268,8 @@ function showApp() {
 
 async function logout(notify = true, notifyServer = true) {
   closePairingLive();
+  closeTutorStream();
+  stopAutoRefresh();
   if (notifyServer) {
     try {
       await fetch(`${API}/auth/logout`, {
@@ -452,6 +460,7 @@ async function navigate() {
     await loadAlerts();
     renderAlerts();
   }
+  state.signature = viewSignature();
 }
 
 function loadingBlock(label) {
@@ -462,6 +471,9 @@ async function enterApp() {
   await loadCore();
   if (!location.hash) location.hash = '#/resumen';
   await navigate();
+  state.signature = viewSignature();
+  startAutoRefresh();
+  connectTutorStream();
 }
 
 async function loadCore() {
@@ -485,6 +497,166 @@ async function loadAlerts() {
 async function refreshCore() {
   await loadCore();
   if (state.route === 'alertas') state.alerts = await api('/alerts?limit=200');
+}
+
+/* ---------- Actualización automática ---------- */
+
+const AUTO_REFRESH_MS = 25000;
+const STREAM_RETRY_MAX_MS = 30000;
+
+function viewSignature() {
+  return JSON.stringify({
+    overview: state.overview,
+    alerts: state.alerts.map((alert) => [alert.id, alert.estado]),
+    devices: state.devices.map((device) => [device.id, device.estado, device.ultima_conexion]),
+  });
+}
+
+function rerenderCurrent() {
+  const view = $('#view');
+  if (!view || document.hidden) return;
+  if (document.querySelector('dialog[open]')) return;
+
+  const scroll = window.scrollY;
+  if (state.route === 'resumen' && state.overview) renderOverview();
+  else if (state.route === 'alertas') renderAlerts();
+  else if (state.route === 'dispositivos') renderDevices();
+  else return;
+  window.scrollTo(0, scroll);
+}
+
+let refreshing = false;
+
+async function refreshFromServer({ force = false } = {}) {
+  if (!state.tutor || refreshing) return;
+  const now = Date.now();
+  if (!force && now - state.lastRefreshAt < 4000) return;
+  state.lastRefreshAt = now;
+  refreshing = true;
+  try {
+    await refreshCore();
+    const signature = viewSignature();
+    if (force || signature !== state.signature) {
+      state.signature = signature;
+      rerenderCurrent();
+    }
+  } catch {
+    // Un fallo puntual no debe romper la vista: el próximo ciclo reintenta.
+  } finally {
+    refreshing = false;
+  }
+}
+
+function startAutoRefresh() {
+  stopAutoRefresh();
+  state.autoTimer = setInterval(() => {
+    if (!document.hidden) refreshFromServer();
+  }, AUTO_REFRESH_MS);
+  document.addEventListener('visibilitychange', onVisibilityChange);
+  window.addEventListener('focus', onWindowFocus);
+}
+
+function stopAutoRefresh() {
+  clearInterval(state.autoTimer);
+  state.autoTimer = null;
+  document.removeEventListener('visibilitychange', onVisibilityChange);
+  window.removeEventListener('focus', onWindowFocus);
+}
+
+function onVisibilityChange() {
+  if (document.hidden) return;
+  if (!state.stream && state.tutor) connectTutorStream();
+  refreshFromServer();
+}
+
+function onWindowFocus() {
+  if (!document.hidden) refreshFromServer();
+}
+
+async function connectTutorStream() {
+  if (!state.tutor || state.stream || document.hidden) return;
+  try {
+    const ticket = await api('/realtime/ticket', { method: 'POST' });
+    const scheme = location.protocol === 'https:' ? 'wss' : 'ws';
+    const socket = new WebSocket(
+      `${scheme}://${location.host}${ticket.ws_url}`,
+      ['guardiania', ticket.ws_ticket],
+    );
+    state.stream = socket;
+    socket.onopen = () => {
+      state.streamRetries = 0;
+    };
+    socket.onmessage = (event) => {
+      let message;
+      try { message = JSON.parse(event.data); } catch { return; }
+      if (message.type === 'risk_alert') handleLiveAlert(message.data);
+    };
+    socket.onclose = () => {
+      if (state.stream !== socket) return;
+      state.stream = null;
+      if (state.tutor) scheduleTutorReconnect();
+    };
+    socket.onerror = () => {
+      // onclose programa el reintento.
+    };
+  } catch {
+    scheduleTutorReconnect();
+  }
+}
+
+function scheduleTutorReconnect() {
+  clearTimeout(state.streamTimer);
+  const attempt = Math.min(state.streamRetries + 1, 5);
+  state.streamRetries = attempt;
+  const delay = Math.min(STREAM_RETRY_MAX_MS, 2000 * 2 ** (attempt - 1));
+  state.streamTimer = setTimeout(() => {
+    if (!document.hidden) connectTutorStream();
+  }, delay);
+}
+
+function closeTutorStream() {
+  clearTimeout(state.streamTimer);
+  state.streamTimer = null;
+  state.streamRetries = 0;
+  if (state.stream) {
+    const socket = state.stream;
+    state.stream = null;
+    try { socket.close(); } catch { /* noop */ }
+  }
+}
+
+function handleLiveAlert(data) {
+  if (!data) return;
+  const who = data.etiqueta_menor || data.device_alias || 'el teléfono';
+  const tone = ['ALTA', 'CRITICA'].includes(data.severidad) ? 'danger' : 'default';
+  toast(`Nueva señal de ${who}: ${prettyAlertLabel(data.categoria)}`, tone);
+  // El evento no trae las reglas completas: se recarga para pintar la alerta
+  // igual que por REST, sin inventar campos.
+  refreshFromServer({ force: true });
+  if (state.overview) {
+    state.overview.open_alerts += 1;
+    if (data.severidad === 'CRITICA') state.overview.critical_alerts += 1;
+    updateAlertBadges(state.overview.open_alerts);
+  }
+}
+
+function prettyAlertLabel(code) {
+  const labels = {
+    self_harm: 'posible autolesión',
+    grooming: 'posible grooming',
+    sexual_content: 'contenido sexual',
+    violence: 'violencia',
+    coercion: 'presión o chantaje',
+    bullying: 'acoso escolar',
+    drugs: 'drogas o alcohol',
+    gambling: 'apuestas',
+    malestar: 'malestar emocional',
+    unknown_contact: 'contacto desconocido',
+    uso_nocturno: 'uso nocturno',
+    uso_prolongado: 'uso prolongado',
+    contacto_recurrente: 'contacto recurrente',
+  };
+  return labels[code] || String(code || '').replace(/^ai_/, '').replaceAll('_', ' ');
 }
 
 function updateAlertBadges(count) {
@@ -977,9 +1149,7 @@ function handlePairingSuccess(deviceAlias) {
   closePairingLive();
   renderPairing();
   toast(`Vinculación activa: ${pairing.deviceAlias}`);
-  refreshCore().then(() => {
-    if (state.route === 'resumen') renderOverview();
-  }).catch(() => {});
+  refreshFromServer({ force: true });
 }
 
 function handlePairingExpired() {

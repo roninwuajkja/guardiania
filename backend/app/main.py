@@ -175,7 +175,9 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         if request.url.path.startswith("/api/") or request.url.path.startswith("/auth/"):
             response.headers.setdefault("Cache-Control", "no-store")
         elif request.url.path.startswith("/static/"):
-            response.headers.setdefault("Cache-Control", "public, max-age=3600")
+            # El panel se actualiza seguido: se revalida siempre para que un
+            # despliegue no deje una pestaña con JS viejo durante una hora.
+            response.headers.setdefault("Cache-Control", "no-cache")
         return response
 
 

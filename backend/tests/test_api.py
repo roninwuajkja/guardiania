@@ -571,6 +571,56 @@ def test_capture_evaluate_notifies_tutor_over_ws(client, auth_headers, monkeypat
         assert "raw" not in event["data"]
 
 
+def test_sync_publishes_medium_rule_alert_to_stream(client, auth_headers):
+    """Una alerta MEDIA de reglas también llega al panel sin recargar."""
+
+    generated = generate_pairing(client, auth_headers)
+    verified = verify_manual(client, generated["manual_code"]).json()
+    device_headers = {"Authorization": f"Bearer {verified['access_token']}"}
+
+    ticket = client.post("/api/v1/realtime/ticket", headers=auth_headers).json()
+
+    now = datetime.now(timezone.utc)
+    start = now - timedelta(minutes=10)
+    payload = {
+        "schema_version": 1,
+        "batch_id": str(uuid.uuid4()),
+        "device_clock": now.isoformat().replace("+00:00", "Z"),
+        "captures": [
+            {
+                "schema_version": 1,
+                "event_id": str(uuid.uuid4()),
+                "device_id": verified["device_id"],
+                "time_window": {
+                    "start": start.isoformat().replace("+00:00", "Z"),
+                    "end": now.isoformat().replace("+00:00", "Z"),
+                    "tz_offset_minutes": -180,
+                },
+                "category": "social",
+                "lexical_flag_count": 1,
+                "flags": ["gambling"],
+                "usage_duration_minutes": 12,
+                "notification_count": 3,
+                "event_count": 3,
+                "integrity": {"attestation_ok": True, "app_version": "1.2.0"},
+            }
+        ],
+    }
+
+    with client.websocket_connect(
+        ticket["ws_url"], subprotocols=["guardiania", ticket["ws_ticket"]]
+    ) as websocket:
+        assert websocket.receive_json()["type"] == "tutor_ready"
+
+        synced = client.post("/api/v1/captures/sync", json=payload, headers=device_headers)
+        assert synced.status_code == 200, synced.text
+
+        event = websocket.receive_json()
+        assert event["type"] == "risk_alert"
+        assert event["data"]["categoria"] == "gambling"
+        assert event["data"]["severidad"] == "MEDIA"
+
+
 def test_capture_evaluate_dedupes_and_rejects_raw_text(client, auth_headers, monkeypatch):
     from app.services import evaluation as evaluation_module
     from app.services.ai_evaluator import AIEvaluatorService, HeuristicProvider

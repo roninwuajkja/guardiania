@@ -239,16 +239,19 @@ async def dispatch_rule_alerts(
     device: Device,
     alerts: list[RiskAlert],
 ) -> None:
-    """Notify high-severity rule alerts created by the batch sync."""
+    """Publica las alertas de reglas en el stream del tutor.
+
+    Todas se publican en el WebSocket para que el panel se actualice solo; el
+    push FCM se reserva a ALTA/CRITICA para no saturar al tutor.
+    """
 
     for alert in alerts:
-        if alert.severidad not in {Severidad.ALTA.value, Severidad.CRITICA.value}:
-            continue
+        high = alert.severidad in {Severidad.ALTA.value, Severidad.CRITICA.value}
         await notify_alert(
             db,
             tutor_id=tutor_id,
             alert=alert,
             device_alias=device.alias,
             etiqueta_menor=binding.etiqueta_menor,
-            allow_push=True,
+            allow_push=high,
         )
