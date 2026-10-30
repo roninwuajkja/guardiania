@@ -84,7 +84,7 @@ Reglas de seguridad:
   borra sus datos al desvincular.
 
 > El **panel web** usa el mismo `/ws/tutor`: pide un ticket, escucha `risk_alert`
-> y refresca el resumen cada 25 s (y al volver a la pestaña) como respaldo. Así
+> y refresca el resumen cada 15 s (y al volver a la pestaña) como respaldo. Así
 > las alertas, los contadores y el estado de los teléfonos aparecen sin recargar.
 > También se publican las alertas de reglas MEDIA; el push FCM queda reservado a
 > ALTA/CRITICA.

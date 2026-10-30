@@ -501,7 +501,7 @@ async function refreshCore() {
 
 /* ---------- Actualización automática ---------- */
 
-const AUTO_REFRESH_MS = 25000;
+const AUTO_REFRESH_MS = 15000;
 const STREAM_RETRY_MAX_MS = 30000;
 
 function viewSignature() {
@@ -585,6 +585,8 @@ async function connectTutorStream() {
     state.stream = socket;
     socket.onopen = () => {
       state.streamRetries = 0;
+      // Al (re)conectar puede haber alertas de mientras estaba caído.
+      refreshFromServer({ force: true });
     };
     socket.onmessage = (event) => {
       let message;
