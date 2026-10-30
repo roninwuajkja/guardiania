@@ -888,6 +888,19 @@ svg {
   background: var(--amber);
 }
 
+#live-chip[data-state='live'] .dot {
+  background: var(--sage-500);
+  box-shadow: 0 0 0 3px rgba(94, 143, 123, 0.18);
+}
+
+#live-chip[data-state='retry'] .dot {
+  background: var(--amber);
+}
+
+#live-chip[data-state='off'] .dot {
+  background: var(--oxblood);
+}
+
 /* ---------- Shared surfaces ---------- */
 
 .card {

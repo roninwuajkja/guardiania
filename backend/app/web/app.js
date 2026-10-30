@@ -37,6 +37,8 @@ const state = {
   autoTimer: null,
   signature: '',
   lastRefreshAt: 0,
+  streamConnecting: false,
+  streamError: null,
   poll: null,
   ticker: null,
   filter: 'TODAS',
@@ -550,7 +552,10 @@ async function refreshFromServer({ force = false } = {}) {
 function startAutoRefresh() {
   stopAutoRefresh();
   state.autoTimer = setInterval(() => {
-    if (!document.hidden) refreshFromServer();
+    if (document.hidden) return;
+    // Autocuración: si el socket quedó caído, se reintenta en cada ciclo.
+    if (!state.stream) connectTutorStream();
+    refreshFromServer();
   }, AUTO_REFRESH_MS);
   document.addEventListener('visibilitychange', onVisibilityChange);
   window.addEventListener('focus', onWindowFocus);
@@ -574,7 +579,9 @@ function onWindowFocus() {
 }
 
 async function connectTutorStream() {
-  if (!state.tutor || state.stream || document.hidden) return;
+  if (!state.tutor || state.stream || state.streamConnecting || document.hidden) return;
+  state.streamConnecting = true;
+  updateLiveChip('retry');
   try {
     const ticket = await api('/realtime/ticket', { method: 'POST' });
     const scheme = location.protocol === 'https:' ? 'wss' : 'ws';
@@ -585,6 +592,8 @@ async function connectTutorStream() {
     state.stream = socket;
     socket.onopen = () => {
       state.streamRetries = 0;
+      state.streamError = null;
+      updateLiveChip('live');
       // Al (re)conectar puede haber alertas de mientras estaba caído.
       refreshFromServer({ force: true });
     };
@@ -596,13 +605,18 @@ async function connectTutorStream() {
     socket.onclose = () => {
       if (state.stream !== socket) return;
       state.stream = null;
+      updateLiveChip(state.tutor ? 'retry' : 'off');
       if (state.tutor) scheduleTutorReconnect();
     };
     socket.onerror = () => {
       // onclose programa el reintento.
     };
-  } catch {
+  } catch (error) {
+    state.streamError = String(error?.message || error);
+    updateLiveChip('retry');
     scheduleTutorReconnect();
+  } finally {
+    state.streamConnecting = false;
   }
 }
 
@@ -620,11 +634,24 @@ function closeTutorStream() {
   clearTimeout(state.streamTimer);
   state.streamTimer = null;
   state.streamRetries = 0;
+  updateLiveChip('off');
   if (state.stream) {
     const socket = state.stream;
     state.stream = null;
     try { socket.close(); } catch { /* noop */ }
   }
+}
+
+function updateLiveChip(status) {
+  const chip = $('#live-chip');
+  if (!chip) return;
+  chip.dataset.state = status;
+  chip.classList.toggle('is-stale', status !== 'live');
+  chip.lastElementChild.textContent = status === 'live'
+    ? 'En vivo'
+    : status === 'retry'
+      ? 'Reconectando'
+      : 'Sin conexión';
 }
 
 function handleLiveAlert(data) {
