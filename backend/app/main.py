@@ -1,4 +1,5 @@
 import asyncio
+import hashlib
 import logging
 import uuid
 from contextlib import asynccontextmanager
@@ -239,14 +240,21 @@ async def health_alias():
     return await health()
 
 
+_ASSET_VERSION: str | None = None
+
+
 def _asset_version() -> str:
     """Versión de los estáticos: cambia cuando cambia el panel desplegado."""
 
-    parts = []
-    for name in ("app.js", "app.css", "fonts.css"):
-        path = WEB_DIR / name
-        parts.append(str(int(path.stat().st_mtime)) if path.exists() else "0")
-    return ".".join(parts)
+    global _ASSET_VERSION
+    if _ASSET_VERSION is None:
+        digest = hashlib.sha1()
+        for name in ("app.js", "app.css", "fonts.css"):
+            path = WEB_DIR / name
+            if path.exists():
+                digest.update(path.read_bytes())
+        _ASSET_VERSION = digest.hexdigest()[:12]
+    return _ASSET_VERSION
 
 
 def _index_html() -> str:
