@@ -210,6 +210,26 @@ vector ────►│    Groq      │────────────�
 - Un fallo de proveedor **no** devuelve error al teléfono; se responde con la
   evaluación heurística y `provider="heuristic"`.
 
+### Nivel mínimo por contexto
+
+El prompt fija mínimos explícitos y, además, `apply_policy_floor` los vuelve a
+aplicar después de la respuesta del modelo. Así una IA prudente en exceso no
+"pierde" una señal real:
+
+| Contexto del vector | Nivel mínimo |
+|---|---|
+| Autolesión, grooming, contenido sexual, violencia, presión/chantaje, acoso | ALTO |
+| Cualquier otra señal (apuestas, drogas, malestar, contacto desconocido) | MEDIO |
+| Dos o más señales distintas | ALTO |
+| 20+ notificaciones por hora en app social/mensajería | MEDIO |
+| Madrugada (00:00–05:59) con 8+ notificaciones | MEDIO |
+| Sin señales y uso razonable | BAJO (sin alerta) |
+
+Si el mínimo sube el nivel, el texto se reescribe con las señales detectadas y el
+consejo de la regla correspondiente: la alerta nunca dice "sin riesgo" mientras
+el vector tenga señales. El teléfono adelanta la evaluación (sin esperar el lote)
+cuando hay señales, 20+ notificaciones en la ventana o actividad nocturna.
+
 ## 6. Entrega al tutor
 
 ### WebSocket (primer plano)
