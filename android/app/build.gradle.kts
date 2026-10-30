@@ -22,6 +22,16 @@ android {
         versionCode = 3
         versionName = "1.2.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // Autoridad del FileProvider en un placeholder: permite darle una
+        // distinta a un build de pruebas sin tocar el manifiesto.
+        manifestPlaceholders["fileProviderAuthority"] = "cl.guardiania.agent.fileprovider"
+
+        // Solo teléfonos reales: sin las librerías x86/x86_64 el APK pesa
+        // ~15 MB menos. Un emulador x86 necesitaría esta línea revertida.
+        ndk {
+            abiFilters += listOf("arm64-v8a", "armeabi-v7a")
+        }
     }
 
     buildFeatures {
@@ -96,7 +106,16 @@ dependencies {
     implementation("net.zetetic:android-database-sqlcipher:4.5.4")
     implementation("androidx.sqlite:sqlite:2.4.0")
     implementation("androidx.work:work-runtime-ktx:2.9.1")
-    implementation("com.journeyapps:zxing-android-embedded:4.3.0")
+
+    // QR: CameraX para la cámara y ML Kit (modelo empaquetado, sin red) para
+    // decodificar. Sustituye a zxing-android-embedded, que recortaba el
+    // fotograma con un rectángulo interno y no detectaba el código.
+    implementation("androidx.camera:camera-core:1.3.4")
+    implementation("androidx.camera:camera-camera2:1.3.4")
+    implementation("androidx.camera:camera-lifecycle:1.3.4")
+    implementation("androidx.camera:camera-view:1.3.4")
+    implementation("com.google.mlkit:barcode-scanning:17.3.0")
+    implementation("com.google.zxing:core:3.5.3")
 
     // FCM: el plugin de Google solo se aplica si existe google-services.json.
     implementation(platform("com.google.firebase:firebase-bom:33.5.1"))
@@ -106,4 +125,8 @@ dependencies {
 
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1")
+
+    androidTestImplementation("androidx.test.ext:junit:1.2.1")
+    androidTestImplementation("androidx.test:runner:1.6.2")
+    androidTestImplementation("androidx.test:rules:1.6.1")
 }

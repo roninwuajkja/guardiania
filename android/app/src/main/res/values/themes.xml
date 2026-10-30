@@ -8,4 +8,14 @@
         <item name="android:windowBackground">@color/pine_950</item>
         <item name="android:fontFamily">sans</item>
     </style>
+
+    <!-- Lector de QR: pantalla oscura a juego con el marco de escaneo. -->
+    <style name="Theme.GuardianIA.QrScan" parent="android:Theme.Material.NoActionBar">
+        <item name="android:statusBarColor">@color/pine_950</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:navigationBarColor">@color/pine_950</item>
+        <item name="android:windowLightNavigationBar">false</item>
+        <item name="android:windowBackground">@color/pine_950</item>
+        <item name="android:fontFamily">sans</item>
+    </style>
 </resources>

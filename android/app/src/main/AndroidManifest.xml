@@ -41,11 +41,9 @@
 
         <activity
             android:name=".ui.QrScanActivity"
-            android:configChanges="orientation|screenSize|keyboardHidden"
             android:exported="false"
             android:screenOrientation="portrait"
-            android:theme="@style/zxing_CaptureTheme"
-            android:windowSoftInputMode="stateAlwaysHidden" />
+            android:theme="@style/Theme.GuardianIA.QrScan" />
 
         <service
             android:name=".capture.GuardianNotificationListener"
@@ -90,7 +88,7 @@
         <!-- Used only to hand the account JSON export to the system share sheet. -->
         <provider
             android:name="androidx.core.content.FileProvider"
-            android:authorities="cl.guardiania.agent.fileprovider"
+            android:authorities="${fileProviderAuthority}"
             android:exported="false"
             android:grantUriPermissions="true">
             <meta-data

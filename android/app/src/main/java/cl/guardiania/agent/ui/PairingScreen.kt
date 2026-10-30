@@ -1,6 +1,9 @@
 package cl.guardiania.agent.ui
 
+import android.app.Activity
+import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -49,8 +52,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.journeyapps.barcodescanner.ScanContract
-import com.journeyapps.barcodescanner.ScanOptions
+import androidx.compose.ui.platform.LocalContext
 
 @Composable
 fun PairingScreen(
@@ -65,22 +67,18 @@ fun PairingScreen(
     var code by rememberSaveable { mutableStateOf("") }
     var childAssent by rememberSaveable { mutableStateOf(false) }
 
-    val scanner = rememberLauncherForActivityResult(ScanContract()) { result ->
-        result.contents?.let { if (childAssent) onVerifyQr(server, it, true) }
+    val context = LocalContext.current
+
+    val scanner = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val raw = result.data?.getStringExtra(QrScanActivity.EXTRA_RESULT)
+            if (raw != null && childAssent) onVerifyQr(server, raw, true)
+        }
     }
 
     fun launchScanner() {
         if (!childAssent) return
-        scanner.launch(
-            ScanOptions()
-                .setDesiredBarcodeFormats(ScanOptions.QR_CODE)
-                .setCaptureActivity(QrScanActivity::class.java)
-                .setPrompt("")
-                .setBeepEnabled(false)
-                // El retrato se fija en el manifiesto; pedirle a la librería que
-                // "bloquee" la orientación la dejaba en horizontal.
-                .setOrientationLocked(false),
-        )
+        scanner.launch(Intent(context, QrScanActivity::class.java))
     }
 
     Box(

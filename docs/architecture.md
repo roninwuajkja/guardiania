@@ -163,6 +163,8 @@ Reglas:
 - El ticket WS dura 60 s y viaja en `Sec-WebSocket-Protocol`, nunca en la query string. El servidor acepta el subprotocolo `guardiania` y rechaza con `4401` si el ticket falta o llega en la URL.
 - El evento WebSocket se publica desde el outbox **después del commit**; un fallo de red no deja una vinculación fantasma.
 
+En el teléfono, el QR se lee con **CameraX + ML Kit** usando el modelo empaquetado en el APK: no hay red ni descarga en el primer uso, y el contenido del QR no se registra en logs. El marco central es solo una guía visual; la detección usa el fotograma completo, así que el código se lee aunque quede algo descentrado. La actividad está fijada en retrato y cada fotograma se analiza en un hilo aparte (`STRATEGY_KEEP_ONLY_LATEST`).
+
 ### Estados
 
 ```mermaid

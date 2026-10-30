@@ -14,4 +14,5 @@
     <string name="qr_scan_close">Cerrar</string>
     <string name="qr_scan_torch_on">Encender linterna</string>
     <string name="qr_scan_torch_off">Apagar linterna</string>
+    <string name="qr_scan_no_permission">Sin permiso de cámara no se puede leer el QR. Actívalo en Ajustes y vuelve a intentarlo.</string>
 </resources>
