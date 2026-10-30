@@ -11,7 +11,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         app:zxing_preview_scaling_strategy="centerCrop"
-        app:zxing_use_texture_view="false" />
+        app:zxing_use_texture_view="true" />
 
     <cl.guardiania.agent.ui.ScanFrameOverlay
         android:layout_width="match_parent"
