@@ -571,6 +571,16 @@ def test_capture_evaluate_notifies_tutor_over_ws(client, auth_headers, monkeypat
         assert "raw" not in event["data"]
 
 
+def test_index_serves_versioned_assets_without_cache(client):
+    """Un despliegue no puede dejar la pestaña con JS viejo."""
+
+    response = client.get("/")
+    assert response.status_code == 200
+    assert response.headers.get("cache-control") == "no-store"
+    assert "/static/app.js?v=" in response.text
+    assert "/static/app.css?v=" in response.text
+
+
 def test_sync_publishes_medium_rule_alert_to_stream(client, auth_headers):
     """Una alerta MEDIA de reglas también llega al panel sin recargar."""
 

@@ -8,7 +8,7 @@ from urllib.parse import urlsplit
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
@@ -239,9 +239,29 @@ async def health_alias():
     return await health()
 
 
+def _asset_version() -> str:
+    """Versión de los estáticos: cambia cuando cambia el panel desplegado."""
+
+    parts = []
+    for name in ("app.js", "app.css", "fonts.css"):
+        path = WEB_DIR / name
+        parts.append(str(int(path.stat().st_mtime)) if path.exists() else "0")
+    return ".".join(parts)
+
+
+def _index_html() -> str:
+    """index.html con los estáticos versionados para saltarse cachés viejas."""
+
+    version = _asset_version()
+    html = (WEB_DIR / "index.html").read_text(encoding="utf-8")
+    for name in ("app.js", "app.css", "fonts.css"):
+        html = html.replace(f'/static/{name}', f'/static/{name}?v={version}')
+    return html
+
+
 @app.get("/", include_in_schema=False)
 async def index():
-    return FileResponse(WEB_DIR / "index.html")
+    return HTMLResponse(_index_html(), headers={"Cache-Control": "no-store"})
 
 
 LEGAL_PAGES = {
