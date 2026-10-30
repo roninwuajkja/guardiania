@@ -70,12 +70,16 @@ fun PairingScreen(
     }
 
     fun launchScanner() {
+        if (!childAssent) return
         scanner.launch(
             ScanOptions()
                 .setDesiredBarcodeFormats(ScanOptions.QR_CODE)
-                .setPrompt("Escanea el QR del panel del tutor")
+                .setCaptureActivity(QrScanActivity::class.java)
+                .setPrompt("")
                 .setBeepEnabled(false)
-                .setOrientationLocked(true),
+                // El retrato se fija en el manifiesto; pedirle a la librería que
+                // "bloquee" la orientación la dejaba en horizontal.
+                .setOrientationLocked(false),
         )
     }
 

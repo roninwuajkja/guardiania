@@ -8,4 +8,10 @@
     <string name="alert_channel_description">Avisos cuando IA Guardian detecta una señal que requiere tu atención.</string>
     <string name="sync_channel_name">Sincronización</string>
     <string name="sync_channel_description">Avisos breves cuando se envía una señal prioritaria al panel.</string>
+    <string name="qr_scan_title">Vincular con QR</string>
+    <string name="qr_scan_subtitle">Apunta al código del panel del tutor</string>
+    <string name="qr_scan_hint">Centra el código dentro del recuadro.\nSe detecta solo, no hace falta tocar la pantalla.</string>
+    <string name="qr_scan_close">Cerrar</string>
+    <string name="qr_scan_torch_on">Encender linterna</string>
+    <string name="qr_scan_torch_off">Apagar linterna</string>
 </resources>

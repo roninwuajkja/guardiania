@@ -180,16 +180,41 @@ async def verify_pairing(db: AsyncSession, body) -> PairingVerifyResponse:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Sesión de vinculación no encontrada")
 
     fingerprint = hash_install_id(str(body.device.install_id))
-    already_bound = await db.scalar(
-        select(Binding.id)
-        .join(Device, Binding.dispositivo_id == Device.id)
-        .where(Device.fingerprint_hmac == fingerprint, Binding.estado == EstadoVinculacion.ACTIVO.value)
-    )
-    if already_bound is not None:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Este dispositivo ya está vinculado. Revoca la vinculación anterior primero.",
+    # Un mismo teléfono puede necesitar volver a vincularse: app reinstalada,
+    # datos borrados, cambio de tutor o vinculación perdida en el dispositivo.
+    # Un código nuevo emitido por el tutor es la autorización suficiente, así
+    # que se revoca la vinculación anterior y sus tokens en vez de rechazar el
+    # intento con un error que la app no puede explicar.
+    previous = (
+        await db.execute(
+            select(Binding, Device)
+            .join(Device, Binding.dispositivo_id == Device.id)
+            .where(
+                Device.fingerprint_hmac == fingerprint,
+                Binding.estado == EstadoVinculacion.ACTIVO.value,
+            )
         )
+    ).all()
+    for previous_binding, previous_device in previous:
+        previous_device.estado = "REVOCADO"
+        previous_device.refresh_token_hash = None
+        previous_device.refresh_expira_en = None
+        previous_binding.estado = EstadoVinculacion.REVOCADO.value
+        previous_binding.revocada_en = now
+        previous_binding.actualizado_en = now
+        previous_binding.motivo_revocacion = "Revinculación desde el mismo teléfono"
+        db.add(
+            pairing_event(
+                "binding_revoked",
+                session_id=previous_binding.sesion_id,
+                binding_id=previous_binding.id,
+                tutor_id=previous_binding.tutor_id,
+                device_alias=None,
+                severity="REVOCADO",
+            )
+        )
+    if previous:
+        await db.flush()
 
     tutor = await db.get(User, binding.tutor_id)
     if tutor is None:

@@ -104,6 +104,39 @@ def test_pairing_full_flow(client, auth_headers):
     assert reuse.status_code == 422
 
 
+def test_relinking_same_phone_replaces_previous_binding(client, auth_headers):
+    install_id = uuid.uuid4()
+
+    first = generate_pairing(client, auth_headers, etiqueta="Primera")
+    first_verify = verify_manual(client, first["manual_code"], install_id)
+    assert first_verify.status_code == 200, first_verify.text
+    first_body = first_verify.json()
+
+    second = generate_pairing(client, auth_headers, etiqueta="Segunda")
+    second_verify = verify_manual(client, second["manual_code"], install_id)
+    assert second_verify.status_code == 200, second_verify.text
+    second_body = second_verify.json()
+
+    assert first_body["device_id"] != second_body["device_id"]
+    assert first_body["vinculacion_id"] != second_body["vinculacion_id"]
+
+    activos = [
+        device
+        for device in client.get("/api/v1/devices", headers=auth_headers).json()
+        if device["model_family"] == "Pixel 8" and device["estado"] == "ACTIVO"
+    ]
+    assert len(activos) == 1
+    assert activos[0]["id"] == second_body["device_id"]
+
+    # El token del teléfono anterior deja de servir de inmediato.
+    stale = client.post(
+        "/api/v1/captures/sync",
+        json={"batch_id": str(uuid.uuid4()), "device_clock": "2026-01-01T00:00:00Z", "captures": []},
+        headers={"Authorization": f"Bearer {first_body['access_token']}"},
+    )
+    assert stale.status_code in (401, 410)
+
+
 def test_qr_token_cannot_be_reused(client, auth_headers):
     generated = generate_pairing(client, auth_headers)
     qr_token = generated["qr_payload"].split("t=", 1)[1]
@@ -157,19 +190,23 @@ def test_capture_sync_is_idempotent_and_rejects_extra_fields(client, auth_header
     device_id = verified["device_id"]
     headers = {"Authorization": f"Bearer {verified['access_token']}"}
     event_id = str(uuid.uuid4())
+    # Ventana relativa al reloj: con fechas fijas el test caduca solo al pasar
+    # la retención de 7 días y parece una regresión de la API.
+    window_end = datetime.now(timezone.utc) - timedelta(minutes=5)
+    window_start = window_end - timedelta(minutes=15)
 
     payload = {
         "schema_version": 1,
         "batch_id": str(uuid.uuid4()),
-        "device_clock": "2026-10-22T12:00:00Z",
+        "device_clock": window_end.isoformat().replace("+00:00", "Z"),
         "captures": [
             {
                 "schema_version": 1,
                 "event_id": event_id,
                 "device_id": device_id,
                 "time_window": {
-                    "start": "2026-10-22T11:30:00Z",
-                    "end": "2026-10-22T11:45:00Z",
+                    "start": window_start.isoformat().replace("+00:00", "Z"),
+                    "end": window_end.isoformat().replace("+00:00", "Z"),
                     "tz_offset_minutes": -180,
                 },
                 "category": "social",

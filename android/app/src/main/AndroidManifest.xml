@@ -39,6 +39,14 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".ui.QrScanActivity"
+            android:configChanges="orientation|screenSize|keyboardHidden"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/zxing_CaptureTheme"
+            android:windowSoftInputMode="stateAlwaysHidden" />
+
         <service
             android:name=".capture.GuardianNotificationListener"
             android:exported="true"
