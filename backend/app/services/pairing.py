@@ -22,12 +22,14 @@ from ..schemas import DeviceInfo, PairingVerifyResponse, PolicySummary
 from ..security import (
     create_device_token,
     create_pairing_token,
+    create_short_pairing_token,
     create_ws_ticket,
     decode_token,
     generate_pairing_code,
     hash_install_id,
     hash_pairing_code,
     new_refresh_token,
+    verify_short_pairing_token,
 )
 from .outbox import pairing_event
 
@@ -106,7 +108,7 @@ async def generate_pairing(
     )
     await db.commit()
 
-    qr_token = create_pairing_token(tutor.id, session_id, ttl_seconds)
+    qr_token = create_short_pairing_token(session_id)
     return GeneratedPairing(
         session_id=session_id,
         expires_at=expires_at,
@@ -119,7 +121,17 @@ async def generate_pairing(
 
 async def _resolve_session(db: AsyncSession, body) -> PairingSession:
     if body.qr_token:
-        claims = decode_token(body.qr_token, settings.pairing_audience)
+        token = body.qr_token.strip()
+        short_session = verify_short_pairing_token(token)
+        if short_session is not None:
+            session = await db.scalar(select(PairingSession).where(PairingSession.id == short_session))
+            if session is None:
+                raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Código inválido")
+            return session
+
+        # Formato anterior (JWT largo): se sigue aceptando para no romper un
+        # QR generado justo antes de actualizar el servidor.
+        claims = decode_token(token, settings.pairing_audience)
         if claims.get("scope") != "pairing:verify" or claims.get("typ") != "pairing":
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token de vinculación inválido")
         try:

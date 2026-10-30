@@ -23,6 +23,10 @@ android {
         versionName = "1.2.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
+        // Se activa solo en el build de diagnóstico: guarda el último fotograma
+        // analizado en caché para revisar qué ve realmente el lector.
+        buildConfigField("boolean", "QR_DIAGNOSTIC", "false")
+
         // Autoridad del FileProvider en un placeholder: permite darle una
         // distinta a un build de pruebas sin tocar el manifiesto.
         manifestPlaceholders["fileProviderAuthority"] = "cl.guardiania.agent.fileprovider"
@@ -72,6 +76,20 @@ android {
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             signingConfig = signingConfigs.findByName("release")
+        }
+
+        // Mismo paquete y misma firma que release, sin R8 y depurable: se instala
+        // encima sin borrar la vinculación y conserva los Log. Sirve para ver por
+        // qué un QR no se detecta. No se distribuye.
+        create("diagnostic") {
+            initWith(getByName("release"))
+            isMinifyEnabled = false
+            isShrinkResources = false
+            isDebuggable = true
+            signingConfig = signingConfigs.findByName("release")
+            matchingFallbacks += listOf("release")
+            versionNameSuffix = "-diag"
+            buildConfigField("boolean", "QR_DIAGNOSTIC", "true")
         }
     }
 

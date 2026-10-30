@@ -47,12 +47,19 @@ class PairingRepository(private val store: SecureStore) {
         val value = raw.trim()
         val token = if (value.startsWith("guardiania://", ignoreCase = true)) {
             Uri.parse(value).getQueryParameter("t")
-        } else {
+        } else if (TOKEN_ONLY.matches(value)) {
             value
+        } else {
+            null
         }
-        require(!token.isNullOrBlank() && token.count { it == '.' } == 2) {
+        // Acepta el token corto actual (uuid.HMAC) y el JWT anterior.
+        require(!token.isNullOrBlank() && token.length >= 20 && TOKEN_ONLY.matches(token)) {
             "Ese QR no pertenece a una vinculación de IA Guardian."
         }
         return token
+    }
+
+    private companion object {
+        val TOKEN_ONLY = Regex("^[A-Za-z0-9._-]{20,}$")
     }
 }

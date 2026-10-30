@@ -146,6 +146,34 @@ def test_qr_token_cannot_be_reused(client, auth_headers):
     assert second.status_code == 409
 
 
+def test_qr_payload_is_short_enough_to_scan(client, auth_headers):
+    generated = generate_pairing(client, auth_headers)
+    token = generated["qr_payload"].split("t=", 1)[1]
+
+    # El JWT anterior medía ~330 caracteres y producía un QR de 89×89 módulos,
+    # imposible de leer en pantalla a distancia normal. El token corto debe
+    # dejar el código por debajo de ~50 módulos por lado.
+    assert len(token) < 80
+    assert len(token.split(".")[0]) == 36
+
+    # Un token manipulado no abre la sesión.
+    tampered = token[:-1] + ("A" if token[-1] != "A" else "B")
+    rejected = client.post(
+        "/api/v1/pairing/verify",
+        json={"qr_token": tampered, "device": device_payload(), "child_assent": True},
+    )
+    assert rejected.status_code in (401, 422)
+
+
+def test_qr_svg_has_few_modules(client, auth_headers):
+    generated = generate_pairing(client, auth_headers)
+    svg = generated["qr_svg"]
+    # width = (modulos + 2 de borde) * scale(6)
+    width = int(svg.split('width="', 1)[1].split('"', 1)[0])
+    modules = width // 6 - 2
+    assert modules <= 45, f"QR de {modules} módulos: demasiado denso para pantalla"
+
+
 def test_pairing_rejects_unknown_code(client):
     response = verify_manual(client, "000000")
     assert response.status_code == 422

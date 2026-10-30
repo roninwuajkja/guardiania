@@ -758,7 +758,7 @@ function renderPairing() {
       <div>
         <p class="eyebrow">Vinculación en curso</p>
         <h2>${expired ? 'El código expiró.' : 'Muestra este código.'}</h2>
-        <p>${expired ? 'Genera uno nuevo para intentarlo otra vez. Los códigos duran 10 minutos.' : 'Escanea el QR con la app IA Guardian del teléfono, o escribe el código manual. Se confirma aquí, en vivo.'}</p>
+        <p>${expired ? 'Genera uno nuevo para intentarlo otra vez. Los códigos duran 10 minutos.' : 'Escanea el QR con la app IA Guardian del teléfono, o escribe el código manual. Se confirma aquí, en vivo. Si el teléfono no lo detecta, acércalo al QR o usa el código manual.'}</p>
       </div>
       ${expired ? '<button class="btn btn-primary" type="button" data-action="reset-pairing">Generar otro código</button>' : ''}
     </section>

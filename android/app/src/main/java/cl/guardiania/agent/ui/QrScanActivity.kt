@@ -3,8 +3,13 @@ package cl.guardiania.agent.ui
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.os.SystemClock
 import android.util.Log
+import android.util.Size
 import android.view.View
 import android.widget.TextView
 import android.widget.Toast
@@ -12,20 +17,27 @@ import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
+import androidx.camera.core.FocusMeteringAction
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
 import androidx.camera.core.Preview
+import androidx.camera.core.resolutionselector.ResolutionSelector
+import androidx.camera.core.resolutionselector.ResolutionStrategy
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
+import cl.guardiania.agent.BuildConfig
 import cl.guardiania.agent.R
 import com.google.mlkit.vision.barcode.BarcodeScanner
 import com.google.mlkit.vision.barcode.BarcodeScannerOptions
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.common.InputImage
+import java.io.File
+import java.io.FileOutputStream
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 
 /**
  * Lector de QR en vertical.
@@ -50,6 +62,16 @@ class QrScanActivity : ComponentActivity() {
     private var torchOn = false
     private var delivered = false
     private var loggedFirstFrame = false
+    private var frames = 0
+    private var lastCandidates = 0
+    private var lastDumpAt = 0L
+    private val mainHandler = Handler(Looper.getMainLooper())
+    private val focusTicker = object : Runnable {
+        override fun run() {
+            refocusCenter()
+            if (!delivered) mainHandler.postDelayed(this, 2_000)
+        }
+    }
 
     private val requestCamera = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         if (granted) {
@@ -100,9 +122,19 @@ class QrScanActivity : ComponentActivity() {
 
                 val analysis = ImageAnalysis.Builder()
                     .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-                    // 720p basta para leer un QR a distancia de mano y gasta menos
-                    // batería que el tamaño máximo del sensor.
-                    .setTargetResolution(android.util.Size(1280, 720))
+                    // RGBA: permite convertir el fotograma a Bitmap para
+                    // diagnosticar y evita rarezas de planos YUV del fabricante.
+                    .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_RGBA_8888)
+                    .setResolutionSelector(
+                        ResolutionSelector.Builder()
+                            .setResolutionStrategy(
+                                ResolutionStrategy(
+                                    Size(1280, 720),
+                                    ResolutionStrategy.FALLBACK_RULE_CLOSEST_HIGHER_THEN_LOWER,
+                                ),
+                            )
+                            .build(),
+                    )
                     .build()
                 analysis.setAnalyzer(analyzerExecutor) { proxy -> analyze(proxy) }
 
@@ -122,39 +154,68 @@ class QrScanActivity : ComponentActivity() {
 
                 val hasFlash = camera?.cameraInfo?.hasFlashUnit() == true
                 torchButton.visibility = if (hasFlash) View.VISIBLE else View.GONE
+
+                // Algunos equipos no reenfocan solos al acercarse a un QR:
+                // se pide enfoque y exposición al centro cada 2 s.
+                mainHandler.post(focusTicker)
             },
             ContextCompat.getMainExecutor(this),
         )
     }
 
-    @androidx.annotation.OptIn(androidx.camera.core.ExperimentalGetImage::class)
     private fun analyze(proxy: ImageProxy) {
-        val media = proxy.image
         val client = scanner
-        if (media == null || client == null) {
+        if (client == null) {
             proxy.close()
             return
         }
 
-        if (!loggedFirstFrame) {
-            loggedFirstFrame = true
-            Log.i(TAG, "Primer fotograma: ${media.width}x${media.height} rotación ${proxy.imageInfo.rotationDegrees}°")
+        val bitmap = runCatching { proxy.toBitmap() }.getOrNull()
+        val rotation = proxy.imageInfo.rotationDegrees
+        proxy.close()
+        if (bitmap == null) {
+            Log.w(TAG, "Fotograma ilegible")
+            return
         }
 
-        val image = InputImage.fromMediaImage(media, proxy.imageInfo.rotationDegrees)
-        client.process(image)
+        frames++
+        if (!loggedFirstFrame) {
+            loggedFirstFrame = true
+            Log.i(TAG, "Fotograma ${bitmap.width}x${bitmap.height} rotación ${rotation}°")
+        }
+        if (BuildConfig.QR_DIAGNOSTIC) dumpFrame(bitmap, rotation)
+
+        client.process(InputImage.fromBitmap(bitmap, rotation))
             .addOnSuccessListener { barcodes ->
+                lastCandidates = barcodes.size
                 if (barcodes.isNotEmpty()) {
-                    Log.i(TAG, "ML Kit encontró ${barcodes.size} candidato(s) en el fotograma")
+                    Log.i(TAG, "ML Kit encontró ${barcodes.size} candidato(s) en el fotograma $frames")
                 }
                 val raw = barcodes.firstOrNull { it.rawValue != null }?.rawValue
                 if (raw != null) deliver(raw)
             }
             .addOnFailureListener { e ->
                 Log.w(TAG, "ML Kit falló en el fotograma", e)
-                proxy.close()
             }
-            .addOnCompleteListener { proxy.close() }
+            .addOnCompleteListener {
+                if (BuildConfig.QR_DIAGNOSTIC && frames % 30 == 0) {
+                    Log.i(TAG, "frames=$frames candidatos=$lastCandidates")
+                }
+            }
+    }
+
+    /** Solo en el build de diagnóstico: guarda un fotograma para revisarlo. */
+    private fun dumpFrame(bitmap: Bitmap, rotation: Int) {
+        val now = SystemClock.elapsedRealtime()
+        if (now - lastDumpAt < 1500) return
+        lastDumpAt = now
+        runCatching {
+            val file = File(cacheDir, "scan-frame.jpg")
+            FileOutputStream(file).use { out ->
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 90, out)
+            }
+            Log.i(TAG, "Fotograma guardado: ${file.absolutePath} (${bitmap.width}x${bitmap.height}, rot=$rotation)")
+        }.onFailure { Log.w(TAG, "No se pudo guardar el fotograma", it) }
     }
 
     private fun deliver(raw: String) {
@@ -164,6 +225,17 @@ class QrScanActivity : ComponentActivity() {
         Log.i(TAG, "QR detectado (${raw.length} caracteres)")
         setResult(RESULT_OK, Intent().putExtra(EXTRA_RESULT, raw))
         finish()
+    }
+
+    private fun refocusCenter() {
+        val bound = camera ?: return
+        val factory = previewView.meteringPointFactory
+        val point = factory.createPoint(previewView.width / 2f, previewView.height / 2f)
+        val action = FocusMeteringAction.Builder(
+            point,
+            FocusMeteringAction.FLAG_AF or FocusMeteringAction.FLAG_AE,
+        ).setAutoCancelDuration(2, TimeUnit.SECONDS).build()
+        runCatching { bound.cameraControl.startFocusAndMetering(action) }
     }
 
     private fun toggleTorch() {
@@ -176,6 +248,7 @@ class QrScanActivity : ComponentActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
+        mainHandler.removeCallbacks(focusTicker)
         runCatching { scanner?.close() }
         analyzerExecutor.shutdown()
     }

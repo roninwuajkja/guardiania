@@ -1,3 +1,4 @@
+import base64
 import hashlib
 import hmac
 import secrets
@@ -99,6 +100,34 @@ def create_pairing_token(tutor_id: uuid.UUID, session_id: uuid.UUID, ttl_seconds
     claims["ver"] = 1
     claims["dev"] = "web-console"
     return _encode(claims)
+
+
+def create_short_pairing_token(session_id: uuid.UUID) -> str:
+    """Token compacto para el QR: id de sesión + HMAC truncado.
+
+    El JWT de vinculación mide ~330 caracteres y produce un QR de 89×89
+    módulos, ilegible en una pantalla a distancia normal. Este formato cabe en
+    ~33 módulos por lado y sigue siendo imposible de falsificar sin la pepper.
+    """
+    mac = hmac.new(
+        f"qr:{settings.pairing_pepper}".encode(),
+        str(session_id).encode(),
+        hashlib.sha256,
+    ).digest()[:16]
+    return f"{session_id}.{base64.urlsafe_b64encode(mac).rstrip(b'=').decode()}"
+
+
+def verify_short_pairing_token(token: str) -> uuid.UUID | None:
+    """Devuelve el id de sesión si el token corto tiene un HMAC válido."""
+    session_part, _, _ = token.partition(".")
+    try:
+        session_id = uuid.UUID(session_part)
+    except ValueError:
+        return None
+    expected = create_short_pairing_token(session_id)
+    if not hmac.compare_digest(expected, token):
+        return None
+    return session_id
 
 
 def create_device_token(device_id: uuid.UUID, binding_id: uuid.UUID) -> str:
