@@ -54,6 +54,40 @@ class SanitizerTest {
     }
 
     @Test
+    fun `emotional distress is flagged without alarmism`() {
+        val result = Sanitizer.sanitize(
+            "com.whatsapp",
+            "Sofía",
+            "No aguanto más, me siento muy sola y no quiero ir al colegio",
+        )
+
+        assertTrue(result.flags.contains("malestar"))
+        assertFalse(result.flags.contains("self_harm"))
+    }
+
+    @Test
+    fun `coercion and pressure are flagged`() {
+        val result = Sanitizer.sanitize(
+            "com.instagram.android",
+            null,
+            "Si no me mandas la foto te voy a contar a tus papás",
+        )
+
+        assertTrue(result.flags.contains("coercion"))
+    }
+
+    @Test
+    fun `grooming question about age is flagged`() {
+        val result = Sanitizer.sanitize(
+            "org.telegram.messenger",
+            "Desconocido",
+            "¿Qué edad tienes? No le digas a tus papás",
+        )
+
+        assertTrue(result.flags.contains("grooming"))
+    }
+
+    @Test
     fun `harmless study message has no flags`() {
         val result = Sanitizer.sanitize(
             "com.whatsapp",

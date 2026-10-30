@@ -46,9 +46,11 @@ _FLAG_PRIORITY = (
     "grooming",
     "sexual_content",
     "violence",
+    "coercion",
     "bullying",
     "drugs",
     "gambling",
+    "malestar",
     "unknown_contact",
 )
 
@@ -57,8 +59,36 @@ _CATEGORY_BY_FLAG = {
     "bullying": "Ciberbullying",
 }
 
-_HIGH_FLAGS = {"self_harm", "grooming", "sexual_content", "violence", "bullying", "drugs"}
-_MEDIUM_FLAGS = {"gambling", "unknown_contact"}
+_FLAG_LABELS = {
+    "self_harm": "Posible autolesión",
+    "grooming": "Posible grooming",
+    "sexual_content": "Contenido sexual",
+    "violence": "Violencia",
+    "bullying": "Acoso escolar",
+    "coercion": "Presión o chantaje",
+    "drugs": "Drogas o alcohol",
+    "gambling": "Apuestas",
+    "malestar": "Malestar emocional",
+    "unknown_contact": "Contacto desconocido",
+}
+
+# Señales que por sí solas justifican nivel ALTO.
+_SERIOUS_FLAGS = {"self_harm", "grooming", "sexual_content", "violence", "bullying", "coercion"}
+
+# Volumen de notificaciones que, sin señales léxicas, ya merece una revisión.
+_VOLUME_THRESHOLD = 20
+_NIGHT_VOLUME_THRESHOLD = 8
+
+_HIGH_FLAGS = {
+    "self_harm",
+    "grooming",
+    "sexual_content",
+    "violence",
+    "bullying",
+    "coercion",
+    "drugs",
+}
+_MEDIUM_FLAGS = {"gambling", "unknown_contact", "malestar"}
 
 _DEFAULT_NARRATIVE = {
     "ALTO": "Se detectaron señales de riesgo alto en la actividad monitoreada.",
@@ -80,12 +110,24 @@ teléfonos ni contenido de mensajes.
 Responde EXCLUSIVAMENTE un objeto JSON válido, sin markdown, con esta forma:
 {"nivel_riesgo":"BAJO|MEDIO|ALTO","categoria":"Ciberbullying|Conducta_Riesgo|Contenido_Inapropiado|Sin_Riesgo","descripcion_narrativa":"...","consejo_educativo":"..."}
 
-Reglas:
-- Usa "Sin_Riesgo" solo cuando el nivel sea BAJO.
-- No inventes hechos que no estén en el vector.
-- No repitas ni pidas datos personales.
-- Español de Chile, tono respetuoso, sin culpabilizar al menor.
-- Máximo 280 caracteres en cada texto.
+Cómo decidir (en este orden):
+1. Si el vector trae CUALQUIER señal (autolesión, grooming, contenido sexual, violencia,
+   presión o chantaje, acoso, drogas, apuestas, malestar emocional o contacto desconocido),
+   el nivel NUNCA es BAJO: como mínimo es MEDIO.
+2. Autolesión, grooming, contenido sexual, violencia, presión o chantaje, o acoso: ALTO.
+3. Dos o más señales distintas: nivel ALTO.
+4. Muchas notificaciones para la ventana (20 o más por hora) en categoría social o
+   mensajería: como mínimo MEDIO, aunque no haya señales léxicas.
+5. Horario nocturno (00:00–05:59) con señales o con notificaciones abundantes: como
+   mínimo MEDIO.
+6. Contacto desconocido presente junto a otras señales, o contacto desconocido con
+   muchas notificaciones: como mínimo MEDIO; si además hay señales graves, ALTO.
+7. Solo responde BAJO cuando no haya ninguna señal y el uso sea razonable.
+
+No minimices por tratarse de una sola notificación: una sola señal basta para MEDIO.
+No inventes hechos que no estén en el vector. No repitas ni pidas datos personales.
+Español de Chile, tono respetuoso, sin culpabilizar al menor. Máximo 280 caracteres
+en cada texto.
 """
 
 _CONTROL_CHARS = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
@@ -221,6 +263,88 @@ def _parse_payload(payload: Any, provider: str) -> Assessment:
     )
 
 
+def _local_start(vector: DerivedFeatureVector) -> datetime:
+    return vector.time_window.start + timedelta(minutes=vector.time_window.tz_offset_minutes)
+
+
+def _is_nocturnal(vector: DerivedFeatureVector) -> bool:
+    return 0 <= _local_start(vector).hour < 6
+
+
+def _high_volume(vector: DerivedFeatureVector) -> bool:
+    return (
+        vector.notification_count >= _VOLUME_THRESHOLD
+        and vector.category in {"social", "mensajeria"}
+    )
+
+
+def _advice_for(flags: list[str], level: str) -> str:
+    from .risk import FLAG_RULES
+
+    for flag in flags:
+        rule = FLAG_RULES.get(flag)
+        if rule is not None:
+            return rule[3]
+    return _DEFAULT_ADVICE[level]
+
+
+def apply_policy_floor(assessment: Assessment, vector: DerivedFeatureVector) -> Assessment:
+    """Red de seguridad: la IA no puede minimizar señales ya detectadas.
+
+    El modelo puede devolver BAJO ante una señal real (por prudencia excesiva o
+    porque el proveedor degradó). Esta regla determinista garantiza el nivel
+    mínimo que corresponde al vector, y reescribe el texto si contradecía la
+    decisión.
+    """
+
+    order = {"BAJO": 0, "MEDIO": 1, "ALTO": 2}
+    flags = list(dict.fromkeys(vector.flags))
+    serious = [flag for flag in flags if flag in _SERIOUS_FLAGS]
+
+    if serious:
+        minimum = "ALTO"
+    elif flags:
+        minimum = "MEDIO"
+    elif _night_and_busy(vector) or _high_volume(vector):
+        minimum = "MEDIO"
+    else:
+        minimum = "BAJO"
+
+    level = assessment.nivel_riesgo
+    final = level if order[level] >= order[minimum] else minimum
+
+    category = assessment.categoria
+    if final != "BAJO" and category == "Sin_Riesgo":
+        category = _CATEGORY_BY_FLAG.get(serious[0] if serious else (flags[0] if flags else ""), "Conducta_Riesgo")
+
+    if final == level and category == assessment.categoria:
+        return assessment
+
+    if final != level:
+        labels = [_FLAG_LABELS.get(flag, "Señal local") for flag in flags[:3]]
+        narrative = (
+            f"{', '.join(labels)}. Nivel ajustado según las señales derivadas de la ventana."
+            if labels
+            else _DEFAULT_NARRATIVE[final]
+        )
+        advice = _advice_for(flags, final)
+    else:
+        narrative = assessment.descripcion_narrativa
+        advice = assessment.consejo_educativo
+
+    return Assessment(
+        nivel_riesgo=final,
+        categoria=category,
+        descripcion_narrativa=narrative[:280],
+        consejo_educativo=advice[:280],
+        provider=assessment.provider,
+    )
+
+
+def _night_and_busy(vector: DerivedFeatureVector) -> bool:
+    return _is_nocturnal(vector) and vector.notification_count >= _NIGHT_VOLUME_THRESHOLD
+
+
 def _extract_json(content: Any) -> Any:
     if isinstance(content, list):
         # Anthropic devuelve bloques; concatena solo los de texto.
@@ -244,16 +368,25 @@ def vector_payload(vector: DerivedFeatureVector) -> dict[str, Any]:
     """Vista mínima y sin texto del vector, apta para un proveedor externo."""
 
     local_start = vector.time_window.start + timedelta(minutes=vector.time_window.tz_offset_minutes)
+    window_minutes = max(
+        1,
+        int((vector.time_window.end - vector.time_window.start).total_seconds() // 60),
+    )
+    flags = list(vector.flags)
     return {
         "categoria_uso": vector.category,
-        "flags": list(vector.flags),
+        "flags": flags,
+        "flags_descripcion": [_FLAG_LABELS.get(flag, "Señal local") for flag in flags],
         "lexical_flag_count": vector.lexical_flag_count,
         "contacto_desconocido_presente": bool(vector.hashed_contact_id),
         "usage_duration_minutes": vector.usage_duration_minutes,
         "notification_count": vector.notification_count,
+        "notificaciones_por_minuto": round(vector.notification_count / window_minutes, 2),
         "event_count": vector.event_count,
+        "ventana_minutos": window_minutes,
         "hora_local": local_start.strftime("%H:%M"),
         "dia_semana_local": local_start.strftime("%A"),
+        "fin_de_semana": local_start.weekday() >= 5,
     }
 
 
@@ -792,7 +925,7 @@ class AIEvaluatorService:
         started = self._clock()
 
         if not settings.ai_enabled:
-            local = await self._heuristic.classify(vector)
+            local = apply_policy_floor(await self._heuristic.classify(vector), vector)
             return replace(local, latency_ms=self._elapsed_ms(started))
 
         key = cache_key(vector)
@@ -829,6 +962,7 @@ class AIEvaluatorService:
                     },
                     provider.name,
                 )
+                assessment = apply_policy_floor(assessment, vector)
             except asyncio.TimeoutError:
                 breaker.record_failure()
                 logger.warning("ai_provider_timeout provider=%s budget_ms=%d", provider.name, int(budget * 1000))
@@ -849,7 +983,7 @@ class AIEvaluatorService:
             )
             return result
 
-        local = await self._heuristic.classify(vector)
+        local = apply_policy_floor(await self._heuristic.classify(vector), vector)
         result = replace(local, latency_ms=self._elapsed_ms(started))
         logger.warning(
             "ai_eval provider=heuristic level=%s latency_ms=%d degraded=true",

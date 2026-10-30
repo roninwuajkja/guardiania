@@ -15,8 +15,10 @@ FLAG_RULES: dict[str, tuple[str, Severidad, int, str]] = {
     "sexual_content": ("Contenido sexual", Severidad.ALTA, 82, "Abre la conversación sin castigo y revisa la configuración de la app."),
     "violence": ("Violencia", Severidad.ALTA, 78, "Pregunta cómo está y qué pasó. Evita reaccionar en caliente."),
     "bullying": ("Acoso escolar", Severidad.ALTA, 74, "Escucha sin minimizar y considera avisar al colegio si se repite."),
+    "coercion": ("Presión o chantaje", Severidad.ALTA, 76, "Habla con calma sobre esa relación y deja claro que puede pedir ayuda sin miedo."),
     "drugs": ("Drogas o alcohol", Severidad.ALTA, 70, "Conversa sobre lo que vio y ofrece apoyo antes que sanción."),
     "gambling": ("Apuestas", Severidad.MEDIA, 58, "Revisa si hay dinero involucrado y pon límites claros."),
+    "malestar": ("Malestar emocional", Severidad.MEDIA, 54, "Pregúntale cómo se siente y qué necesita; no minimices lo que cuenta."),
     "unknown_contact": ("Contacto desconocido", Severidad.MEDIA, 50, "Pregunta quién es y cómo se conocieron."),
 }
 

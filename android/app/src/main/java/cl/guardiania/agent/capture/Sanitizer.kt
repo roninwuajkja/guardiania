@@ -18,11 +18,11 @@ object Sanitizer {
     private val rules = listOf(
         Rule(
             "self_harm",
-            Regex("\\b(quiero (morir|desaparecer)|quitarme la vida|me quiero matar|matarme|autolesion\\w*|cortarme|suicid\\w*)\\b"),
+            Regex("\\b(quiero (morir|desaparecer)|quitarme la vida|me quiero matar|matarme|autolesion\\w*|cortarme|suicid\\w*|mejor (no estar|morir)|no quiero (vivir|seguir viviendo))\\b"),
         ),
         Rule(
             "grooming",
-            Regex("\\b(manda(me)? (una )?foto|no le (digas|cuentes) a (nadie|tus papas|tu mama|tu papa)|nos vemos a solas|eres (muy )?madur\\w+|guardemos el secreto|secreto entre (nosotros|tu y yo))\\b"),
+            Regex("\\b(manda(me)? (una )?foto|no le (digas|cuentes) a (nadie|tus papas|tus padres|tu mama|tu papa)|nos vemos a solas|eres (muy )?madur\\w+|guardemos el secreto|secreto entre (nosotros|tu y yo)|borra (el chat|los mensajes)|que edad tienes)\\b"),
         ),
         Rule(
             "sexual_content",
@@ -30,19 +30,27 @@ object Sanitizer {
         ),
         Rule(
             "violence",
-            Regex("\\b(te voy a (pegar|matar)|voy a golpearte|golpiza|amenaza\\w*|machete)\\b"),
+            Regex("\\b(te voy a (pegar|matar|sacar la cresta)|voy a golpearte|golpiza|amenaza\\w*|machete|cuchillo|pelea)\\b"),
+        ),
+        Rule(
+            "coercion",
+            Regex("\\b(me obliga\\w*|me amenaza\\w*|si no (me )?(mandas|haces|respondes)|te voy a funar|si le (cuentas|dices) (a alguien|a tus papas)|chantaje\\w*)\\b"),
         ),
         Rule(
             "bullying",
-            Regex("\\b(nadie te quiere|no te juntes con|te van a pegar|acos\\w*|bullying|molest\\w*|eres un (perdedor|raro))\\b"),
+            Regex("\\b(nadie te quiere|todos te odian|no te juntes con|te van a pegar|acos\\w*|bullying|molest\\w*|webe\\w*|funar|eres un (perdedor|raro))\\b"),
         ),
         Rule(
             "drugs",
-            Regex("\\b(marihuana|pasto|droga\\w*|cocaina|alcohol|cerveza|vape\\w*|tabaco)\\b"),
+            Regex("\\b(marihuana|pasto|droga\\w*|cocaina|alcohol|cerveza|vape\\w*|tabaco|tussi|extasis|lsd)\\b"),
         ),
         Rule(
             "gambling",
-            Regex("\\b(apuesta\\w*|casino|ruleta|tragamonedas|loteria|bet)\\b"),
+            Regex("\\b(apuesta\\w*|casino|ruleta|tragamonedas|loteria|bet|cuotas deportivas)\\b"),
+        ),
+        Rule(
+            "malestar",
+            Regex("\\b(no aguanto (mas|nada)|me siento (solo|sola|mal|triste|vacio|vacia)|estoy (cansad\\w+|chata\\w*) de todo|no quiero ir (al colegio|a clases)|me da miedo|nadie me (quiere|habla))\\b"),
         ),
     )
 

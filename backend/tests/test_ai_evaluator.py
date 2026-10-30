@@ -12,6 +12,7 @@ from app.services.ai_evaluator import (
     AssessmentCache,
     CircuitBreaker,
     HeuristicProvider,
+    apply_policy_floor,
     cache_key,
     vector_payload,
 )
@@ -23,6 +24,8 @@ def make_vector(
     usage: int = 10,
     event_id: uuid.UUID | None = None,
     start: datetime | None = None,
+    notifications: int = 0,
+    category: str = "social",
 ) -> DerivedFeatureVector:
     start = start or (datetime.now(timezone.utc) - timedelta(minutes=15))
     return DerivedFeatureVector(
@@ -33,10 +36,11 @@ def make_vector(
             "end": start + timedelta(minutes=15),
             "tz_offset_minutes": 0,
         },
-        category="social",
+        category=category,
         lexical_flag_count=len(flags or []),
         flags=flags or [],
         usage_duration_minutes=usage,
+        notification_count=notifications,
     )
 
 
@@ -135,6 +139,44 @@ def test_heuristic_high_risk_categories():
     assert sexual.nivel_riesgo == bullying.nivel_riesgo == "ALTO"
 
 
+def test_policy_floor_never_minimizes_a_signal():
+    vector = make_vector(flags=["gambling"])
+    floored = apply_policy_floor(assessment(level="BAJO", category="Sin_Riesgo"), vector)
+
+    assert floored.nivel_riesgo == "MEDIO"
+    assert floored.categoria != "Sin_Riesgo"
+    assert "Apuestas" in floored.descripcion_narrativa
+
+
+def test_policy_floor_raises_serious_signals_to_high():
+    vector = make_vector(flags=["self_harm"])
+    floored = apply_policy_floor(assessment(level="MEDIO"), vector)
+
+    assert floored.nivel_riesgo == "ALTO"
+    assert "autolesión" in floored.descripcion_narrativa.lower()
+
+
+def test_policy_floor_keeps_high_levels_and_never_downgrades():
+    vector = make_vector(flags=["malestar"])
+    floored = apply_policy_floor(assessment(level="ALTO"), vector)
+    assert floored.nivel_riesgo == "ALTO"
+
+    benign = apply_policy_floor(assessment(level="BAJO", category="Sin_Riesgo"), make_vector())
+    assert benign.nivel_riesgo == "BAJO"
+
+
+def test_policy_floor_high_volume_is_medium():
+    vector = make_vector(notifications=30)
+    floored = apply_policy_floor(assessment(level="BAJO", category="Sin_Riesgo"), vector)
+
+    assert floored.nivel_riesgo == "MEDIO"
+
+
+def test_heuristic_knows_emotional_distress():
+    result = asyncio.run(HeuristicProvider().classify(make_vector(flags=["malestar"])))
+    assert result.nivel_riesgo == "MEDIO"
+
+
 def test_cache_key_ignores_event_id_but_not_flags():
     first = make_vector(flags=["bullying"])
     second = make_vector(flags=["bullying"])
@@ -148,15 +190,20 @@ def test_vector_payload_has_no_text_fields():
     assert set(payload) == {
         "categoria_uso",
         "flags",
+        "flags_descripcion",
         "lexical_flag_count",
         "contacto_desconocido_presente",
         "usage_duration_minutes",
         "notification_count",
+        "notificaciones_por_minuto",
         "event_count",
+        "ventana_minutos",
         "hora_local",
         "dia_semana_local",
+        "fin_de_semana",
     }
     assert not any("snippet" in key or "text" in key or "raw" in key for key in payload)
+    assert payload["flags_descripcion"] == ["Acoso escolar"]
 
 
 def test_circuit_breaker_skips_dead_provider_until_cooldown():

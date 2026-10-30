@@ -1,13 +1,16 @@
 package cl.guardiania.agent.sync
 
 import cl.guardiania.agent.data.CaptureVector
+import java.time.Instant
+import java.time.ZoneOffset
 
 /**
  * Decide qué vectores merecen una evaluación de IA inmediata.
  *
- * Solo se adelanta la evaluación de señales MEDIA/ALTA; el resto viaja en el
- * lote normal para no gastar presupuesto de IA en eventos benignos. Si la
- * evaluación falla por red, el vector vuelve al lote y no se pierde.
+ * Se adelanta la evaluación de señales MEDIA/ALTA, de ventanas con muchas
+ * notificaciones y de las nocturnas con actividad: son los contextos donde la
+ * IA aporta más que una regla léxica aislada. El resto viaja en el lote normal.
+ * Si la evaluación falla por red, el vector vuelve al lote y no se pierde.
  */
 object HighRiskPolicy {
 
@@ -17,12 +20,31 @@ object HighRiskPolicy {
         "grooming",
         "sexual_content",
         "violence",
+        "coercion",
         "bullying",
         "drugs",
         "gambling",
+        "malestar",
         "unknown_contact",
     )
 
-    fun shouldEvaluate(vector: CaptureVector): Boolean =
-        vector.flags.any { it in HIGH_RISK_FLAGS }
+    /** Notificaciones en una ventana que ya justifican mirar el contexto. */
+    private const val VOLUME_THRESHOLD = 20
+
+    /** Menos notificaciones bastan si ocurren de madrugada. */
+    private const val NIGHT_VOLUME_THRESHOLD = 8
+
+    fun shouldEvaluate(vector: CaptureVector): Boolean {
+        if (vector.flags.any { it in HIGH_RISK_FLAGS }) return true
+        if (vector.notificationCount >= VOLUME_THRESHOLD) return true
+        return isNight(vector) && vector.notificationCount >= NIGHT_VOLUME_THRESHOLD
+    }
+
+    private fun isNight(vector: CaptureVector): Boolean {
+        return runCatching {
+            val start = Instant.parse(vector.timeWindow.start)
+            val offset = ZoneOffset.ofTotalSeconds(vector.timeWindow.tzOffsetMinutes * 60)
+            start.atOffset(offset).hour in 0..5
+        }.getOrDefault(false)
+    }
 }
