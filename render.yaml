@@ -61,6 +61,9 @@ services:
       # 30 minutos para la demo; en uso normal 60 es menos ruidoso.
       - key: OFFLINE_ALERT_MINUTES
         value: "30"
+      # Clave para que el pinger dispare /api/v1/maintenance/sweep.
+      - key: MAINTENANCE_KEY
+        sync: false
 
       # --- Push del tutor (FCM) ---------------------------------------------
       # La cuenta de servicio viaja como variable (JSON o base64) y el backend

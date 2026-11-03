@@ -16,7 +16,7 @@ from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from .config import settings
 from .db import SessionFactory, init_db
-from .routers import account, auth, captures, devices, pairing, panel, realtime, ws
+from .routers import account, auth, captures, devices, maintenance, pairing, panel, realtime, ws
 from .runtime import dispatcher
 from .services.pairing import expire_stale_pairings
 from .services.retention import run_retention
@@ -212,6 +212,7 @@ app.include_router(captures.router, prefix="/api/v1")
 app.include_router(devices.router, prefix="/api/v1")
 app.include_router(panel.router, prefix="/api/v1")
 app.include_router(realtime.router, prefix="/api/v1")
+app.include_router(maintenance.router, prefix="/api/v1")
 app.include_router(ws.router)
 
 if WEB_DIR.exists():

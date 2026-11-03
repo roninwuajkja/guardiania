@@ -736,6 +736,7 @@ def _set_last_connection(device_id: str, when: datetime) -> None:
             device = await db.get(Device, uuid.UUID(device_id))
             assert device is not None
             device.ultima_conexion = when
+            device.creado_en = when - timedelta(hours=1)
             await db.commit()
 
     asyncio.run(run())
@@ -922,3 +923,27 @@ def test_offline_alert_is_sent_once_and_reconnect_is_announced(client, auth_head
         reconnected = websocket.receive_json()
         assert reconnected["type"] == "device_reconnected"
         assert reconnected["data"]["device_alias"]
+
+def test_fresh_device_is_not_reported_offline(client, auth_headers):
+    generated = generate_pairing(client, auth_headers)
+    verified = verify_manual(client, generated["manual_code"]).json()
+
+    client.get("/api/v1/overview", headers=auth_headers)
+    alerts = client.get("/api/v1/alerts?limit=50", headers=auth_headers).json()
+    assert [a for a in alerts if a["categoria"] == "sin_senal"] == []
+    assert verified["device_id"]
+
+def test_maintenance_sweep_requires_the_key(client, monkeypatch):
+    from app.config import settings
+
+    monkeypatch.setattr(settings, "maintenance_key", "clave-de-prueba")
+
+    assert client.post("/api/v1/maintenance/sweep").status_code == 404
+    assert client.post(
+        "/api/v1/maintenance/sweep", headers={"X-Maintenance-Key": "otra"}
+    ).status_code == 404
+    ok = client.post(
+        "/api/v1/maintenance/sweep", headers={"X-Maintenance-Key": "clave-de-prueba"}
+    )
+    assert ok.status_code == 200
+    assert "avisos" in ok.json()

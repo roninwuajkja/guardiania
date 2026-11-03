@@ -146,6 +146,9 @@ class Settings(BaseSettings):
     # Minutos sin sincronizar antes de avisar «teléfono sin señal».
     offline_alert_minutes: int = 60
 
+    # Clave del endpoint /maintenance/sweep que puede llamar el pinger.
+    maintenance_key: str | None = None
+
     @model_validator(mode="before")
     @classmethod
     def materialize_firebase_credentials(cls, data):

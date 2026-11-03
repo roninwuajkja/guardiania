@@ -55,6 +55,9 @@ async def sweep_offline(db: AsyncSession, tutor_id: uuid.UUID | None = None) -> 
         .where(
             Binding.estado == EstadoVinculacion.ACTIVO.value,
             Device.estado == "ACTIVO",
+            # Un equipo recién vinculado aún no tiene ultima_conexion: se le da
+            # el mismo margen del umbral antes de avisar.
+            Device.creado_en < threshold,
             or_(Device.ultima_conexion.is_(None), Device.ultima_conexion < threshold),
         )
     )
