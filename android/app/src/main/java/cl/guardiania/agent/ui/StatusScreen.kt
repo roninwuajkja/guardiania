@@ -22,6 +22,8 @@ import androidx.compose.material.icons.outlined.Accessibility
 import androidx.compose.material.icons.outlined.BarChart
 import androidx.compose.material.icons.outlined.BatterySaver
 import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.LinkOff
+import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Science
 import androidx.compose.material.icons.outlined.Sync
@@ -31,9 +33,11 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -367,62 +371,88 @@ fun StatusScreen(
     }
 
     if (confirmUnpair) {
-        AlertDialog(
-            onDismissRequest = { confirmUnpair = false },
-            title = { Text("¿Desvincular este teléfono?") },
-            text = {
-                Text(
-                    "Se borran los datos locales y se detiene el envío de señales. Si tu tutor definió un código, te lo pediremos ahora.",
+        GuardianDialog(
+            icon = Icons.Outlined.LinkOff,
+            title = "¿Desvincular este teléfono?",
+            onDismiss = { confirmUnpair = false },
+            iconTint = Oxblood,
+            iconBackground = OxbloodSoft,
+            content = {
+                DialogBodyText(
+                    "Se borran los datos locales y se detiene el envío de señales al panel.",
                 )
+                Spacer(Modifier.height(12.dp))
+                DialogNote("Si tu tutor definió un código, te lo pediremos ahora.")
             },
-            confirmButton = {
-                TextButton(
+            actions = {
+                DialogPrimaryButton(
+                    text = "Desvincular",
                     onClick = {
                         confirmUnpair = false
                         onUnpair(null)
                     },
-                    colors = ButtonDefaults.textButtonColors(contentColor = Oxblood),
-                ) { Text("Desvincular") }
-            },
-            dismissButton = {
-                TextButton(onClick = { confirmUnpair = false }) { Text("Cancelar") }
+                    destructive = true,
+                    loading = state.busy,
+                )
+                DialogSecondaryButton("Cancelar") { confirmUnpair = false }
             },
         )
     }
 
     if (state.unlinkPinRequired) {
         var pin by remember { mutableStateOf("") }
-        AlertDialog(
-            onDismissRequest = { onCancelUnlinkPin() },
-            title = { Text("Código del tutor") },
-            text = {
-                Column {
-                    Text(
-                        "Escribe el código de 6 dígitos que definió tu tutor. Sin él, el teléfono no puede desvincularse desde la app.",
-                    )
-                    Spacer(Modifier.height(12.dp))
-                    OutlinedTextField(
-                        value = pin,
-                        onValueChange = { value -> pin = value.filter(Char::isDigit).take(6) },
-                        label = { Text("Código de 6 dígitos") },
-                        singleLine = true,
-                        isError = state.unlinkError != null,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
-                    )
-                    state.unlinkError?.let { message ->
-                        Spacer(Modifier.height(8.dp))
-                        Text(message, color = Oxblood, fontSize = 12.sp)
-                    }
+        GuardianDialog(
+            icon = Icons.Outlined.Lock,
+            title = "Código del tutor",
+            onDismiss = { onCancelUnlinkPin() },
+            iconTint = Pine700,
+            iconBackground = SageSoft,
+            content = {
+                DialogBodyText(
+                    "Escribe el código de 6 dígitos que definió tu tutor. Sin él, el teléfono no puede desvincularse desde la app.",
+                )
+                Spacer(Modifier.height(16.dp))
+                OutlinedTextField(
+                    value = pin,
+                    onValueChange = { value -> pin = value.filter(Char::isDigit).take(6) },
+                    modifier = Modifier.fillMaxWidth(),
+                    textStyle = LocalTextStyle.current.copy(
+                        textAlign = TextAlign.Center,
+                        fontSize = 24.sp,
+                        letterSpacing = 9.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Ink,
+                    ),
+                    placeholder = {
+                        Text("••••••", color = Muted, fontSize = 20.sp, letterSpacing = 9.sp)
+                    },
+                    singleLine = true,
+                    isError = state.unlinkError != null,
+                    shape = RoundedCornerShape(14.dp),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Pine600,
+                        unfocusedBorderColor = LineStrong,
+                        errorBorderColor = Oxblood,
+                        focusedContainerColor = Card2,
+                        unfocusedContainerColor = Card2,
+                        cursorColor = Pine600,
+                    ),
+                )
+                state.unlinkError?.let { message ->
+                    Spacer(Modifier.height(8.dp))
+                    DialogErrorText(message)
                 }
             },
-            confirmButton = {
-                TextButton(
+            actions = {
+                DialogPrimaryButton(
+                    text = "Desvincular",
                     onClick = { onUnpair(pin) },
-                    enabled = pin.length == 6 && !state.busy,
-                ) { Text("Desvincular") }
-            },
-            dismissButton = {
-                TextButton(onClick = { onCancelUnlinkPin() }) { Text("Cancelar") }
+                    enabled = pin.length == 6,
+                    destructive = true,
+                    loading = state.busy,
+                )
+                DialogSecondaryButton("Cancelar") { onCancelUnlinkPin() }
             },
         )
     }
