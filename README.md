@@ -240,7 +240,7 @@ Estados de vinculación: `PENDIENTE`, `ACTIVO`, `REVOCADO`, `EXPIRADO`. Un códi
 ## Pruebas
 
 ```powershell
-# Backend: 103 pruebas
+# Backend: 104 pruebas
 cd backend
 .\.venv\Scripts\python.exe -m pytest -q
 
