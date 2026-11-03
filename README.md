@@ -70,31 +70,6 @@ flowchart LR
 
 Diagramas y contratos completos en [`docs/architecture.md`](docs/architecture.md). Decisiones de producto y privacidad en [`DESIGN.md`](DESIGN.md).
 
-## Capturas
-
-### Panel del tutor
-
-<p align="center">
-  <img src="docs/screenshots/web-overview.png" alt="Resumen del panel" width="720">
-</p>
-
-<p align="center">
-  <img src="docs/screenshots/web-alerts.png" alt="Alertas del panel" width="720">
-</p>
-
-### App del menor
-
-<p align="center">
-  <img src="docs/screenshots/android-status.png" alt="Estado del teléfono" width="340">
-</p>
-
-### Vinculación
-
-<p align="center">
-  <img src="docs/screenshots/web-pairing.png" alt="Vincular desde la web" width="680">
-  <img src="docs/screenshots/android-pairing.png" alt="Vincular desde Android" width="320">
-</p>
-
 ## Estructura
 
 ```text
