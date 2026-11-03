@@ -515,10 +515,35 @@ const AUTO_REFRESH_MS = 15000;
 const STREAM_RETRY_MAX_MS = 30000;
 
 function viewSignature() {
+  if (state.route === 'alertas') {
+    // El resumen general cambia cada 15 s aunque las alertas no; no debe
+    // provocar un repintado que cierre los detalles abiertos.
+    return JSON.stringify(
+      state.alerts.map((alert) => [alert.id, alert.estado, alert.severidad, alert.categoria, alert.resumen]),
+    );
+  }
+  if (state.route === 'dispositivos') {
+    return JSON.stringify(state.devices);
+  }
   return JSON.stringify({
     overview: state.overview,
     alerts: state.alerts.map((alert) => [alert.id, alert.estado]),
     devices: state.devices.map((device) => [device.id, device.estado, device.ultima_conexion]),
+  });
+}
+
+function openAlertIds() {
+  return new Set(
+    Array.from(document.querySelectorAll('.alert-why[open]'))
+      .map((node) => node.dataset.alertId)
+      .filter(Boolean),
+  );
+}
+
+function restoreOpenAlertIds(ids) {
+  if (!ids.size) return;
+  document.querySelectorAll('.alert-why').forEach((node) => {
+    if (ids.has(node.dataset.alertId)) node.open = true;
   });
 }
 
@@ -798,6 +823,7 @@ function renderOverview() {
     ? devices.map(compactDeviceRow).join('')
     : `<div class="alert-empty"><strong>Sin dispositivos</strong>Vincula el teléfono de tu hijo o hija para empezar.</div>`;
 
+  const openDetails = openAlertIds();
   $('#view').innerHTML = `
     <section class="hero">
       <div class="hero-copy">
@@ -834,6 +860,7 @@ function renderOverview() {
       </aside>
     </div>
   `;
+  restoreOpenAlertIds(openDetails);
 }
 
 function statCard({ label, value, unit, note, series, alert = false, seriesAlert = false }) {
@@ -934,7 +961,7 @@ function alertRow(alert, { compact = false } = {}) {
         </div>
         <h3 class="alert-title">${escapeHtml(alertRuleLabel(alert))}</h3>
         <p class="alert-summary">${escapeHtml(alert.resumen)}</p>
-        <details class="alert-why">
+        <details class="alert-why" data-alert-id="${escapeAttr(alert.id)}">
           <summary>Por qué se generó</summary>
           <p class="alert-why-text">${escapeHtml(alert.resumen)}</p>
           <p class="alert-evidence">${escapeHtml(evidence || 'Regla heurística del motor de riesgo local.')}</p>
@@ -1498,6 +1525,7 @@ function renderAlerts() {
     .map(([key, label]) => `<button class="chip" type="button" aria-pressed="${state.filter === key}" data-action="filter" data-filter="${key}">${label}<span class="chip-count">${counts[key]}</span></button>`)
     .join('');
 
+  const openDetails = openAlertIds();
   $('#view').innerHTML = `
     <section class="page-head">
       <div>
@@ -1516,6 +1544,7 @@ function renderAlerts() {
           </div>`}
     </section>
     <div class="privacy-line" style="margin-top:20px">${icon('lock', 15)}<span>El motor de riesgo es heurístico y explicable. No es un diagnóstico ni reemplaza una conversación.</span></div>`;
+  restoreOpenAlertIds(openDetails);
 }
 
 async function setAlertState(id, newState) {
