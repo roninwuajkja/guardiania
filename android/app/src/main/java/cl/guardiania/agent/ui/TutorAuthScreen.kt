@@ -162,7 +162,7 @@ fun TutorAuthScreen(
                     onValueChange = { server = it; localError = null },
                     modifier = Modifier.fillMaxWidth(),
                     label = { Text("Dirección del panel") },
-                    supportingText = { Text("Emulador: 10.0.2.2:8000 · Teléfono: IP del servidor.", fontSize = 11.sp) },
+                    supportingText = { Text("Panel desplegado. En local: http://10.0.2.2:8000.", fontSize = 11.sp) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri, imeAction = ImeAction.Next),
                     shape = RoundedCornerShape(12.dp),

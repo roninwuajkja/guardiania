@@ -128,7 +128,7 @@ fun PairingScreen(
                         label = { Text("Dirección del panel") },
                         supportingText = {
                             Text(
-                                text = "Emulador: 10.0.2.2:8000 · Teléfono: la IP de tu computador.",
+                                text = "Panel desplegado. Para pruebas locales usa http://10.0.2.2:8000.",
                                 fontSize = 11.sp,
                             )
                         },
