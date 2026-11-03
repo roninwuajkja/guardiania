@@ -28,11 +28,16 @@ class DeviceStatusReporter(
             filter != NotificationManager.INTERRUPTION_FILTER_UNKNOWN &&
             filter != NotificationManager.INTERRUPTION_FILTER_ALL
 
+        val lastNotification = store.meta("last_notification_at")
+            ?.toLongOrNull()
+            ?.let { java.time.Instant.ofEpochMilli(it).toString() }
+
         val body = DeviceStatusRequest(
             notificacionesActivas = permissions.notificationAccess,
             usoActivo = permissions.usageAccess,
             dnd = dnd,
             accesibilidad = permissions.accessibility,
+            ultimaNotificacionEn = lastNotification,
         )
 
         withContext(Dispatchers.IO) {

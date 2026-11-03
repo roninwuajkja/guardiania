@@ -68,6 +68,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 role = role,
                 hasTutorSession = tutorSession != null,
             )
+            if (pairing != null) {
+                // Al abrir la app se reporta el estado: el panel lo ve al instante.
+                runCatching { container.statusReporter.report() }
+            }
         }
     }
 

@@ -12,7 +12,7 @@ import uuid
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..db import utcnow
-from ..models import AccessNotice, DeviceStatus, RiskAlert, Severidad
+from ..models import AccessNotice, DeviceStatus, ListenerHeartbeat, RiskAlert, Severidad
 from ..realtime import tutor_hub
 from .alerts import notify_alert
 
@@ -31,6 +31,17 @@ async def report_status(db: AsyncSession, ctx, body) -> None:
     row.dnd = body.dnd
     row.accesibilidad = body.accesibilidad
     row.reportado_en = now
+
+    heartbeat = await db.get(ListenerHeartbeat, ctx.device.id)
+    if heartbeat is None:
+        heartbeat = ListenerHeartbeat(
+            device_id=ctx.device.id,
+            ultima_notificacion_en=body.ultima_notificacion_en,
+        )
+        db.add(heartbeat)
+    elif body.ultima_notificacion_en is not None:
+        heartbeat.ultima_notificacion_en = body.ultima_notificacion_en
+    heartbeat.actualizado_en = now
 
     notice = await db.get(AccessNotice, ctx.device.id)
     alert: RiskAlert | None = None
