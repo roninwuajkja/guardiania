@@ -947,3 +947,49 @@ def test_maintenance_sweep_requires_the_key(client, monkeypatch):
     )
     assert ok.status_code == 200
     assert "avisos" in ok.json()
+
+def test_status_alerts_when_notification_access_is_lost(client, auth_headers):
+    generated = generate_pairing(client, auth_headers)
+    verified = verify_manual(client, generated["manual_code"]).json()
+    device_headers = {"Authorization": f"Bearer {verified['access_token']}"}
+
+    def report(**overrides):
+        body = {
+            "notificaciones_activas": True,
+            "uso_activo": True,
+            "dnd": False,
+            "accesibilidad": False,
+        }
+        body.update(overrides)
+        return client.post("/api/v1/devices/self/status", json=body, headers=device_headers)
+
+    assert report(notificaciones_activas=False).status_code == 204
+    alerts = client.get("/api/v1/alerts?limit=50", headers=auth_headers).json()
+    access = [a for a in alerts if a["categoria"] == "acceso_desactivado"]
+    assert len(access) == 1
+    assert access[0]["severidad"] == "ALTA"
+    assert "acceso a notificaciones" in access[0]["resumen"].lower()
+
+    # El mismo corte no repite la alerta.
+    assert report(notificaciones_activas=False).status_code == 204
+    alerts = client.get("/api/v1/alerts?limit=50", headers=auth_headers).json()
+    assert len([a for a in alerts if a["categoria"] == "acceso_desactivado"]) == 1
+
+    devices = client.get("/api/v1/devices", headers=auth_headers).json()
+    row = next(d for d in devices if d["id"] == verified["device_id"])
+    assert row["notificaciones_activas"] is False
+
+    # Al reactivarlo, el estado vuelve y un corte nuevo sí avisa otra vez.
+    assert report(notificaciones_activas=True).status_code == 204
+    devices = client.get("/api/v1/devices", headers=auth_headers).json()
+    row = next(d for d in devices if d["id"] == verified["device_id"])
+    assert row["notificaciones_activas"] is True
+
+    assert report(notificaciones_activas=False).status_code == 204
+    alerts = client.get("/api/v1/alerts?limit=50", headers=auth_headers).json()
+    assert len([a for a in alerts if a["categoria"] == "acceso_desactivado"]) == 2
+
+    # No molestar no genera alerta.
+    assert report(notificaciones_activas=True, dnd=True).status_code == 204
+    alerts = client.get("/api/v1/alerts?limit=50", headers=auth_headers).json()
+    assert len([a for a in alerts if a["categoria"] == "acceso_desactivado"]) == 2

@@ -602,6 +602,7 @@ async function connectTutorStream() {
       try { message = JSON.parse(event.data); } catch { return; }
       if (message.type === 'risk_alert') handleLiveAlert(message.data);
       else if (message.type === 'device_reconnected') handleReconnected(message.data);
+      else if (message.type === 'device_status') handleDeviceStatus(message.data);
     };
     socket.onclose = () => {
       if (state.stream !== socket) return;
@@ -677,9 +678,19 @@ function handleReconnected(data) {
   refreshFromServer({ force: true });
 }
 
+function handleDeviceStatus(data) {
+  if (!data) return;
+  const who = data.etiqueta_menor || data.device_alias || 'El teléfono';
+  if (data.notificaciones_activas) {
+    toast(`${who}: acceso a notificaciones restaurado`);
+  }
+  refreshFromServer({ force: true });
+}
+
 function prettyAlertLabel(code) {
   const labels = {
     sin_senal: 'teléfono sin señal',
+    acceso_desactivado: 'acceso a notificaciones desactivado',
     self_harm: 'posible autolesión',
     grooming: 'posible grooming',
     sexual_content: 'contenido sexual',
@@ -1264,12 +1275,21 @@ function renderDevices() {
   const activeRows = active
     .map((device) => {
       const name = device.etiqueta_menor || device.alias;
+      const sinAcceso = device.notificaciones_activas === false;
+      const statusBits = [
+        device.notificaciones_activas === true ? 'Notificaciones activas' : null,
+        device.dnd === true ? 'No molestar activo' : null,
+      ].filter(Boolean);
+      const statusText = sinAcceso
+        ? 'Acceso a notificaciones desactivado'
+        : statusBits.join(' · ');
       return `
         <article class="device-row">
           <span class="device-icon">${icon('device', 18)}</span>
           <div class="device-info">
             <strong>${escapeHtml(name)}</strong>
             <span>${escapeHtml(device.model_family || 'Android')} · Android API ${device.api_level} · sincronizó ${relativeLabel(device.ultima_conexion)}</span>
+            ${statusText ? `<span class="${sinAcceso ? 'device-alert' : 'device-status-line'}">${escapeHtml(statusText)}</span>` : ''}
           </div>
           <span class="device-state"><i class="dot"></i>Activo</span>
           <button class="btn btn-sm btn-danger" type="button" data-action="revoke" data-id="${device.vinculacion_id}" data-name="${escapeAttr(name)}">Revocar</button>

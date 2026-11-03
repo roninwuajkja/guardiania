@@ -201,6 +201,7 @@ def test_vector_payload_has_no_text_fields():
         "hora_local",
         "dia_semana_local",
         "fin_de_semana",
+        "uso_sin_notificaciones",
     }
     assert not any("snippet" in key or "text" in key or "raw" in key for key in payload)
     assert payload["flags_descripcion"] == ["Acoso escolar"]

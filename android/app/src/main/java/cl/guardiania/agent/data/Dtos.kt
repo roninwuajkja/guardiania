@@ -51,6 +51,14 @@ data class UnlinkRequest(
 )
 
 @Serializable
+data class DeviceStatusRequest(
+    @SerialName("notificaciones_activas") val notificacionesActivas: Boolean,
+    @SerialName("uso_activo") val usoActivo: Boolean,
+    val dnd: Boolean,
+    val accesibilidad: Boolean,
+)
+
+@Serializable
 data class RefreshResponse(
     @SerialName("access_token") val accessToken: String,
     @SerialName("token_type") val tokenType: String = "bearer",

@@ -361,3 +361,26 @@ class OfflineNotice(Base):
     vinculacion_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("vinculaciones.id"), nullable=False)
     ultima_conexion_avisada: Mapped[datetime | None] = mapped_column(UtcDateTime, nullable=True)
     avisado_en: Mapped[datetime] = mapped_column(UtcDateTime, default=utcnow, nullable=False)
+
+class DeviceStatus(Base):
+    """Último estado reportado por el teléfono (permisos y No molestar)."""
+
+    __tablename__ = "estado_dispositivo"
+
+    device_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("dispositivos.id"), primary_key=True)
+    vinculacion_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("vinculaciones.id"), nullable=False)
+    notificaciones_activas: Mapped[bool] = mapped_column(default=True, nullable=False)
+    uso_activo: Mapped[bool] = mapped_column(default=True, nullable=False)
+    dnd: Mapped[bool] = mapped_column(default=False, nullable=False)
+    accesibilidad: Mapped[bool] = mapped_column(default=False, nullable=False)
+    reportado_en: Mapped[datetime] = mapped_column(UtcDateTime, default=utcnow, nullable=False)
+
+
+class AccessNotice(Base):
+    """Evita repetir la alerta de acceso a notificaciones en el mismo corte."""
+
+    __tablename__ = "avisos_acceso"
+
+    device_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("dispositivos.id"), primary_key=True)
+    vinculacion_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("vinculaciones.id"), nullable=False)
+    avisado_en: Mapped[datetime] = mapped_column(UtcDateTime, default=utcnow, nullable=False)

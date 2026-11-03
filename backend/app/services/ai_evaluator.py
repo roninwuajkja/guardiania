@@ -123,6 +123,10 @@ Cómo decidir (en este orden):
 6. Contacto desconocido presente junto a otras señales, o contacto desconocido con
    muchas notificaciones: como mínimo MEDIO; si además hay señales graves, ALTO.
 7. Solo responde BAJO cuando no haya ninguna señal y el uso sea razonable.
+   Si `uso_sin_notificaciones` es true (uso alto en app social o de mensajería con
+   cero notificaciones), considera que las notificaciones pueden estar silenciadas:
+   no es una señal grave por sí sola, pero súbela a MEDIO si hay otra señal o es
+   de madrugada.
 
 No minimices por tratarse de una sola notificación: una sola señal basta para MEDIO.
 No inventes hechos que no estén en el vector. No repitas ni pidas datos personales.
@@ -387,6 +391,11 @@ def vector_payload(vector: DerivedFeatureVector) -> dict[str, Any]:
         "hora_local": local_start.strftime("%H:%M"),
         "dia_semana_local": local_start.strftime("%A"),
         "fin_de_semana": local_start.weekday() >= 5,
+        "uso_sin_notificaciones": (
+            vector.category in {"social", "mensajeria"}
+            and vector.usage_duration_minutes >= 15
+            and vector.notification_count == 0
+        ),
     }
 
 

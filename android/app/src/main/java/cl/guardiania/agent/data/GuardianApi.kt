@@ -36,6 +36,12 @@ interface GuardianApi {
         @Body body: UnlinkRequest,
     ): Response<Unit>
 
+    @POST("api/v1/devices/self/status")
+    suspend fun reportStatus(
+        @Header("Authorization") authorization: String,
+        @Body body: DeviceStatusRequest,
+    ): Response<Unit>
+
     @POST("api/v1/auth/login")
     suspend fun tutorLogin(@Body body: TutorLoginRequest): TutorAuthDto
 

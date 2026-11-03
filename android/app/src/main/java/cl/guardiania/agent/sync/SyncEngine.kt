@@ -4,6 +4,7 @@ import cl.guardiania.agent.capture.FeatureComposer
 import cl.guardiania.agent.capture.UsageCollector
 import cl.guardiania.agent.data.CaptureVector
 import cl.guardiania.agent.data.DeviceSession
+import cl.guardiania.agent.data.DeviceStatusReporter
 import cl.guardiania.agent.data.NotPairedException
 import cl.guardiania.agent.data.SyncRequest
 import cl.guardiania.agent.data.SecureStore
@@ -29,6 +30,7 @@ class SyncEngine(
     private val session: DeviceSession,
     private val usage: UsageCollector,
     private val appVersion: String,
+    private val statusReporter: DeviceStatusReporter? = null,
 ) {
     private val json = Json {
         ignoreUnknownKeys = true
@@ -38,6 +40,8 @@ class SyncEngine(
 
     suspend fun syncNow(): SyncOutcome {
         val pairing = store.pairing() ?: throw NotPairedException()
+        // El estado de permisos se reporta en cada sync, aunque no haya capturas.
+        runCatching { statusReporter?.report() }
         val now = System.currentTimeMillis()
         store.pruneSignals(now - MAX_AGE_MS)
 

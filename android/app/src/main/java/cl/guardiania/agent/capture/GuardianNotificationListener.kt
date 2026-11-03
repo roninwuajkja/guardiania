@@ -19,6 +19,21 @@ class GuardianNotificationListener : NotificationListenerService() {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
+    override fun onListenerConnected() {
+        super.onListenerConnected()
+        scope.launch {
+            (application as GuardianApp).container.statusReporter.report()
+        }
+    }
+
+    override fun onListenerDisconnected() {
+        super.onListenerDisconnected()
+        // Avisa de inmediato: sin este acceso la guardia queda incompleta.
+        scope.launch {
+            (application as GuardianApp).container.statusReporter.report()
+        }
+    }
+
     override fun onNotificationPosted(notification: StatusBarNotification?) {
         val posted = notification ?: return
         if (posted.packageName == packageName) return

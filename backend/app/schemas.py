@@ -324,6 +324,18 @@ class DeviceOut(BaseModel):
     ultima_conexion: datetime | None
     creado_en: datetime
     unlink_code_set: bool = False
+    notificaciones_activas: bool | None = None
+    dnd: bool | None = None
+    estado_reportado_en: datetime | None = None
+
+
+class DeviceStatusRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    notificaciones_activas: bool
+    uso_activo: bool
+    dnd: bool = False
+    accesibilidad: bool = False
 
 
 class UnlinkCodeRequest(BaseModel):

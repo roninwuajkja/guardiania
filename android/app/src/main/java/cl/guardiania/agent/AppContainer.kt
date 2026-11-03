@@ -4,6 +4,7 @@ import android.content.Context
 import cl.guardiania.agent.capture.UsageCollector
 import cl.guardiania.agent.core.SecretVault
 import cl.guardiania.agent.data.DeviceSession
+import cl.guardiania.agent.data.DeviceStatusReporter
 import cl.guardiania.agent.data.PairingRepository
 import cl.guardiania.agent.data.SecureStore
 import cl.guardiania.agent.data.TutorRepository
@@ -26,8 +27,11 @@ class AppContainer(context: Context) {
     val tutorRepository: TutorRepository by lazy { TutorRepository(store) }
     val session: DeviceSession by lazy { DeviceSession(store) }
     val usageCollector: UsageCollector by lazy { UsageCollector(appContext) }
+    val statusReporter: DeviceStatusReporter by lazy {
+        DeviceStatusReporter(appContext, store, session)
+    }
     val syncEngine: SyncEngine by lazy {
-        SyncEngine(store, session, usageCollector, BuildConfig.VERSION_NAME)
+        SyncEngine(store, session, usageCollector, BuildConfig.VERSION_NAME, statusReporter)
     }
 
     /** Alertas del tutor recibidas en vivo; el ViewModel las consume. */
