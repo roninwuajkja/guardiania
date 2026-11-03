@@ -72,19 +72,26 @@ Diagramas y contratos completos en [`docs/architecture.md`](docs/architecture.md
 
 ### Panel del tutor
 
-![Resumen del panel](docs/screenshots/web-overview.png)
+<p align="center">
+  <img src="docs/screenshots/web-overview.png" alt="Resumen del panel" width="720">
+</p>
 
-![Alertas del panel](docs/screenshots/web-alerts.png)
+<p align="center">
+  <img src="docs/screenshots/web-alerts.png" alt="Alertas del panel" width="720">
+</p>
 
 ### App del menor
 
-![Estado del teléfono](docs/screenshots/android-status.png)
+<p align="center">
+  <img src="docs/screenshots/android-status.png" alt="Estado del teléfono" width="340">
+</p>
 
 ### Vinculación
 
-![Vincular desde la web](docs/screenshots/web-pairing.png)
-
-![Vincular desde Android](docs/screenshots/android-pairing.png)
+<p align="center">
+  <img src="docs/screenshots/web-pairing.png" alt="Vincular desde la web" width="680">
+  <img src="docs/screenshots/android-pairing.png" alt="Vincular desde Android" width="320">
+</p>
 
 ## Estructura
 
