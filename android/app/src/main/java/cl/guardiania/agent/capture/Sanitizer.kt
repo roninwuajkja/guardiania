@@ -93,6 +93,24 @@ object Sanitizer {
             ),
         ),
         Rule(
+            "insult_mild",
+            Regex(
+                """\b(tonto|tonta|tontito|tontita|bobo|boba|ridiculo|ridicula|inutil|mediocre|lerdo|lerda|papanatas|zoquete|menso|mensa|blandengue|(eres|es|son|que) (un|una|unos|unas)? (payaso|payasa|pavo|pava|pesado|pesada|cargante|novato|novata|chistoso|chistosa|flojo|floja))\b""",
+            ),
+        ),
+        Rule(
+            "insult_moderate",
+            Regex(
+                """\b(idiota|imbecil|estupido|estupida|tarado|tarada|pelotudo|pelotuda|aweonao|aweonada|sacowea|saco de weas|huevon de mierda|weon de mierda|(eres|es|son|que) (un|una|unos|unas)? (huevon|huevona|weon|weona|gil|gila|cerdo|cerda|rata|asqueroso|asquerosa|patetico|patetica|arrastrado|arrastrada|chupamedias))\b""",
+            ),
+        ),
+        Rule(
+            "insult_severe",
+            Regex(
+                """\b(hijo de puta|hija de puta|hijos de puta|conchetumadre|conchetumare|culiao|culiada|maricon|maricona|maricon de mierda|(eres|es|son|que) (un|una|unos|unas)? (puto|puta|perra|zorra|fleto|fleta)|perra de mierda|zorra de mierda|chupapico|chupapija|malparido|malparida|bastardo|bastarda|escoria|basura humana|retrasado|retrasada|mongolico|mongolica|sudaca|veneco|indio de mierda|negro de mierda|ojala te mueras|ojala te maten|muerete (de verdad|luego|ahora)|te voy a matar)\b""",
+            ),
+        ),
+        Rule(
             "eating_disorder",
             Regex(
                 """\b(no (he )?comido (en|hace|todo el dia)|deje de comer|vomito? (despues de comer|lo que como)|me provoco el vomito|purga(s)?|laxante\w*|ayuno (extremo|prolongado|de (varios|muchos) dias)|atracon\w*|trastorno (alimentario|de la conducta alimentaria)|anorexia|bulimia|ortorexia)\b""",
@@ -132,6 +150,54 @@ object Sanitizer {
             "malestar",
             Regex(
                 """\b(no aguanto (mas|nada)|me siento (solo|sola|mal|triste|vacio|vacia|ansios\w*|deprimid\w*)|estoy (cansad\w+|chata\w*) de todo|no quiero ir (al colegio|a clases)|me da miedo|nadie me (quiere|habla)|ataque de panico|ansiedad|depresion|no puedo dormir|lloro (todo el tiempo|sin parar)|me siento un fracaso|sin esperanza|no le veo sentido)\b""",
+            ),
+        ),
+        Rule(
+            "scam_points",
+            Regex(
+                """\b((canjea|canjear|canje|cambia) (tus|sus|los|las)? ?(puntos|recompensas|codigos?)|tus puntos (vencen|expiran|estan por vencer)|puntos (acumulados|disponibles|por vencer)|reclama (tus|el) (puntos|premio|recompensa)|codigo de canje|cupon(es)? (de descuento|exclusivo)|tarjeta de regalo|gift card|voucher|beneficio exclusivo|promocion exclusiva|ultimos dias para canjear|canjea antes)\b""",
+            ),
+        ),
+        Rule(
+            "scam_casino",
+            Regex(
+                """\b(casino (online|en linea|vip|premium)|bono (de bienvenida|sin deposito|de casino)|giros gratis|free spins|apuesta gratis|apuestas? (deportivas?|online)|codigo promocional (de casino|de apuestas)|jackpot|1xbet|bet365|betway|stake (casino|online)|sportsbook|tragamonedas|ruleta (online|virtual)|gana (dinero|premios) (facil|rapido)|multiplica tu dinero|bono de casino)\b""",
+            ),
+        ),
+        Rule(
+            "scam_financial",
+            Regex(
+                """\b(inversion (segura|garantizada|de alto rendimiento)|rendimiento (fijo|garantizado)|duplica (tu|el) dinero|ganancias? (diarias|garantizadas|faciles)|bitcoin|criptomoneda|cripto|usdt|binance|airtm|forex|trading (de|crypto)|mineria (de bitcoin|cripto)|invierte (desde|con)|capital (garantizado|inicial))\b""",
+            ),
+        ),
+        Rule(
+            "scam_account",
+            Regex(
+                """\b(tu cuenta (sera|ha sido|fue) (suspendida|bloqueada|cancelada|verificada)|verifica (tu|la) cuenta|confirma (tu|tus) (datos|identidad|informacion)|actualiza (tu|tus) (datos|informacion)|inicia sesion (aqui|en este enlace)|soporte tecnico (de|te)|codigo de verificacion|comparte (el|tu) codigo|otp|token de seguridad|banco (te|le) (informa|solicita)|haz clic (aqui|en el enlace)|enlace (seguro|oficial)|phishing|suplantacion|estafa)\b""",
+            ),
+        ),
+        Rule(
+            "scam_prize",
+            Regex(
+                """\b(ganaste (un|el) (premio|sorteo|iphone|playstation|dinero|viaje)|felicidades (has|te has) ganado|reclama (tu|el) premio|premio (gratis|gratuito|exclusivo)|sorteo (internacional|exclusivo)|loteria|rifa|iphone gratis|playstation gratis|ultimo aviso|beneficiario|premio (mayor|jackpot))\b""",
+            ),
+        ),
+        Rule(
+            "scam_delivery",
+            Regex(
+                """\b(paquete (retenido|en aduana|pendiente)|aduana (te|le) (solicita|requiere)|pago de (impuestos|tasa|arancel)|reprogramar (la )?entrega|tracking|numero de seguimiento|courier|correos de chile|tarifa de envio|envio (bloqueado|retenido))\b""",
+            ),
+        ),
+        Rule(
+            "scam_job",
+            Regex(
+                """\b(trabajo (desde casa|remoto|facil)|gana (dinero|hasta) (facil|desde casa|por dia)|ingresos? (extra|rapidos|diarios)|sin experiencia|pago diario|teletrabajo|entrevista (por|via) whatsapp|empresa internacional (te|le) (contrata|busca)|contratado (para|en) (trabajo|puesto)|solo (necesitas|requieres) (tu|un) (celular|telefono))\b""",
+            ),
+        ),
+        Rule(
+            "scam_romance",
+            Regex(
+                """\b(soldado (en|destinado) (el extranjero|afganistan|siria|irak)|medico (en|destinado) (el extranjero|mision)|necesito (dinero|ayuda) para (el pasaje|la visa|el vuelo)|mi amor (necesito|estoy en)|te amo (pero|y) necesito|conoci tus fotos|quiero conocerte (en persona|y casarme)|envia (dinero|regalo) para (la visa|el pasaje))\b""",
             ),
         ),
         Rule(
@@ -186,5 +252,5 @@ object Sanitizer {
 
     private val diacritics = Regex("\\p{Mn}+")
     private const val MAX_SCANNED_CHARS = 4000
-    private const val MAX_FLAGS = 10
+    private const val MAX_FLAGS = 14
 }

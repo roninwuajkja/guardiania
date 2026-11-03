@@ -3,7 +3,7 @@
 Regla Cero: este módulo solo recibe ``DerivedFeatureVector``. No existe ningún
 camino de código que envíe texto, nombres, teléfonos o contenido de
 notificaciones a un proveedor externo. ``AI_SEND_SNIPPET`` es una compuerta
-cerrada y sin llamadores en 1.5.0.
+cerrada y sin llamadores en 1.6.0.
 
 Orden de ejecución:
     1. caché en memoria por hash del vector (5 min)
@@ -54,6 +54,9 @@ _FLAG_PRIORITY = (
     "coercion",
     "bullying",
     "hate_speech",
+    "insult_severe",
+    "insult_moderate",
+    "insult_mild",
     "eating_disorder",
     "doxxing",
     "runaway",
@@ -61,6 +64,14 @@ _FLAG_PRIORITY = (
     "drugs",
     "gambling",
     "malestar",
+    "scam_points",
+    "scam_casino",
+    "scam_financial",
+    "scam_account",
+    "scam_prize",
+    "scam_delivery",
+    "scam_job",
+    "scam_romance",
     "scam",
     "unknown_contact",
 )
@@ -71,6 +82,9 @@ _CATEGORY_BY_FLAG = {
     "sexual_content": "Contenido_Inapropiado",
     "bullying": "Ciberbullying",
     "hate_speech": "Ciberbullying",
+    "insult_severe": "Ciberbullying",
+    "insult_moderate": "Ciberbullying",
+    "insult_mild": "Ciberbullying",
 }
 
 _FLAG_LABELS = {
@@ -86,6 +100,9 @@ _FLAG_LABELS = {
     "coercion": "Presión o chantaje",
     "bullying": "Acoso escolar",
     "hate_speech": "Discurso de odio o discriminación",
+    "insult_severe": "Insulto grave",
+    "insult_moderate": "Insulto moderado",
+    "insult_mild": "Insulto leve",
     "eating_disorder": "Señales de trastorno alimentario",
     "doxxing": "Exposición de datos personales",
     "runaway": "Riesgo de fuga o desaparición",
@@ -93,6 +110,14 @@ _FLAG_LABELS = {
     "drugs": "Drogas o alcohol",
     "gambling": "Apuestas",
     "malestar": "Malestar emocional",
+    "scam_points": "Canje de puntos sospechoso",
+    "scam_casino": "Invitación a casino o apuestas",
+    "scam_financial": "Inversión o cripto sospechosa",
+    "scam_account": "Suplantación o phishing",
+    "scam_prize": "Premio o sorteo sospechoso",
+    "scam_delivery": "Paquete o aduana sospechosa",
+    "scam_job": "Oferta de trabajo sospechosa",
+    "scam_romance": "Posible estafa romántica",
     "scam": "Posible estafa o phishing",
     "unknown_contact": "Contacto desconocido",
 }
@@ -111,6 +136,7 @@ _SERIOUS_FLAGS = {
     "coercion",
     "bullying",
     "hate_speech",
+    "insult_severe",
     "eating_disorder",
     "doxxing",
     "runaway",
@@ -133,7 +159,22 @@ _VOLUME_THRESHOLD = 20
 _NIGHT_VOLUME_THRESHOLD = 8
 
 _HIGH_FLAGS = _SERIOUS_FLAGS
-_MEDIUM_FLAGS = {"gambling", "malestar", "scam", "unknown_contact"}
+_MEDIUM_FLAGS = {
+    "insult_moderate",
+    "insult_mild",
+    "gambling",
+    "malestar",
+    "scam_points",
+    "scam_casino",
+    "scam_financial",
+    "scam_account",
+    "scam_prize",
+    "scam_delivery",
+    "scam_job",
+    "scam_romance",
+    "scam",
+    "unknown_contact",
+}
 
 _DEFAULT_NARRATIVE = {
     "ALTO": "Se detectaron señales de riesgo alto en la actividad monitoreada.",
@@ -157,9 +198,10 @@ Responde EXCLUSIVAMENTE un objeto JSON válido, sin markdown, con esta forma:
 
 Señales críticas: autolesión, grooming, sextorsión, abuso o maltrato, trata o
 explotación, radicalización. Señales graves: contenido sexual, violencia o armas,
-presión o chantaje, acoso, discurso de odio, trastorno alimentario, exposición de
-datos, fuga, retos peligrosos y drogas. Señales medias: apuestas, malestar, estafa y
-contacto desconocido.
+presión o chantaje, acoso, insulto grave, discurso de odio, trastorno alimentario,
+exposición de datos, fuga, retos peligrosos y drogas. Señales medias: insulto leve
+o moderado, apuestas, malestar, estafas (puntos, casino, inversión, cuenta, premio,
+envío, trabajo, romance) y contacto desconocido.
 
 Cómo decidir (en este orden):
 1. Si hay CUALQUIER señal, el nivel NUNCA es BAJO: como mínimo es MEDIO.
@@ -176,13 +218,15 @@ Cómo decidir (en este orden):
    estar silenciadas: no es grave por sí sola, pero súbela a MEDIO si hay otra
    señal o es de madrugada.
 
-Categoría: Ciberbullying para acoso y discurso de odio; Contenido_Inapropiado para
-grooming, sextorsión, contenido sexual y trata; Conducta_Riesgo para el resto.
-Sin_Riesgo solo si el nivel es BAJO.
+Categoría: Ciberbullying para acoso, insultos y discurso de odio;
+Contenido_Inapropiado para grooming, sextorsión, contenido sexual y trata;
+Conducta_Riesgo para el resto. Sin_Riesgo solo si el nivel es BAJO.
 
-No minimices por tratarse de una sola notificación. No inventes hechos que no estén
-en el vector. No repitas ni pidas datos personales. Si hay una señal crítica, el
-consejo debe priorizar la seguridad y la ayuda inmediata. Español de Chile, tono
+Una estafa que pida dinero, códigos, contraseñas o datos, o un insulto grave
+repetido, debe priorizarse como ALTO. Un insulto leve aislado no es ALTO por sí
+solo. No minimices por tratarse de una sola notificación. No inventes hechos que no
+estén en el vector. No repitas ni pidas datos personales. Si hay una señal crítica,
+el consejo debe priorizar la seguridad y la ayuda inmediata. Español de Chile, tono
 respetuoso, sin culpabilizar al menor. Máximo 280 caracteres en cada texto.
 """
 

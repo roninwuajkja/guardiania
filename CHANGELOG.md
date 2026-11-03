@@ -6,6 +6,25 @@ Todas las versiones relevantes de IA Guardian. El detalle técnico vive en
 
 > Las notas de cada versión se publican en [GitHub Releases](https://github.com/roninwuajkja/guardiania/releases). Este archivo conserva el historial completo.
 
+## 1.6.0 — 2026-11-03
+
+### Detección de lenguaje y estafas
+
+- Insultos en tres niveles: **leve, moderado y grave**, con modismos chilenos y
+  términos despectivos.
+- Familias de estafa separadas: canje de puntos, invitación a casino/apuestas,
+  inversión o cripto, suplantación/phishing, premios, envíos/aduanas, ofertas de
+  trabajo y estafa romántica.
+- La IA recibe las señales por separado. Un insulto grave o una estafa que pide
+  dinero, códigos o datos sube a **ALTO**; dos señales distintas también.
+- El catálogo local pasa de 21 a **32 señales**.
+
+### Versión y distribución
+
+- Backend y Android **1.6.0**; APK `versionCode` 7.
+- Nuevo release `v1.6.0` con APK y changelog. `v1.5.0` y `v1.4.0` quedan como
+  releases anteriores.
+
 ## 1.5.0 — 2026-11-03
 
 ### Panel del tutor

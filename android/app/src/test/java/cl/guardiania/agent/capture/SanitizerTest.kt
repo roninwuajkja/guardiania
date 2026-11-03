@@ -278,4 +278,140 @@ class SanitizerTest {
 
         assertFalse(result.flags.contains("violence"))
     }
+
+    @Test
+    fun `mild insult is detected`() {
+        val result = Sanitizer.sanitize("com.instagram.android", null, "Eres un tonto, no sabes nada")
+
+        assertTrue(result.flags.contains("insult_mild"))
+    }
+
+    @Test
+    fun `moderate insult is detected`() {
+        val result = Sanitizer.sanitize("com.whatsapp", null, "Eres un idiota y no entiendes")
+
+        assertTrue(result.flags.contains("insult_moderate"))
+    }
+
+    @Test
+    fun `severe insult and death wish are detected`() {
+        val result = Sanitizer.sanitize(
+            "org.telegram.messenger",
+            null,
+            "Eres un conchetumadre, ojalá te mueras",
+        )
+
+        assertTrue(result.flags.contains("insult_severe"))
+    }
+
+    @Test
+    fun `points redemption scam is detected`() {
+        val result = Sanitizer.sanitize(
+            "com.whatsapp",
+            null,
+            "Canjea tus puntos antes que venzan y recibe un premio",
+        )
+
+        assertTrue(result.flags.contains("scam_points"))
+    }
+
+    @Test
+    fun `casino invitation scam is detected`() {
+        val result = Sanitizer.sanitize(
+            "com.instagram.android",
+            null,
+            "Casino online con bono de bienvenida y giros gratis",
+        )
+
+        assertTrue(result.flags.contains("scam_casino"))
+        assertTrue(result.flags.contains("gambling"))
+    }
+
+    @Test
+    fun `financial scam is detected`() {
+        val result = Sanitizer.sanitize(
+            "com.whatsapp",
+            null,
+            "Inversión garantizada en bitcoin, duplica tu dinero",
+        )
+
+        assertTrue(result.flags.contains("scam_financial"))
+    }
+
+    @Test
+    fun `account phishing is detected`() {
+        val result = Sanitizer.sanitize(
+            "org.telegram.messenger",
+            null,
+            "Tu cuenta será suspendida, envía el código de verificación",
+        )
+
+        assertTrue(result.flags.contains("scam_account"))
+    }
+
+    @Test
+    fun `prize scam is detected`() {
+        val result = Sanitizer.sanitize(
+            "com.whatsapp",
+            null,
+            "Ganaste un premio, reclama tu iPhone gratis",
+        )
+
+        assertTrue(result.flags.contains("scam_prize"))
+    }
+
+    @Test
+    fun `delivery scam is detected`() {
+        val result = Sanitizer.sanitize(
+            "com.whatsapp",
+            null,
+            "Paquete retenido en aduana, paga los impuestos",
+        )
+
+        assertTrue(result.flags.contains("scam_delivery"))
+    }
+
+    @Test
+    fun `job scam is detected`() {
+        val result = Sanitizer.sanitize(
+            "com.instagram.android",
+            null,
+            "Trabajo desde casa, gana dinero fácil sin experiencia",
+        )
+
+        assertTrue(result.flags.contains("scam_job"))
+    }
+
+    @Test
+    fun `romance scam is detected`() {
+        val result = Sanitizer.sanitize(
+            "com.whatsapp",
+            null,
+            "Soldado en el extranjero necesita dinero para el pasaje",
+        )
+
+        assertTrue(result.flags.contains("scam_romance"))
+    }
+
+    @Test
+    fun `circus clown is not an insult`() {
+        val result = Sanitizer.sanitize(
+            "com.google.android.youtube",
+            null,
+            "El payaso del circo hizo un truco",
+        )
+
+        assertFalse(result.flags.contains("insult_mild"))
+    }
+
+    @Test
+    fun `sports points are not a points scam`() {
+        val result = Sanitizer.sanitize(
+            "com.whatsapp",
+            "Matías",
+            "El partido tiene tres puntos y vamos ganando",
+        )
+
+        assertFalse(result.flags.contains("scam_points"))
+    }
 }

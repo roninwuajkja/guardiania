@@ -89,7 +89,7 @@ class Settings(BaseSettings):
     # --- Motor de IA (Módulo A) ------------------------------------------------
     # La nube recibe SOLO el vector derivado. AI_SEND_SNIPPET existe como
     # compuerta explícita para un futuro con consentimiento y DPA firmados; en
-    # 1.5.0 ninguna ruta acepta texto, por lo que el valor no habilita nada.
+    # 1.6.0 ninguna ruta acepta texto, por lo que el valor no habilita nada.
     ai_enabled: bool = True
     ai_send_snippet: bool = False
     # auto = primer proveedor con clave; explícito = ese manda y el resto queda
