@@ -2,6 +2,8 @@
 
 ![IA Guardian](docs/screenshots/banner.png)
 
+> **APK Android 1.4.0:** [descargar desde GitHub Releases](https://github.com/roninwuajkja/guardiania/releases/tag/v1.4.0) · [changelog](CHANGELOG.md)
+
 Control parental para Android con **privacidad por diseño**: la conversación nunca sale del teléfono. El agente analiza localmente, descarta el texto y envía solo un vector de señales derivadas. El tutor recibe alertas explicables, no contenido.
 
 > **Proyecto de Título — versión 1.4.0 (defensa).** Los datos de la demo son sintéticos. El motor de riesgo combina reglas explicables y una evaluación de IA que **solo recibe el vector derivado** (nunca texto); si no hay proveedor configurado, opera en modo heurístico. No es un diagnóstico ni reemplaza una conversación familiar. Antes de operar con datos reales de menores se requiere revisión legal chilena y auditoría de seguridad independiente; ver [`docs/compliance/compuerta-lanzamiento.md`](docs/compliance/compuerta-lanzamiento.md).
