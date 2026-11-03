@@ -37,6 +37,7 @@ Todas las versiones relevantes de IA Guardian. El detalle técnico vive en
 - El QR del panel web ahora incluye `viewBox` y escala completo dentro de su tarjeta.
 - El código manual de la app Android quedó centrado, junto con su etiqueta y el botón de copiar.
 - En “Señales recientes”, el mensaje solo se puede expandir si no cabe en dos líneas; al expandirlo se ve una sola vez, sin duplicar el texto.
+- En **Alertas**, “Por qué se generó” ya no repite el mensaje: aparece solo cuando aporta evidencia o consejo, y el texto largo se expande en su lugar.
 
 ### Documentación y presentación
 
