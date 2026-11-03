@@ -20,6 +20,7 @@ from .ai_evaluator import ai_evaluator
 from .alerts import create_ai_alert, notify_alert, severity_for
 from .audit import record
 from .captures import persist_capture
+from .offline import mark_online, sweep_offline
 
 
 def validate_vector(ctx, vector: DerivedFeatureVector, now) -> None:
@@ -70,6 +71,9 @@ async def evaluate_vector(db: AsyncSession, ctx, vector: DerivedFeatureVector) -
 
     ctx.device.ultima_conexion = now
     await db.commit()
+
+    await mark_online(db, ctx)
+    await sweep_offline(db, tutor_id=ctx.binding.tutor_id)
 
     notified = False
     if alert is not None:

@@ -1,9 +1,11 @@
+import base64
+import json
 import logging
 import os
 from functools import lru_cache
 from pathlib import Path
 
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -135,8 +137,58 @@ class Settings(BaseSettings):
     # siendo el canal en tiempo real. El payload nunca incluye texto.
     fcm_enabled: bool = False
     firebase_credentials_file: Path = BASE_DIR / "secrets" / "firebase-service-account.json"
+    # Permite desplegar sin disco persistente: el JSON se escribe a un archivo
+    # temporal al arrancar. Nunca se registra en logs.
+    firebase_credentials_json: str | None = None
     fcm_timeout_ms: int = 1500
     android_package_name: str = "cl.guardiania.agent"
+
+    # Minutos sin sincronizar antes de avisar «teléfono sin señal».
+    offline_alert_minutes: int = 60
+
+    @model_validator(mode="before")
+    @classmethod
+    def materialize_firebase_credentials(cls, data):
+        """Escribe la cuenta de servicio desde una variable de entorno.
+
+        Render gratuito no permite subir archivos secretos, así que la
+        credencial viaja como variable (JSON o base64) y se materializa en
+        /tmp antes de validar la configuración.
+        """
+
+        if not isinstance(data, dict):
+            return data
+        raw = data.get("firebase_credentials_json") or os.environ.get("FIREBASE_CREDENTIALS_JSON")
+        if not raw:
+            return data
+        text = str(raw).strip()
+        if not text.startswith("{"):
+            try:
+                text = base64.b64decode(text).decode("utf-8")
+            except Exception:
+                return data
+        json.loads(text)  # si no es JSON válido, se ignora sin filtrar el contenido
+        target = Path(
+            data.get("firebase_credentials_file")
+            or os.environ.get("FIREBASE_CREDENTIALS_FILE")
+            or "/tmp/firebase-service-account.json"
+        )
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(text, encoding="utf-8")
+        try:
+            target.chmod(0o600)
+        except OSError:
+            pass
+        data["firebase_credentials_file"] = str(target)
+        data["fcm_enabled"] = True
+        return data
+
+    @field_validator("offline_alert_minutes")
+    @classmethod
+    def offline_minutes_range(cls, value: int) -> int:
+        if not 5 <= value <= 1440:
+            raise ValueError("OFFLINE_ALERT_MINUTES debe estar entre 5 y 1440")
+        return value
 
     @field_validator(
         "gemini_api_key",
