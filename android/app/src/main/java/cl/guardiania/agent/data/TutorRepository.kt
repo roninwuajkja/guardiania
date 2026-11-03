@@ -97,6 +97,24 @@ class TutorRepository(private val store: SecureStore) {
         }
     }
 
+    suspend fun setUnlinkCode(bindingId: String, code: String) {
+        authorized { api, token ->
+            val response = api.tutorSetUnlinkCode(
+                "Bearer $token",
+                bindingId,
+                TutorUnlinkCodeRequest(code),
+            )
+            if (!response.isSuccessful) throw HttpException(response)
+        }
+    }
+
+    suspend fun clearUnlinkCode(bindingId: String) {
+        authorized { api, token ->
+            val response = api.tutorClearUnlinkCode("Bearer $token", bindingId)
+            if (!response.isSuccessful) throw HttpException(response)
+        }
+    }
+
     suspend fun generatePairing(childLabel: String?, declaresGuardianship: Boolean): TutorPairingDto =
         authorized { api, token ->
             api.tutorGeneratePairing(

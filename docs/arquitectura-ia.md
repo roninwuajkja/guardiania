@@ -63,20 +63,6 @@ sequenceDiagram
     Note over A,D: El ticket del WebSocket no sirve para la API REST.<br/>La query string con ticket se rechaza (4401).
 ```
 
-### Diagrama ASCII
-
-```
- Tutor                     API                        Menor
-   |                        |                          |
-   |-- generar (tutoría) -->|                          |
-   |<-- código + QR ------- |                          |
-   |== WS /ws/pairing ======|                          |
-   |                        |<-- verificar + asiente --|
-   |                        |--- binding ACTIVO ------>|
-   |<== pairing_state ACTIVO|                          |
-   |                        |                          |
-```
-
 Reglas de seguridad:
 
 - El ticket viaja **solo** en `Sec-WebSocket-Protocol`, nunca en la URL.
@@ -194,30 +180,21 @@ sequenceDiagram
     E->>DB: marca señales como enviadas
 ```
 
-### Diagrama ASCII
+### Flujo resumido
 
-```
-Notificación ──► Sanitizer ──► SQLCipher          (texto descartado)
-                                  │
-                                  ▼
-                            SyncEngine
-                             │       │
-               señal MEDIA/ALTA   resto
-                             │       │
-                             ▼       ▼
-                 /captures/evaluate  /captures/sync
-                             │       │
-                             ▼       ▼
-                       AIEvaluator  reglas deterministas
-                             │       │
-                             └───┬───┘
-                                 ▼
-                          PostgreSQL (verdad)
-                                 │
-                    ┌────────────┴────────────┐
-                    ▼                         ▼
-             TutorHub / WS              FCM HTTP v1
-             (primer plano)         (segundo plano / cerrada)
+```mermaid
+flowchart TD
+  N["Notificación"] --> S["Sanitizer\ntexto descartado"]
+  S --> DB[("SQLCipher")]
+  DB --> E["SyncEngine"]
+  E -->|"señal MEDIA/ALTA"| EVAL["POST /captures/evaluate"]
+  E -->|"resto"| SYNC["POST /captures/sync"]
+  EVAL --> AI["AIEvaluator"]
+  SYNC --> R["Reglas deterministas"]
+  AI --> PG[("PostgreSQL\nfuente de verdad")]
+  R --> PG
+  PG --> WS["TutorHub / WebSocket\nprimer plano"]
+  PG --> FCM["FCM HTTP v1\nsegundo plano o app cerrada"]
 ```
 
 ### Por qué dos rutas
@@ -262,18 +239,15 @@ operativo, no del backend.
 
 ### Degradación
 
-```
-            ┌──────────────┐  timeout/error   ┌──────────────────────────┐
-vector ────►│    Groq      │─────────────────►│ Gemini / OpenAI / Anthropic│
-            └──────┬───────┘                  └────────┬─────────────────┘
-                   │ éxito                             │ éxito
-                   ▼                                   ▼
-              Assessment                          Assessment
-                   │ todos fallan, 429/503 o breaker abierto
-                   ▼
-            ┌──────────────┐
-            │  Heurística  │  determinista, sin red
-            └──────────────┘
+```mermaid
+flowchart TD
+  V["Vector derivado"] --> G["Groq"]
+  G -->|"timeout / error"| F["Gemini / OpenAI / Anthropic"]
+  G -->|"éxito"| A["Assessment"]
+  F -->|"éxito"| A
+  G -->|"falla, 429/503\no breaker abierto"| H["Heurística\ndeterminista, sin red"]
+  F -->|"falla, 429/503\no breaker abierto"| H
+  H --> A
 ```
 
 - **Caché** por hash del vector (5 min, 512 entradas): no guarda texto.
