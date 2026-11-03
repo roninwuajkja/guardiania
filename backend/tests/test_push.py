@@ -72,8 +72,8 @@ def test_payload_uses_a_system_notification_without_content(service):
 
     assert result.sent == 1
     message = FakeClient.captured[0]["message"]
-    assert message["notification"]["title"] == "IA Guardian · Señal alta"
-    assert message["notification"]["body"] == "Señal alta en el teléfono"
+    assert message["notification"]["title"] == "IA Guardian · Señal de riesgo"
+    assert message["notification"]["body"] == "Señal alta · el teléfono"
     assert message["android"]["priority"] == "high"
     assert message["android"]["notification"]["channel_id"] == "guardiania_alerts"
     assert message["android"]["ttl"] == "300s"
@@ -109,3 +109,25 @@ def test_unregistered_token_is_deactivated(service):
 
     assert result.sent == 0
     assert result.invalid_tokens == ("token-abc",)
+
+def test_payload_includes_category_and_summary(service):
+    result = asyncio.run(
+        service.send(
+            ["token-abc"],
+            data={
+                "tipo": "risk_alert",
+                "alert_id": "alert-2",
+                "severidad": "MEDIA",
+                "categoria": "gambling",
+                "device_alias": "Sofía",
+                "resumen": "Se detectaron señales de apuestas en la ventana.",
+            },
+        )
+    )
+
+    assert result.sent == 1
+    notification = FakeClient.captured[0]["message"]["notification"]
+    assert notification["title"] == "IA Guardian · Apuestas"
+    assert "media" in notification["body"]
+    assert "Sofía" in notification["body"]
+    assert "apuestas" in notification["body"]

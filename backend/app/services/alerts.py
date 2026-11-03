@@ -3,7 +3,8 @@
 Garantías:
 - ``alertas_riesgo`` guarda solo la evaluación derivada; ningún texto crudo.
 - El evento WebSocket lleva el detalle que el panel ya expone por REST.
-- El push FCM lleva el mínimo: alert_id, severidad, categoría y alias.
+- El push FCM lleva la alerta derivada: id, severidad, categoría, alias y el
+  resumen generado. Nunca texto de conversaciones ni contactos.
 - La deduplicación usa ``(dispositivo, evento, categoría)``, igual que el motor
   de reglas, para no duplicar alertas del mismo evento.
 """
@@ -208,6 +209,8 @@ async def notify_alert(
                     "severidad": alert.severidad,
                     "categoria": alert.categoria,
                     "device_alias": device_alias,
+                    "etiqueta_menor": etiqueta_menor or "",
+                    "resumen": alert.resumen[:180],
                     "ts": alert.creado_en.isoformat(),
                 },
             ),
@@ -246,12 +249,11 @@ async def dispatch_rule_alerts(
     """
 
     for alert in alerts:
-        high = alert.severidad in {Severidad.ALTA.value, Severidad.CRITICA.value}
         await notify_alert(
             db,
             tutor_id=tutor_id,
             alert=alert,
             device_alias=device.alias,
             etiqueta_menor=binding.etiqueta_menor,
-            allow_push=high,
+            allow_push=True,
         )

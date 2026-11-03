@@ -86,8 +86,8 @@ Reglas de seguridad:
 > El **panel web** usa el mismo `/ws/tutor`: pide un ticket, escucha `risk_alert`
 > y refresca el resumen cada 15 s (y al volver a la pestaña) como respaldo. Así
 > las alertas, los contadores y el estado de los teléfonos aparecen sin recargar.
-> También se publican las alertas de reglas MEDIA; el push FCM queda reservado a
-> ALTA/CRITICA.
+> También se publican las alertas de reglas MEDIA; **todas las alertas** (BAJA,
+> MEDIA, ALTA) se empujan con su severidad y resumen derivado.
 
 ### Teléfono sin señal
 
@@ -126,10 +126,13 @@ completa cuando no lo está.
 
 ### Push en tiempo real
 
-El push de alertas viaja como **`notification` + `data`**:
+El push de alertas viaja como **`notification` + `data`** y se envía para
+**todas las severidades** (BAJA, MEDIA, ALTA), no solo las críticas:
 
 - El bloque `notification` lo pinta el sistema aunque la app esté cerrada; no
   necesita despertarla.
+- Título con la categoría legible (`IA Guardian · Apuestas`) y cuerpo con
+  severidad, alias y el resumen derivado (`Señal media · Sofía: …`).
 - El `data` lleva `alert_id`, severidad, categoría, alias y `open_alerts` para
   abrir la pestaña de alertas al tocar.
 - Prioridad `high`, TTL de 5 minutos y canal `guardiania_alerts`.
