@@ -34,7 +34,7 @@ Todas las versiones relevantes de IA Guardian. El detalle técnico vive en
 
 ### Documentación y presentación
 
-- README sin tablas de capturas: las imágenes quedan apiladas por sección.
+- README sin capturas: solo queda el banner de portada y la documentación.
 - Diagramas ASCII reemplazados por Mermaid en `android/README.md`,
   `docs/arquitectura-ia.md` y `docs/compliance/registro-tratamiento.md`.
 - Banner y logo nuevos, con transparencia real fuera de la tarjeta.
