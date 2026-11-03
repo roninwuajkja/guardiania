@@ -1431,6 +1431,32 @@ svg {
   overflow: hidden;
 }
 
+.alert-summary.is-expanded {
+  display: block;
+  overflow: visible;
+  -webkit-line-clamp: unset;
+}
+
+.alert-expand {
+  margin-top: 5px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--pine-700);
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.alert-expand:hover {
+  text-decoration: underline;
+}
+
+[data-theme='dark'] .alert-expand {
+  color: var(--sage-300);
+}
+
 .alert-why {
   margin-top: 6px;
 }

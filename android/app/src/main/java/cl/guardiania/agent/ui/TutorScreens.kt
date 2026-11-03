@@ -918,25 +918,43 @@ private fun PairingLive(
                 }
                 Spacer(Modifier.height(12.dp))
             }
-            Text("Código manual", color = Muted, fontFamily = Mono, fontSize = 9.sp, letterSpacing = 1.sp)
-            SelectionContainer {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
                 Text(
-                    pairing.manualCode,
-                    color = Ink,
+                    "Código manual",
+                    color = Muted,
                     fontFamily = Mono,
-                    fontSize = 32.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    letterSpacing = 6.sp,
+                    fontSize = 9.sp,
+                    letterSpacing = 1.sp,
+                    textAlign = TextAlign.Center,
+                )
+                SelectionContainer {
+                    Text(
+                        pairing.manualCode,
+                        color = Ink,
+                        fontFamily = Mono,
+                        fontSize = 32.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        letterSpacing = 6.sp,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+                TextButton(
+                    onClick = { clipboard.setText(AnnotatedString(pairing.manualCode.replace(" ", ""))) },
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text("Copiar código", fontSize = 12.sp)
+                }
+                Text(
+                    "El código expira en 10 minutos. Si no se usa, genera uno nuevo.",
+                    color = Muted,
+                    fontSize = 11.sp,
+                    textAlign = TextAlign.Center,
                 )
             }
-            TextButton(onClick = { clipboard.setText(AnnotatedString(pairing.manualCode.replace(" ", ""))) }) {
-                Text("Copiar código", fontSize = 12.sp)
-            }
-            Text(
-                "El código expira en 10 minutos. Si no se usa, genera uno nuevo.",
-                color = Muted,
-                fontSize = 11.sp,
-            )
         }
         Spacer(Modifier.height(8.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {

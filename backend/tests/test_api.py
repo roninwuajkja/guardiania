@@ -172,6 +172,8 @@ def test_qr_svg_has_few_modules(client, auth_headers):
     width = int(svg.split('width="', 1)[1].split('"', 1)[0])
     modules = width // 6 - 2
     assert modules <= 45, f"QR de {modules} módulos: demasiado denso para pantalla"
+    # Sin viewBox el SVG no escala con el contenedor y queda diminuto arriba.
+    assert f'viewBox="0 0 {width} {width}"' in svg
 
 
 def test_pairing_rejects_unknown_code(client):

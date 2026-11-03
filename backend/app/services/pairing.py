@@ -1,4 +1,5 @@
 import io
+import re
 import uuid
 from dataclasses import dataclass
 from datetime import datetime, timedelta
@@ -58,7 +59,22 @@ def _render_qr(payload: str) -> str:
         svgclass=None,
         lineclass=None,
     )
-    return buffer.getvalue().decode("utf-8")
+    svg = buffer.getvalue().decode("utf-8")
+    # Segno emite width/height sin viewBox. Sin viewBox el CSS puede agrandar
+    # el elemento, pero el dibujo queda en su tamaño original arriba a la
+    # izquierda. Se agrega el viewBox para que escale con el contenedor.
+    match = re.search(r"<svg\b([^>]*)>", svg)
+    if match:
+        attrs = match.group(1)
+        width = re.search(r'\bwidth="([^"]+)"', attrs)
+        height = re.search(r'\bheight="([^"]+)"', attrs)
+        if width and height and "viewBox=" not in attrs:
+            svg = svg.replace(
+                match.group(0),
+                f'<svg{attrs} viewBox="0 0 {width.group(1)} {height.group(1)}">',
+                1,
+            )
+    return svg
 
 
 async def generate_pairing(
