@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends, Response, status
+import asyncio
+
+from fastapi import APIRouter, Depends, Query, Response, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -110,8 +112,18 @@ async def unregister_token(
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 @router.post("/push/test", response_model=PushTestOut)
-async def test_push(tutor: User = Depends(current_tutor), db: AsyncSession = Depends(get_db)):
-    """Envía una push de prueba solo a los tokens del tutor autenticado."""
+async def test_push(
+    tutor: User = Depends(current_tutor),
+    db: AsyncSession = Depends(get_db),
+    delay_seconds: int = Query(default=0, ge=0, le=30),
+):
+    """Envía una push de prueba solo a los tokens del tutor autenticado.
+
+    ``delay_seconds`` permite programar la prueba para que el tutor pueda
+    cerrar la app antes de que FCM la entregue. Sin retraso, un mensaje
+    ``notification`` enviado con la app en primer plano lo consume el servicio
+    local y el sistema no lo pinta.
+    """
 
     await enforce(f"push:test:{tutor.id}", 5, 60)
     rows = list(
@@ -128,16 +140,33 @@ async def test_push(tutor: User = Depends(current_tutor), db: AsyncSession = Dep
     if not tokens:
         return PushTestOut(enabled=True, sent=0, invalid=0, tokens=0)
 
-    result = await push_service.send(
-        tokens,
-        data={
-            "tipo": "test",
-            "severidad": "BAJA",
-            "categoria": "test",
-            "device_alias": "IA Guardian",
-            "ts": utcnow().isoformat(),
-        },
-    )
+    data = {
+        "tipo": "test",
+        "severidad": "BAJA",
+        "categoria": "test",
+        "device_alias": "IA Guardian",
+        "ts": utcnow().isoformat(),
+    }
+
+    if delay_seconds > 0:
+        async def send_later() -> None:
+            await asyncio.sleep(delay_seconds)
+            try:
+                await push_service.send(tokens, data=data)
+            except Exception:  # noqa: BLE001 - una prueba no debe tumbar el proceso
+                return
+
+        asyncio.create_task(send_later())
+        return PushTestOut(
+            enabled=True,
+            sent=0,
+            invalid=0,
+            tokens=len(tokens),
+            scheduled=True,
+            delay_seconds=delay_seconds,
+        )
+
+    result = await push_service.send(tokens, data=data)
     if result.invalid_tokens:
         invalid = set(result.invalid_tokens)
         for row in rows:
@@ -150,4 +179,6 @@ async def test_push(tutor: User = Depends(current_tutor), db: AsyncSession = Dep
         sent=result.sent,
         invalid=len(result.invalid_tokens),
         tokens=len(tokens),
+        scheduled=False,
+        delay_seconds=0,
     )

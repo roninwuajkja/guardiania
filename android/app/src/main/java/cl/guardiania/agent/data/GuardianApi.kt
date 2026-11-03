@@ -155,6 +155,7 @@ interface GuardianApi {
     @POST("api/v1/push/test")
     suspend fun tutorTestPush(
         @Header("Authorization") authorization: String,
+        @Query("delay_seconds") delaySeconds: Int = 0,
     ): PushTestDto
 
     @POST("api/v1/push/tokens/unregister")

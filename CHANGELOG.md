@@ -6,6 +6,18 @@ Todas las versiones relevantes de IA Guardian. El detalle técnico vive en
 
 > Las notas de cada versión se publican en [GitHub Releases](https://github.com/roninwuajkja/guardiania/releases). Este archivo conserva el historial completo.
 
+## 1.6.1 — 2026-11-03
+
+### Notificaciones del tutor
+
+- La prueba push ahora se **programa con 10 segundos de retraso** para que el
+  tutor pueda cerrar la app antes de que FCM la entregue.
+- La app muestra “Push programada” y el número de tokens; si no hay token o FCM
+  no está configurado, lo indica explícitamente.
+- Las notificaciones de insultos y estafas usan su etiqueta específica en lugar
+  de “Señal de riesgo”.
+- Android `1.6.1` (`versionCode` 8) y backend `1.6.1`.
+
 ## 1.6.0 — 2026-11-03
 
 ### Detección de lenguaje y estafas
