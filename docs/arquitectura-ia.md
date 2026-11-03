@@ -406,6 +406,11 @@ Producción exige además PostgreSQL, TLS, verificación de correo y
   un adulto converse, no una prueba.
 - La heurística y las reglas léxicas pueden dar falsos positivos y falsos
   negativos; ninguna evaluación reemplaza la conversación familiar.
+- **Cobertura observacional:** el motor solo ve notificaciones y uso. No lee
+  chats, fotos, audio ni conversaciones dentro de las apps. Un contenido dañino
+  que no genera una notificación o que no coincide con una regla local puede no
+  detectarse; ampliar eso requeriría un modelo local o leer contenido, con otro
+  análisis de privacidad y consentimiento.
 - Sin claves de proveedor, el sistema opera solo con heurística local.
 - **Free tier de Groq:** alrededor de 30 req/min y 1.000 req/día por modelo,
   con 8K TPM y 200K TPD; los valores exactos se confirman en la consola y con

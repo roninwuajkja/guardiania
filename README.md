@@ -274,6 +274,7 @@ FCM puede cargarse desde `FIREBASE_CREDENTIALS_JSON` (JSON o base64): el backend
 ## Límites honestos
 
 - **No es un diagnóstico clínico** ni un sistema certificado. Es una señal para conversar, no una prueba.
+- **Cobertura:** el agente ve notificaciones y uso, no chats, fotos ni audio. Un contenido dañino sin notificación o fuera de las reglas locales puede no detectarse.
 - **No se puede impedir** que el menor desinstale la app, borre sus datos o restablezca el teléfono sin MDM. Se detecta y se avisa.
 - **No se puede impedir** que desactive notificaciones o active No molestar; se reporta el estado y se alerta si se pierde el acceso.
 - **DND** no debería cegar al listener; el panel muestra “última notificación” para distinguirlo. Si un fabricante lo bloquea, queda el contexto de uso.
