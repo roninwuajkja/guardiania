@@ -989,6 +989,8 @@ function alertRow(alert, { compact = false } = {}) {
   const advice = (alert.reglas || [])
     .map((rule) => rule.consejo_educativo)
     .find((value) => typeof value === 'string' && value.trim());
+  const title = alertRuleLabel(alert);
+  const showWhy = !compact && (Boolean(advice) || (evidence && evidence !== title));
   const canAct = ['NUEVA', 'VISTA'].includes(alert.estado);
   return `
     <article class="alert-row">
@@ -1001,7 +1003,7 @@ function alertRow(alert, { compact = false } = {}) {
           <span class="sev sev--${alert.severidad}">${severityLabel(alert.severidad)}</span>
           ${compact && alert.estado !== 'NUEVA' ? `<span>${alertStateLabel(alert.estado)}</span>` : ''}
         </div>
-        <h3 class="alert-title">${escapeHtml(alertRuleLabel(alert))}</h3>
+        <h3 class="alert-title">${escapeHtml(title)}</h3>
         ${compact ? `
           <div class="alert-summary-block" data-alert-id="${escapeAttr(alert.id)}">
             <p class="alert-summary">${escapeHtml(alert.resumen)}</p>
@@ -1011,12 +1013,12 @@ function alertRow(alert, { compact = false } = {}) {
             <p class="alert-summary">${escapeHtml(alert.resumen)}</p>
             <button class="alert-expand" type="button" data-action="expand-alert-summary" hidden>Ver mensaje completo</button>
           </div>
-          <details class="alert-why" data-alert-id="${escapeAttr(alert.id)}">
+          ${showWhy ? `<details class="alert-why" data-alert-id="${escapeAttr(alert.id)}">
             <summary>Por qué se generó</summary>
-            <p class="alert-evidence">${escapeHtml(evidence || 'Regla heurística del motor de riesgo local.')}</p>
+            ${evidence && evidence !== title ? `<p class="alert-evidence">${escapeHtml(evidence)}</p>` : ''}
             ${advice ? `<p class="alert-why-advice">${escapeHtml(advice)}</p>` : ''}
             <p class="alert-note">Sin contenido del mensaje: solo señales derivadas.</p>
-          </details>`}
+          </details>` : ''}`}
         ${compact ? '' : `
           <div class="alert-actions">
             ${alert.estado === 'NUEVA' ? `<button class="btn btn-sm btn-secondary" type="button" data-action="alert-state" data-id="${alert.id}" data-state="VISTA">Marcar vista</button>` : ''}
