@@ -4,6 +4,8 @@ Todas las versiones relevantes de IA Guardian. El detalle técnico vive en
 [`docs/architecture.md`](docs/architecture.md) y
 [`docs/arquitectura-ia.md`](docs/arquitectura-ia.md).
 
+> Las notas de cada versión se publican en [GitHub Releases](https://github.com/roninwuajkja/guardiania/releases). Este archivo conserva el historial completo.
+
 ## 1.5.0 — 2026-11-03
 
 ### Panel del tutor
