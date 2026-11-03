@@ -1588,6 +1588,10 @@ svg {
   overflow-wrap: anywhere;
 }
 
+[data-theme='dark'] .panel-address code {
+  color: var(--sage-300);
+}
+
 .panel-address-note {
   margin: 0 0 14px;
   color: var(--muted);
