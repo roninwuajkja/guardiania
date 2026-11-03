@@ -99,6 +99,8 @@ fun TutorShell(
     onTab: (TutorTab) -> Unit,
     onAlertState: (String, String) -> Unit,
     onRevoke: (String) -> Unit,
+    onSetUnlinkCode: (String, String) -> Unit,
+    onClearUnlinkCode: (String) -> Unit,
     onGeneratePairing: (String, Boolean) -> Unit,
     onCancelPairing: () -> Unit,
     onClearPairing: () -> Unit,
@@ -131,6 +133,8 @@ fun TutorShell(
                 TutorTab.EQUIPOS -> TutorDevices(
                     state = state,
                     onRevoke = onRevoke,
+                    onSetUnlinkCode = onSetUnlinkCode,
+                    onClearUnlinkCode = onClearUnlinkCode,
                     onGeneratePairing = onGeneratePairing,
                     onCancelPairing = onCancelPairing,
                     onClearPairing = onClearPairing,
@@ -604,12 +608,15 @@ private enum class DeviceFilter { ACTIVOS, TODOS }
 private fun TutorDevices(
     state: TutorUiState,
     onRevoke: (String) -> Unit,
+    onSetUnlinkCode: (String, String) -> Unit,
+    onClearUnlinkCode: (String) -> Unit,
     onGeneratePairing: (String, Boolean) -> Unit,
     onCancelPairing: () -> Unit,
     onClearPairing: () -> Unit,
 ) {
     var filter by rememberSaveable { mutableStateOf(DeviceFilter.ACTIVOS) }
     var revokeTarget by remember { mutableStateOf<TutorDeviceDto?>(null) }
+    var unlinkCodeTarget by remember { mutableStateOf<TutorDeviceDto?>(null) }
     val pairing = state.pairing
     val filtered = state.devices.filter { device ->
         filter == DeviceFilter.TODOS || device.vinculacionEstadoActivo()
@@ -666,7 +673,11 @@ private fun TutorDevices(
             item { EmptyNote("No hay dispositivos en esta vista.") }
         } else {
             items(filtered, key = { it.id }) { device ->
-                DeviceCard(device) { revokeTarget = device }
+                DeviceCard(
+                    device = device,
+                    onRevoke = { revokeTarget = device },
+                    onUnlinkCode = { unlinkCodeTarget = device },
+                )
             }
         }
     }
@@ -695,6 +706,87 @@ private fun TutorDevices(
                     destructive = true,
                 )
                 DialogSecondaryButton("Cancelar") { revokeTarget = null }
+            },
+        )
+    }
+    if (unlinkCodeTarget != null) {
+        var code by remember { mutableStateOf("") }
+        var confirm by remember { mutableStateOf("") }
+        var dialogError by remember { mutableStateOf<String?>(null) }
+        val target = unlinkCodeTarget
+        GuardianDialog(
+            icon = Icons.Outlined.Lock,
+            title = if (target?.unlinkCodeSet == true) {
+                "Cambiar código de desvinculación"
+            } else {
+                "Definir código de desvinculación"
+            },
+            onDismiss = { unlinkCodeTarget = null },
+            iconTint = Pine700,
+            iconBackground = SageSoft,
+            content = {
+                DialogBodyText(
+                    "El teléfono pedirá este PIN de 6 dígitos para desvincularse. Tú siempre puedes revocar el acceso sin él.",
+                )
+                Spacer(Modifier.height(12.dp))
+                OutlinedTextField(
+                    value = code,
+                    onValueChange = { value -> code = value.filter(Char::isDigit).take(6); dialogError = null },
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("Código de 6 dígitos") },
+                    visualTransformation = PasswordVisualTransformation(),
+                    singleLine = true,
+                    shape = RoundedCornerShape(11.dp),
+                    colors = dialogFieldColors(),
+                )
+                Spacer(Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = confirm,
+                    onValueChange = { value -> confirm = value.filter(Char::isDigit).take(6); dialogError = null },
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("Repetir código") },
+                    visualTransformation = PasswordVisualTransformation(),
+                    singleLine = true,
+                    shape = RoundedCornerShape(11.dp),
+                    colors = dialogFieldColors(),
+                )
+                if (dialogError != null) {
+                    Spacer(Modifier.height(8.dp))
+                    DialogErrorText(dialogError.orEmpty())
+                }
+                if (target?.unlinkCodeSet == true) {
+                    Spacer(Modifier.height(10.dp))
+                    DialogNote("Al guardar, el código anterior dejará de funcionar.")
+                }
+            },
+            actions = {
+                DialogPrimaryButton(
+                    text = "Guardar código",
+                    enabled = code.length == 6 && confirm.length == 6,
+                    onClick = {
+                        when {
+                            code.length != 6 -> dialogError = "El código debe tener 6 dígitos."
+                            confirm != code -> dialogError = "Los códigos no coinciden."
+                            else -> {
+                                target?.bindingId?.let { onSetUnlinkCode(it, code) }
+                                unlinkCodeTarget = null
+                            }
+                        }
+                    },
+                )
+                if (target?.unlinkCodeSet == true) {
+                    TextButton(
+                        onClick = {
+                            target.bindingId?.let(onClearUnlinkCode)
+                            unlinkCodeTarget = null
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.textButtonColors(contentColor = Oxblood),
+                    ) {
+                        Text("Quitar código actual", fontSize = 12.5.sp, fontWeight = FontWeight.Medium)
+                    }
+                }
+                DialogSecondaryButton("Cancelar") { unlinkCodeTarget = null }
             },
         )
     }
@@ -898,7 +990,7 @@ private fun DeviceRow(device: TutorDeviceDto) {
 }
 
 @Composable
-private fun DeviceCard(device: TutorDeviceDto, onRevoke: () -> Unit) {
+private fun DeviceCard(device: TutorDeviceDto, onRevoke: () -> Unit, onUnlinkCode: () -> Unit) {
     val active = device.vinculacionEstadoActivo()
     Surface(
         shape = RoundedCornerShape(15.dp),
@@ -981,14 +1073,32 @@ private fun DeviceCard(device: TutorDeviceDto, onRevoke: () -> Unit) {
                 )
             }
             if (active && device.bindingId != null) {
-                TextButton(
-                    onClick = onRevoke,
-                    colors = ButtonDefaults.textButtonColors(contentColor = Oxblood),
-                    contentPadding = PaddingValues(0.dp),
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(14.dp),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Icon(Icons.Outlined.Delete, contentDescription = null, modifier = Modifier.size(15.dp))
-                    Spacer(Modifier.width(5.dp))
-                    Text("Revocar acceso", fontSize = 11.5.sp)
+                    TextButton(
+                        onClick = onUnlinkCode,
+                        colors = ButtonDefaults.textButtonColors(contentColor = Pine700),
+                        contentPadding = PaddingValues(0.dp),
+                    ) {
+                        Icon(Icons.Outlined.Lock, contentDescription = null, modifier = Modifier.size(15.dp))
+                        Spacer(Modifier.width(5.dp))
+                        Text(
+                            if (device.unlinkCodeSet) "Cambiar código" else "Definir código",
+                            fontSize = 11.5.sp,
+                        )
+                    }
+                    TextButton(
+                        onClick = onRevoke,
+                        colors = ButtonDefaults.textButtonColors(contentColor = Oxblood),
+                        contentPadding = PaddingValues(0.dp),
+                    ) {
+                        Icon(Icons.Outlined.Delete, contentDescription = null, modifier = Modifier.size(15.dp))
+                        Spacer(Modifier.width(5.dp))
+                        Text("Revocar acceso", fontSize = 11.5.sp)
+                    }
                 }
             }
         }

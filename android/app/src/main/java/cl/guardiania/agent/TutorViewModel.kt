@@ -382,6 +382,32 @@ class TutorViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun setUnlinkCode(bindingId: String, code: String) {
+        viewModelScope.launch {
+            _ui.update { it.copy(busy = true, error = null, message = null) }
+            try {
+                withContext(Dispatchers.IO) { repo.setUnlinkCode(bindingId, code) }
+                loadDashboard()
+                _ui.update { it.copy(busy = false, message = "Código de desvinculación activo") }
+            } catch (error: Exception) {
+                _ui.update { it.copy(busy = false, error = error.tutorMessage()) }
+            }
+        }
+    }
+
+    fun clearUnlinkCode(bindingId: String) {
+        viewModelScope.launch {
+            _ui.update { it.copy(busy = true, error = null, message = null) }
+            try {
+                withContext(Dispatchers.IO) { repo.clearUnlinkCode(bindingId) }
+                loadDashboard()
+                _ui.update { it.copy(busy = false, message = "Código de desvinculación eliminado") }
+            } catch (error: Exception) {
+                _ui.update { it.copy(busy = false, error = error.tutorMessage()) }
+            }
+        }
+    }
+
     fun generatePairing(childLabel: String, declaresGuardianship: Boolean) {
         if (_ui.value.busy) return
         if (!declaresGuardianship) {

@@ -41,12 +41,14 @@ Los datos de menores son **sensibles por contexto** aunque no sean categorías e
 
 ## 4. Flujos y encargados
 
-```text
-Menor (SQLCipher) --vector derivado/TLS--> API FastAPI --PostgreSQL--> Panel tutor
-                                             |--> Proveedor de IA (solo vector; sin texto)
-                                             |--> FCM (alert_id, severidad, categoría, alias)
-                                             |--> SMTP (correo transaccional)
-                                             |--> logs/auditoría (sin contenido)
+```mermaid
+flowchart LR
+  M["Menor\nSQLCipher"] -->|"vector derivado / TLS"| API["API FastAPI"]
+  API -->|"PostgreSQL"| P["Panel tutor"]
+  API -->|"solo vector, sin texto"| IA["Proveedor de IA"]
+  API -->|"alert_id, severidad, categoría, alias"| FCM["FCM"]
+  API -->|"correo transaccional"| SMTP["SMTP"]
+  API -->|"sin contenido"| LOG["Logs / auditoría"]
 ```
 
 Los encargados concretos, países y contratos están en [`encargados.md`](encargados.md). Cualquier transferencia internacional requiere cláusulas contractuales y evaluación del país destino antes de producción.

@@ -11,7 +11,7 @@ Control parental para Android con **privacidad por diseño**: la conversación n
 - **Detección ampliada:** el teléfono reconoce 21 señales de riesgo (antes 10), incluidas sextorsión, abuso o maltrato, trata, radicalización, armas, discurso de odio, trastorno alimentario, doxxing, fuga, retos virales peligrosos y estafas. La IA recibe solo esas señales derivadas.
 - **QR de vinculación legible:** token corto firmado (59 caracteres, 37×37 módulos) en vez de un JWT de 89×89 que ningún lector podía decodificar.
 - **Revinculación del mismo teléfono:** un código nuevo del tutor reemplaza la vinculación anterior en vez de responder 409.
-- **Código de desvinculación:** el tutor define un PIN de 6 dígitos; el teléfono lo pide para desvincularse (5 intentos y bloqueo de 15 min). El tutor siempre puede revocar sin él.
+- **Código de desvinculación:** el tutor define un PIN de 6 dígitos desde el panel web o la app Android; el teléfono lo pide para desvincularse (5 intentos y bloqueo de 15 min). El tutor siempre puede revocar sin él.
 - **Panel limpio:** los equipos desvinculados se pueden quitar de la lista sin borrar alertas ni historial.
 - **Aviso de teléfono sin señal:** 30 min (demo) / 60 min, una vez por corte, con reconexión avisada.
 - **Permisos y No molestar:** el teléfono reporta si perdió el acceso a notificaciones; se genera una alerta ALTA. No molestar se muestra como contexto y no alarma. Un uso alto sin notificaciones se envía como `uso_sin_notificaciones`.
@@ -70,13 +70,21 @@ Diagramas y contratos completos en [`docs/architecture.md`](docs/architecture.md
 
 ## Capturas
 
-| Panel web | Alertas del panel | App del menor |
-| --- | --- | --- |
-| ![Resumen del panel](docs/screenshots/web-overview.png) | ![Alertas](docs/screenshots/web-alerts.png) | ![Estado del teléfono](docs/screenshots/android-status.png) |
+### Panel del tutor
 
-| Vinculación web | Vinculación en Android |
-| --- | --- |
-| ![Vincular](docs/screenshots/web-pairing.png) | ![Pairing](docs/screenshots/android-pairing.png) |
+![Resumen del panel](docs/screenshots/web-overview.png)
+
+![Alertas del panel](docs/screenshots/web-alerts.png)
+
+### App del menor
+
+![Estado del teléfono](docs/screenshots/android-status.png)
+
+### Vinculación
+
+![Vincular desde la web](docs/screenshots/web-pairing.png)
+
+![Vincular desde Android](docs/screenshots/android-pairing.png)
 
 ## Estructura
 
@@ -285,6 +293,7 @@ FCM puede cargarse desde `FIREBASE_CREDENTIALS_JSON` (JSON o base64): el backend
 ## Documentación
 
 - [`DESIGN.md`](DESIGN.md) — arquitectura, privacidad, reglas de riesgo y sistema visual.
+- [`CHANGELOG.md`](CHANGELOG.md) — cambios por versión y notas de la APK.
 - [`docs/architecture.md`](docs/architecture.md) — diagramas y contratos de la base.
 - [`docs/arquitectura-ia.md`](docs/arquitectura-ia.md) — IA, presupuesto de latencia, push, sin señal y permisos.
 - [`docs/firebase-setup.md`](docs/firebase-setup.md) — configuración de FCM y diagnóstico.

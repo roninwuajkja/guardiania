@@ -251,6 +251,8 @@ private fun GuardianAgentApp(
                             onTab = tutorVm::selectTab,
                             onAlertState = tutorVm::updateAlert,
                             onRevoke = tutorVm::revokeDevice,
+                            onSetUnlinkCode = tutorVm::setUnlinkCode,
+                            onClearUnlinkCode = tutorVm::clearUnlinkCode,
                             onGeneratePairing = tutorVm::generatePairing,
                             onCancelPairing = tutorVm::cancelPairing,
                             onClearPairing = tutorVm::clearPairing,

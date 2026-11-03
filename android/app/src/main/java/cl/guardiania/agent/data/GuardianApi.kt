@@ -3,10 +3,12 @@ package cl.guardiania.agent.data
 import retrofit2.Response
 import okhttp3.ResponseBody
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.PATCH
 import retrofit2.http.POST
+import retrofit2.http.PUT
 import retrofit2.http.Path
 import retrofit2.http.Query
 import retrofit2.http.Streaming
@@ -81,6 +83,19 @@ interface GuardianApi {
 
     @POST("api/v1/devices/{bindingId}/revoke")
     suspend fun tutorRevoke(
+        @Header("Authorization") authorization: String,
+        @Path("bindingId") bindingId: String,
+    ): Response<Unit>
+
+    @PUT("api/v1/devices/{bindingId}/unlink-code")
+    suspend fun tutorSetUnlinkCode(
+        @Header("Authorization") authorization: String,
+        @Path("bindingId") bindingId: String,
+        @Body body: TutorUnlinkCodeRequest,
+    ): Response<Unit>
+
+    @DELETE("api/v1/devices/{bindingId}/unlink-code")
+    suspend fun tutorClearUnlinkCode(
         @Header("Authorization") authorization: String,
         @Path("bindingId") bindingId: String,
     ): Response<Unit>

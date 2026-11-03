@@ -57,7 +57,7 @@ El build **debug** permite HTTP en claro para desarrollo local. El build **relea
 1. Abre la app y elige **Entrar**.
 2. Escribe la dirección del panel, correo y contraseña. Si olvidaste la clave, **Recuperar contraseña** abre `/recuperar` en el navegador.
 3. El refresh token rota y se guarda en SQLCipher; un `401` dispara un solo refresh con `Mutex`.
-4. En **Equipos** puedes generar una vinculación: es obligatorio declarar la calidad legal de tutor antes de generar el QR/código.
+4. En **Equipos** puedes generar una vinculación: es obligatorio declarar la calidad legal de tutor antes de generar el QR/código. En cada equipo activo, **Definir código** permite crear, cambiar o quitar un PIN de 6 dígitos que el teléfono pedirá al desvincularse.
 5. En **Ajustes**: datos de la cuenta, reenviar verificación si falta, **Seguridad** (cambiar contraseña — cierra todas las sesiones — y cerrar sesión en todos los dispositivos), **Mis datos** (exportar JSON y compartirlo con la hoja del sistema), documentos legales, historial de consentimientos, cambiar a modo menor o cerrar sesión. La eliminación definitiva de la cuenta queda en la consola web, con contraseña y frase de confirmación.
 
 ## Modo menor
@@ -84,23 +84,19 @@ La app vuelve a leer los permisos en `ON_RESUME`; no hace falta reiniciarla.
 
 ## Cómo funciona
 
-```text
-UsageStatsManager ─┐
-                   ├─→ Sanitizer (texto descartado) ─→ FeatureComposer
-NotificationListener ┘                                   │
-                                                         ▼
-                                            SQLCipher (señales + outbox)
-                                                         │
-                                             SyncEngine / HighRiskPolicy
-                                              │                    │
-                                   señal MEDIA/ALTA          resto del lote
-                                              ▼                    ▼
-                                     /captures/evaluate   /captures/sync
-                                              │                    │
-                                              └─────────┬──────────┘
-                                                        ▼
-                                          WebSocket /ws/tutor (primer plano)
-                                          FCM (segundo plano, si está configurado)
+```mermaid
+flowchart LR
+  U["UsageStatsManager"] --> S["Sanitizer\ntexto descartado"]
+  N["NotificationListener\n+ servicio en primer plano"] --> S
+  S --> F["FeatureComposer\nvector derivado"]
+  F --> DB[("SQLCipher\nseñales + outbox")]
+  DB --> E["SyncEngine /\nHighRiskPolicy"]
+  E -->|"señal MEDIA/ALTA"| EVAL["POST /captures/evaluate"]
+  E -->|"resto del lote"| SYNC["POST /captures/sync"]
+  EVAL --> API["FastAPI"]
+  SYNC --> API
+  API --> WS["WebSocket /ws/tutor\nprimer plano"]
+  API --> FCM["FCM\nsegundo plano, si está configurado"]
 ```
 
 - `Sanitizer` normaliza el texto (minúsculas, sin tildes) y aplica reglas léxicas. Devuelve solo `category` + `flags`.

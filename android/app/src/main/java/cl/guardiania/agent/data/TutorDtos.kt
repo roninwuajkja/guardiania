@@ -147,6 +147,9 @@ data class DayPointDto(
 data class AlertStateRequest(val estado: String)
 
 @Serializable
+data class TutorUnlinkCodeRequest(val codigo: String)
+
+@Serializable
 data class TutorPairingRequest(
     @SerialName("etiqueta_menor") val childLabel: String? = null,
     @SerialName("ttl_seconds") val ttlSeconds: Int = 600,
