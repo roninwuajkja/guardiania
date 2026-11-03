@@ -40,7 +40,7 @@ No hay Redis ni cola externa. El **outbox transaccional** vive en la misma base 
 - Categoría de la app (no el nombre del paquete en el panel, salvo el alias del dispositivo).
 - Conteos y minutos, nunca títulos, remitentes, números ni extractos.
 - Flags léxicos normalizados (`gambling`, `self_harm`, …), no el texto que los activó.
-- Un hash salado y truncado de contacto, solo cuando la app expone un identificador estable. **No implementado en 1.5.0**: el campo va `null` y `contacto_recurrente` está reservada.
+- Un hash salado y truncado de contacto, solo cuando la app expone un identificador estable. **No implementado en 1.6.0**: el campo va `null` y `contacto_recurrente` está reservada.
 - Ventana temporal de máximo 60 minutos y `event_id` determinista para idempotencia.
 
 ### Qué se queda en el teléfono
@@ -113,6 +113,9 @@ Las reglas son deterministas y explicables. Cada alerta guarda el código, la et
 | `coercion` | Presión o chantaje | ALTA | 82 |
 | `bullying` | Acoso o exclusión | ALTA | 80 |
 | `hate_speech` | Discurso de odio o discriminación | ALTA | 78 |
+| `insult_severe` | Insultos graves, slurs o deseo de muerte | ALTA | 78 |
+| `insult_moderate` | Insultos directos frecuentes | MEDIA | 55 |
+| `insult_mild` | Insultos leves o modismos despectivos | MEDIA | 44 |
 | `eating_disorder` | Conductas de trastorno alimentario | ALTA | 80 |
 | `doxxing` | Exposición de datos personales | ALTA | 82 |
 | `runaway` | Fuga o riesgo de desaparición | ALTA | 84 |
@@ -120,7 +123,15 @@ Las reglas son deterministas y explicables. Cada alerta guarda el código, la et
 | `drugs` | Drogas, alcohol, vapeo | ALTA | 74 |
 | `gambling` | Apuestas, casino, ruleta | MEDIA | 58 |
 | `malestar` | Malestar emocional | MEDIA | 54 |
-| `scam` | Estafa o phishing | MEDIA | 56 |
+| `scam_points` | Canje de puntos, cupones o recompensas | MEDIA | 58 |
+| `scam_casino` | Invitación a casino o bonos de apuestas | MEDIA | 60 |
+| `scam_financial` | Inversión, cripto o rendimiento garantizado | MEDIA | 62 |
+| `scam_account` | Phishing, suplantación o código de verificación | MEDIA | 64 |
+| `scam_prize` | Premios, sorteos o loterías sospechosas | MEDIA | 58 |
+| `scam_delivery` | Paquete retenido, aduana o envío | MEDIA | 55 |
+| `scam_job` | Oferta de trabajo fácil o ingresos rápidos | MEDIA | 55 |
+| `scam_romance` | Estafa romántica o pedido de dinero | MEDIA | 60 |
+| `scam` | Estafa o phishing genérico | MEDIA | 56 |
 | `unknown_contact` | Regla reservada para contacto desconocido | MEDIA | 50 |
 | `uso_nocturno` | Inicio local entre 00:00 y 06:00 con ≥ 20 min de uso | MEDIA | 55 |
 | `uso_prolongado` | ≥ 180 min en la ventana | MEDIA / ALTA | 60 / 72 |

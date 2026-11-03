@@ -243,6 +243,46 @@ def test_scam_flag_is_medium_risk():
     assert result.nivel_riesgo == "MEDIO"
 
 
+def test_insult_severe_is_high_risk_and_others_are_medium():
+    severe = asyncio.run(HeuristicProvider().classify(make_vector(flags=["insult_severe"])))
+    moderate = asyncio.run(HeuristicProvider().classify(make_vector(flags=["insult_moderate"])))
+    mild = asyncio.run(HeuristicProvider().classify(make_vector(flags=["insult_mild"])))
+
+    assert severe.nivel_riesgo == "ALTO"
+    assert moderate.nivel_riesgo == "MEDIO"
+    assert mild.nivel_riesgo == "MEDIO"
+    assert severe.categoria == "Ciberbullying"
+
+
+def test_scam_families_are_medium_risk():
+    for flag in (
+        "scam_points",
+        "scam_casino",
+        "scam_financial",
+        "scam_account",
+        "scam_prize",
+        "scam_delivery",
+        "scam_job",
+        "scam_romance",
+    ):
+        result = asyncio.run(HeuristicProvider().classify(make_vector(flags=[flag])))
+        assert result.nivel_riesgo == "MEDIO", flag
+
+
+def test_two_scam_signals_raise_the_floor_to_high():
+    vector = make_vector(flags=["scam_points", "scam_casino"])
+    floored = apply_policy_floor(assessment(level="BAJO", category="Sin_Riesgo"), vector)
+
+    assert floored.nivel_riesgo == "ALTO"
+
+
+def test_two_insult_levels_raise_the_floor_to_high():
+    vector = make_vector(flags=["insult_moderate", "insult_mild"])
+    floored = apply_policy_floor(assessment(level="BAJO", category="Sin_Riesgo"), vector)
+
+    assert floored.nivel_riesgo == "ALTO"
+
+
 def test_two_medium_flags_raise_the_floor_to_high():
     vector = make_vector(flags=["gambling", "malestar"])
     floored = apply_policy_floor(assessment(level="BAJO", category="Sin_Riesgo"), vector)
@@ -276,6 +316,9 @@ def test_every_known_flag_has_a_server_rule():
         "coercion",
         "bullying",
         "hate_speech",
+        "insult_severe",
+        "insult_moderate",
+        "insult_mild",
         "eating_disorder",
         "doxxing",
         "runaway",
@@ -283,6 +326,14 @@ def test_every_known_flag_has_a_server_rule():
         "drugs",
         "gambling",
         "malestar",
+        "scam_points",
+        "scam_casino",
+        "scam_financial",
+        "scam_account",
+        "scam_prize",
+        "scam_delivery",
+        "scam_job",
+        "scam_romance",
         "scam",
         "unknown_contact",
     }
