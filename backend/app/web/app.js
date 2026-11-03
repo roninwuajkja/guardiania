@@ -1007,10 +1007,12 @@ function alertRow(alert, { compact = false } = {}) {
             <p class="alert-summary">${escapeHtml(alert.resumen)}</p>
             <button class="alert-expand" type="button" data-action="expand-alert-summary" hidden>Ver mensaje completo</button>
           </div>` : `
-          <p class="alert-summary">${escapeHtml(alert.resumen)}</p>
+          <div class="alert-summary-block" data-alert-id="${escapeAttr(alert.id)}">
+            <p class="alert-summary">${escapeHtml(alert.resumen)}</p>
+            <button class="alert-expand" type="button" data-action="expand-alert-summary" hidden>Ver mensaje completo</button>
+          </div>
           <details class="alert-why" data-alert-id="${escapeAttr(alert.id)}">
             <summary>Por qué se generó</summary>
-            <p class="alert-why-text">${escapeHtml(alert.resumen)}</p>
             <p class="alert-evidence">${escapeHtml(evidence || 'Regla heurística del motor de riesgo local.')}</p>
             ${advice ? `<p class="alert-why-advice">${escapeHtml(advice)}</p>` : ''}
             <p class="alert-note">Sin contenido del mensaje: solo señales derivadas.</p>
@@ -1573,6 +1575,7 @@ function renderAlerts() {
     .join('');
 
   const openDetails = openAlertIds();
+  const expandedSummaries = expandedSummaryIds();
   $('#view').innerHTML = `
     <section class="page-head">
       <div>
@@ -1592,6 +1595,9 @@ function renderAlerts() {
     </section>
     <div class="privacy-line" style="margin-top:20px">${icon('lock', 15)}<span>El motor de riesgo es heurístico y explicable. No es un diagnóstico ni reemplaza una conversación.</span></div>`;
   restoreOpenAlertIds(openDetails);
+  restoreExpandedSummaries(expandedSummaries);
+  enhanceCompactSummaries();
+  requestAnimationFrame(enhanceCompactSummaries);
 }
 
 async function setAlertState(id, newState) {
