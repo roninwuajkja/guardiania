@@ -1,6 +1,7 @@
 package cl.guardiania.agent.capture
 
 import android.app.Notification
+import android.content.ComponentName
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import cl.guardiania.agent.GuardianApp
@@ -21,6 +22,7 @@ class GuardianNotificationListener : NotificationListenerService() {
 
     override fun onListenerConnected() {
         super.onListenerConnected()
+        connected = true
         scope.launch {
             (application as GuardianApp).container.statusReporter.report()
         }
@@ -28,11 +30,16 @@ class GuardianNotificationListener : NotificationListenerService() {
 
     override fun onListenerDisconnected() {
         super.onListenerDisconnected()
-        // Avisa de inmediato: sin este acceso la guardia queda incompleta.
+        connected = false
+        // Samsung y algunos fabricantes desenlazan el listener sin volver a
+        // enlazarlo. Se pide explícitamente al sistema que lo reconecte; si no,
+        // las notificaciones se pierden en silencio hasta abrir la app.
+        runCatching {
+            requestRebind(ComponentName(this, GuardianNotificationListener::class.java))
+        }
         scope.launch {
             (application as GuardianApp).container.statusReporter.report()
         }
-        // Trabajo durable por si el sistema mata el proceso justo después.
         SyncScheduler.requestPrioritySync(applicationContext)
     }
 
@@ -60,5 +67,11 @@ class GuardianNotificationListener : NotificationListenerService() {
                 SyncScheduler.requestPrioritySync(applicationContext)
             }
         }
+    }
+
+    companion object {
+        @Volatile
+        var connected: Boolean = false
+            private set
     }
 }

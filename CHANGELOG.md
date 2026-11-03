@@ -6,6 +6,16 @@ Todas las versiones relevantes de IA Guardian. El detalle técnico vive en
 
 > Las notas de cada versión se publican en [GitHub Releases](https://github.com/roninwuajkja/guardiania/releases). Este archivo conserva el historial completo.
 
+## 1.7.1 — 2026-11-03
+
+### Notificaciones del menor
+
+- El listener de notificaciones ahora pide **reconexión explícita** al sistema
+  cuando se desenlaza, en lugar de esperar a que Samsung lo vuelva a enlazar.
+- El servicio en primer plano reintenta la reconexión cada 5 minutos y al
+  arrancar, para reducir los huecos en los que se pierden notificaciones.
+- Android `1.7.1` (`versionCode` 10); backend `1.7.1`.
+
 ## 1.7.0 — 2026-11-03
 
 ### Catálogo local ampliado
