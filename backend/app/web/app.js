@@ -195,7 +195,15 @@ function severityLabel(severity) {
 }
 
 function alertRuleLabel(alert) {
-  return alert.reglas?.[0]?.label || alert.categoria;
+  const rule = alert.reglas?.[0];
+  const code = String(alert.categoria || '').trim().toLowerCase();
+  // Una alerta de IA guarda la señal concreta en `categoria`; se prefiere ese
+  // nombre ("Sextorsión") antes que la categoría genérica del modelo.
+  if (rule?.source === 'ai' && code && !code.startsWith('ai_')) {
+    const label = prettyAlertLabel(code);
+    if (label && label !== code) return label.charAt(0).toUpperCase() + label.slice(1);
+  }
+  return rule?.label || alert.categoria;
 }
 
 function alertStateLabel(estado) {
