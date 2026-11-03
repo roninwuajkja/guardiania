@@ -3,10 +3,14 @@
 import android.app.Notification
 import android.app.PendingIntent
 import android.app.Service
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import android.os.Handler
 import android.os.IBinder
+import android.os.Looper
+import android.service.notification.NotificationListenerService
 import androidx.core.app.NotificationCompat
 import cl.guardiania.agent.GuardianApp
 import cl.guardiania.agent.MainActivity
@@ -22,10 +26,32 @@ import cl.guardiania.agent.notifications.TutorNotifications
  */
 class GuardianForegroundService : Service() {
 
+    private val handler = Handler(Looper.getMainLooper())
+
+    private val rebindTask = object : Runnable {
+        override fun run() {
+            runCatching {
+                NotificationListenerService.requestRebind(
+                    ComponentName(
+                        this@GuardianForegroundService,
+                        GuardianNotificationListener::class.java,
+                    ),
+                )
+            }
+            handler.postDelayed(this, REBIND_INTERVAL_MS)
+        }
+    }
+
     override fun onCreate() {
         super.onCreate()
         TutorNotifications.ensureChannels(this)
         startForeground(NOTIF_ID, buildNotification())
+        handler.postDelayed(rebindTask, REBIND_FIRST_MS)
+    }
+
+    override fun onDestroy() {
+        handler.removeCallbacks(rebindTask)
+        super.onDestroy()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -68,6 +94,8 @@ class GuardianForegroundService : Service() {
 
     companion object {
         private const val NOTIF_ID = 7401
+        private const val REBIND_FIRST_MS = 20_000L
+        private const val REBIND_INTERVAL_MS = 5 * 60_000L
 
         fun start(context: Context) {
             val intent = Intent(context, GuardianForegroundService::class.java)
