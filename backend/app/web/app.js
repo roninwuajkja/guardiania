@@ -936,6 +936,12 @@ function renderPairing() {
           <p class="eyebrow">Nueva vinculación</p>
           <h2>¿A quién vas a vincular?</h2>
           <p>Usa un alias, no el nombre legal. Puedes cambiarlo después. El código vence en 10 minutos y se usa una sola vez.</p>
+          <div class="panel-address">
+            <span class="panel-address-label">Dirección del panel</span>
+            <code>${escapeHtml(location.origin)}</code>
+            <button class="btn btn-sm btn-secondary" type="button" data-action="copy-panel-url">Copiar</button>
+          </div>
+          <p class="panel-address-note">Escríbela en la app si no aparece por defecto.</p>
           <form class="pair-form" id="pair-form">
             <label class="field">
               <span>Alias del teléfono</span>
@@ -1637,6 +1643,13 @@ function bindEvents() {
       location.hash = '#/alertas';
     } else if (action === 'copy-code') {
       await copyManualCode();
+    } else if (action === 'copy-panel-url') {
+      try {
+        await navigator.clipboard.writeText(location.origin);
+        toast('Dirección del panel copiada');
+      } catch {
+        toast(location.origin);
+      }
     } else if (action === 'reset-pairing') {
       resetPairing();
     } else if (action === 'cancel-pairing') {
