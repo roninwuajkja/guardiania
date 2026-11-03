@@ -14,7 +14,7 @@ El tutor también puede usar la consola web; ambos comparten la misma API.
 - Android Studio Ladybug o superior, o Gradle 8.7
 - API de IA Guardian accesible desde el teléfono/emulador
 
-Versiones fijadas: AGP 8.6.0, Gradle 8.7, Kotlin 2.0.21, Compose BOM 2024.09.03, versión de app **1.6.1** (`versionCode` 8).
+Versiones fijadas: AGP 8.6.0, Gradle 8.7, Kotlin 2.0.21, Compose BOM 2024.09.03, versión de app **1.7.0** (`versionCode` 9).
 
 ## Compilar e instalar
 

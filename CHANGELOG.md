@@ -6,6 +6,27 @@ Todas las versiones relevantes de IA Guardian. El detalle técnico vive en
 
 > Las notas de cada versión se publican en [GitHub Releases](https://github.com/roninwuajkja/guardiania/releases). Este archivo conserva el historial completo.
 
+## 1.7.0 — 2026-11-03
+
+### Catálogo local ampliado
+
+- Nuevas señales: **acoso sexual**, **amenaza** y **acecho/seguimiento**.
+- Expansión de todas las familias: autolesión, grooming, sextorsión, abuso,
+  trata, radicalización, violencia, armas, coerción, bullying, discurso de odio,
+  insultos, trastorno alimentario, doxxing, fuga, retos peligrosos, drogas,
+  apuestas, malestar y estafas.
+- Se incorporan variantes chilenas, modismos, insultos leves/moderados/graves y
+  frases como “te voy a tocar”, “a ver tu culo”, “te odio”, “tonta/o” y “drogas”.
+- Normalización anti-ofuscación: quita caracteres invisibles, convierte leetspeak
+  (`t0nt@`, `dr0g4s`) y colapsa letras repetidas (`toooonta`).
+- Se evitan falsos positivos evidentes como “te voy a tocar el timbre” o
+  “corté el pasto”.
+
+### Verificación
+
+- 108 pruebas backend y 61 pruebas unitarias Android.
+- Android `1.7.0` (`versionCode` 9) y backend `1.7.0`.
+
 ## 1.6.1 — 2026-11-03
 
 ### Notificaciones del tutor

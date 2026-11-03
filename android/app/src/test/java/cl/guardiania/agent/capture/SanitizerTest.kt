@@ -425,4 +425,64 @@ class SanitizerTest {
 
         assertFalse(result.flags.contains("insult_severe"))
     }
+
+    @Test
+    fun `ambiguous touch threat is detected`() {
+        val result = Sanitizer.sanitize("com.whatsapp", null, "Te voy a tocar")
+
+        assertTrue(result.flags.contains("threat"))
+    }
+
+    @Test
+    fun `ringing a doorbell is not a threat`() {
+        val result = Sanitizer.sanitize("com.whatsapp", null, "Te voy a tocar el timbre")
+
+        assertFalse(result.flags.contains("threat"))
+    }
+
+    @Test
+    fun `sexual harassment is detected`() {
+        val result = Sanitizer.sanitize("com.instagram.android", null, "A ver tu culo")
+
+        assertTrue(result.flags.contains("sexual_harassment"))
+    }
+
+    @Test
+    fun `hatred and mild insults are detected`() {
+        val hate = Sanitizer.sanitize("com.whatsapp", null, "Te odio")
+        val mild = Sanitizer.sanitize("com.whatsapp", null, "Tonta/o")
+
+        assertTrue(hate.flags.contains("insult_mild"))
+        assertTrue(mild.flags.contains("insult_mild"))
+    }
+
+    @Test
+    fun `plain drugs word is detected`() {
+        val result = Sanitizer.sanitize("com.instagram.android", null, "Drogas")
+
+        assertTrue(result.flags.contains("drugs"))
+    }
+
+    @Test
+    fun `leetspeak and repeated letters are normalized`() {
+        val leet = Sanitizer.sanitize("com.whatsapp", null, "T0nt@")
+        val repeated = Sanitizer.sanitize("com.whatsapp", null, "Toooonta")
+
+        assertTrue(leet.flags.contains("insult_mild"))
+        assertTrue(repeated.flags.contains("insult_mild"))
+    }
+
+    @Test
+    fun `mowing the lawn is not drugs`() {
+        val result = Sanitizer.sanitize("com.whatsapp", null, "Corté el pasto")
+
+        assertFalse(result.flags.contains("drugs"))
+    }
+
+    @Test
+    fun `loneliness is detected without alarmism`() {
+        val result = Sanitizer.sanitize("com.whatsapp", null, "Me siento solo")
+
+        assertTrue(result.flags.contains("malestar"))
+    }
 }
