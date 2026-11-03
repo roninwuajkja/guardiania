@@ -929,38 +929,83 @@ function statCard({ label, value, unit, note, series, alert = false, seriesAlert
 }
 
 function guardStrip(overview) {
-  const marks = overview.guard_marks
-    .map((mark) => {
-      const date = new Date(mark.at);
-      const minutes = date.getHours() * 60 + date.getMinutes();
-      const percent = Math.min(99.7, (minutes / 1440) * 100);
-      const isAlert = mark.kind === 'alerta';
-      const classes = isAlert ? `guard-mark guard-mark--${mark.severity}` : 'guard-mark guard-mark--actividad';
-      const label = isAlert ? `Alerta ${severityLabel(mark.severity)}: ${mark.label}` : mark.label;
-      return `<button type="button" class="${classes}" style="left:${percent.toFixed(2)}%" title="${escapeAttr(label)} · ${timeLabel(mark.at)}" aria-label="${escapeAttr(label)} a las ${timeLabel(mark.at)}" data-action="go-alerts"></button>`;
+  const marks = overview.guard_marks || [];
+  const buckets = Array.from({ length: 24 }, (_, hour) => ({
+    hour,
+    activity: 0,
+    attention: 0,
+    alert: 0,
+  }));
+  const counts = { activity: 0, attention: 0, alert: 0 };
+
+  for (const mark of marks) {
+    const hour = new Date(mark.at).getHours();
+    if (!Number.isFinite(hour)) continue;
+    const bucket = buckets[hour];
+    if (mark.kind !== 'alerta') {
+      bucket.activity += 1;
+      counts.activity += 1;
+    } else if (['MEDIA', 'BAJA'].includes(mark.severity)) {
+      bucket.attention += 1;
+      counts.attention += 1;
+    } else {
+      bucket.alert += 1;
+      counts.alert += 1;
+    }
+  }
+
+  const maxHour = Math.max(1, ...buckets.map((bucket) => bucket.activity + bucket.attention + bucket.alert));
+  const columns = buckets
+    .map((bucket) => {
+      const total = bucket.activity + bucket.attention + bucket.alert;
+      const height = total ? Math.max(7, (total / maxHour) * 100) : 0;
+      const label = `${String(bucket.hour).padStart(2, '0')}:00 · ${bucket.activity} actividad · ${bucket.attention} atención · ${bucket.alert} alerta`;
+      return `<div class="guard-col${bucket.hour < 6 ? ' is-night' : ''}" title="${escapeAttr(label)}" aria-label="${escapeAttr(label)}">
+        ${total ? `<div class="guard-col-bars" style="height:${height.toFixed(1)}%">
+          ${bucket.alert ? `<span class="guard-bar guard-bar--alert" style="flex:${bucket.alert}"></span>` : ''}
+          ${bucket.attention ? `<span class="guard-bar guard-bar--attention" style="flex:${bucket.attention}"></span>` : ''}
+          ${bucket.activity ? `<span class="guard-bar guard-bar--activity" style="flex:${bucket.activity}"></span>` : ''}
+        </div>` : ''}
+      </div>`;
     })
     .join('');
+
+  const total = counts.activity + counts.attention + counts.alert;
+  const summary = `Actividad: ${counts.activity}. Atención: ${counts.attention}. Alertas: ${counts.alert}.`;
 
   return `
     <section class="guard card" aria-labelledby="guard-title">
       <div class="guard-head">
         <div class="guard-title">
           <h2 id="guard-title">Guardia de hoy</h2>
-          <span>${overview.guard_marks.length} ${overview.guard_marks.length === 1 ? 'marca' : 'marcas'} · 24 h</span>
+          <span>${total} ${total === 1 ? 'marca' : 'marcas'} · últimas 24 h</span>
         </div>
-        <div class="legend" aria-hidden="true">
-          <span><i class="is-activity"></i>Actividad</span>
-          <span><i class="is-attention"></i>Atención</span>
-          <span><i class="is-alert"></i>Alerta</span>
+        <div class="guard-stats" role="list" aria-label="Resumen de la guardia">
+          <div class="guard-stat guard-stat--activity" role="listitem">
+            <i class="guard-stat-dot" aria-hidden="true"></i>
+            <strong>${counts.activity}</strong>
+            <span>Actividad</span>
+          </div>
+          <div class="guard-stat guard-stat--attention" role="listitem">
+            <i class="guard-stat-dot" aria-hidden="true"></i>
+            <strong>${counts.attention}</strong>
+            <span>Atención</span>
+          </div>
+          <div class="guard-stat guard-stat--alert" role="listitem">
+            <i class="guard-stat-dot" aria-hidden="true"></i>
+            <strong>${counts.alert}</strong>
+            <span>Alerta</span>
+          </div>
         </div>
       </div>
-      <div class="guard-track">
-        <div class="guard-night" aria-hidden="true"></div>
-        ${marks}
-        ${overview.guard_marks.length ? '' : '<p class="guard-empty">Sin marcas en las últimas 24 horas.</p>'}
-      </div>
-      <div class="guard-scale" aria-hidden="true">
-        <span>00</span><span>06</span><span>12</span><span>18</span><span>24</span>
+      <div class="guard-chart">
+        <div class="guard-bars" role="img" aria-label="${escapeAttr(summary)}">
+          ${columns}
+        </div>
+        ${total ? '' : '<p class="guard-empty">Sin marcas en las últimas 24 horas.</p>'}
+        <div class="guard-scale" aria-hidden="true">
+          <span>00</span><span>06</span><span>12</span><span>18</span><span>24</span>
+        </div>
       </div>
     </section>`;
 }

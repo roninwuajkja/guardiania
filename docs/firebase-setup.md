@@ -1,4 +1,4 @@
-# Firebase Cloud Messaging en IA Guardian 1.4.0
+# Firebase Cloud Messaging en IA Guardian 1.5.0
 
 Objetivo: que el tutor reciba una alerta aunque la app esté en segundo plano o
 cerrada. **FCM es solo transporte**, no base de datos. PostgreSQL sigue siendo
