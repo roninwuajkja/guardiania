@@ -3,6 +3,7 @@ package cl.guardiania.agent
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import cl.guardiania.agent.capture.GuardianForegroundService
 import cl.guardiania.agent.data.PairingRecord
 import cl.guardiania.agent.data.SessionRevokedException
 import cl.guardiania.agent.data.UnlinkRequest
@@ -71,6 +72,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             if (pairing != null) {
                 // Al abrir la app se reporta el estado: el panel lo ve al instante.
                 runCatching { container.statusReporter.report() }
+                GuardianForegroundService.start(app)
+            } else {
+                GuardianForegroundService.stop(app)
             }
         }
     }
@@ -190,6 +194,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 }
                 withContext(Dispatchers.IO) { store.clearPairing() }
                 SyncScheduler.cancel(app)
+                GuardianForegroundService.stop(app)
                 _ui.update {
                     it.copy(
                         busy = false,
@@ -223,6 +228,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 // El servidor ya la había revocado: se limpia lo local igual.
                 withContext(Dispatchers.IO) { store.clearPairing() }
                 SyncScheduler.cancel(app)
+                GuardianForegroundService.stop(app)
                 _ui.update {
                     it.copy(
                         busy = false,
@@ -254,6 +260,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private suspend fun refreshLocal() {
         val (pairing, pending, lastSync) = withContext(Dispatchers.IO) {
             Triple(store.pairing(), store.pendingCount(), store.lastSyncAt())
+        }
+        if (pairing != null) {
+            GuardianForegroundService.start(app)
+        } else {
+            GuardianForegroundService.stop(app)
         }
         _ui.update {
             it.copy(pairing = pairing, pending = pending, lastSyncAt = lastSync)

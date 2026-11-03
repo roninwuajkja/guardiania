@@ -15,4 +15,8 @@
     <string name="qr_scan_torch_on">Encender linterna</string>
     <string name="qr_scan_torch_off">Apagar linterna</string>
     <string name="qr_scan_no_permission">Sin permiso de cámara no se puede leer el QR. Actívalo en Ajustes y vuelve a intentarlo.</string>
+    <string name="guard_channel_name">Guardia activa</string>
+    <string name="guard_channel_description">Mantiene el análisis local activo en este teléfono.</string>
+    <string name="guard_notification_title">IA Guardian está activo</string>
+    <string name="guard_notification_text">Analiza en el teléfono y envía solo señales derivadas. No lee mensajes.</string>
 </resources>

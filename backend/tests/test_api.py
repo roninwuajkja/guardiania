@@ -1025,3 +1025,10 @@ def test_status_keeps_the_last_notification_timestamp(client, auth_headers):
         if d["id"] == verified["device_id"]
     )
     assert row["ultima_notificacion_en"] is not None
+
+def test_push_test_reports_disabled_without_fcm(client, auth_headers):
+    response = client.post("/api/v1/push/test", headers=auth_headers)
+    assert response.status_code == 200
+    body = response.json()
+    assert body["enabled"] is False
+    assert body["sent"] == 0

@@ -62,7 +62,7 @@ def service(monkeypatch):
     return instance
 
 
-def test_payload_is_data_only_and_never_includes_notification(service):
+def test_payload_uses_a_system_notification_without_content(service):
     result = asyncio.run(
         service.send(
             ["token-abc"],
@@ -72,9 +72,13 @@ def test_payload_is_data_only_and_never_includes_notification(service):
 
     assert result.sent == 1
     message = FakeClient.captured[0]["message"]
-    assert "notification" not in message
-    assert message["data"] == {"tipo": "risk_alert", "alert_id": "alert-1", "severidad": "ALTA"}
+    assert message["notification"]["title"] == "IA Guardian · Señal alta"
+    assert message["notification"]["body"] == "Señal alta en el teléfono"
     assert message["android"]["priority"] == "high"
+    assert message["android"]["notification"]["channel_id"] == "guardiania_alerts"
+    assert message["android"]["ttl"] == "300s"
+    assert message["data"]["alert_id"] == "alert-1"
+    assert message["data"]["open_alerts"] == "1"
     assert message["token"] == "token-abc"
 
 

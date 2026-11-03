@@ -356,6 +356,13 @@ class HideResult(BaseModel):
     ocultos: int
 
 
+class PushTestOut(BaseModel):
+    enabled: bool
+    sent: int
+    invalid: int
+    tokens: int
+
+
 class GuardMark(BaseModel):
     at: datetime
     kind: Literal["alerta", "actividad"]

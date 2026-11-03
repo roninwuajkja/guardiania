@@ -137,6 +137,11 @@ interface GuardianApi {
         @Body body: PushTokenRequestDto,
     ): PushTokenDto
 
+    @POST("api/v1/push/test")
+    suspend fun tutorTestPush(
+        @Header("Authorization") authorization: String,
+    ): PushTestDto
+
     @POST("api/v1/push/tokens/unregister")
     suspend fun tutorUnregisterPushToken(
         @Header("Authorization") authorization: String,
