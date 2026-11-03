@@ -185,12 +185,13 @@ class TutorViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             _ui.update { it.copy(busy = true, error = null, message = null) }
             try {
-                val result = withContext(Dispatchers.IO) { repo.testPush() }
+                val result = withContext(Dispatchers.IO) { repo.testPush(delaySeconds = 10) }
                 val text = when {
                     !result.enabled -> "FCM no está configurado en el servidor."
                     result.tokens == 0 -> "Este teléfono aún no tiene token. Abre la app de nuevo."
-                    result.invalid > 0 && result.sent == 0 ->
+                    result.invalid > 0 && result.sent == 0 && !result.scheduled ->
                         "El token de este teléfono ya no es válido. Abre la app de nuevo."
+                    result.scheduled -> "Push programada (${result.tokens}). Cierra la app; llega en ${result.delaySeconds} s."
                     result.sent > 0 -> "Push enviada (${result.sent}). Cierra la app para verla."
                     else -> "El servidor no pudo enviar la push."
                 }

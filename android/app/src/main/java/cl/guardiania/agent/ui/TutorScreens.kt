@@ -1172,7 +1172,7 @@ private fun TutorSettings(
             Text("Notificaciones", fontWeight = FontWeight.SemiBold, color = Ink, fontSize = 14.sp)
             Spacer(Modifier.height(5.dp))
             Text(
-                "Envía una push de prueba a este teléfono para comprobar que llegan con la app cerrada. Ciérrala después de tocarla.",
+                "Envía una push de prueba con 10 segundos de retraso. Toca, cierra la app y espera.",
                 color = Muted,
                 fontSize = 11.5.sp,
                 lineHeight = 17.sp,

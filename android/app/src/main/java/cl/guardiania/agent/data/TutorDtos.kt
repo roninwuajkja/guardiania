@@ -120,6 +120,8 @@ data class PushTestDto(
     val sent: Int = 0,
     val invalid: Int = 0,
     val tokens: Int = 0,
+    val scheduled: Boolean = false,
+    @SerialName("delay_seconds") val delaySeconds: Int = 0,
 )
 
 @Serializable

@@ -190,8 +190,8 @@ class TutorRepository(private val store: SecureStore) {
         }
     }
 
-    suspend fun testPush(): PushTestDto = authorized { api, accessToken ->
-        api.tutorTestPush("Bearer $accessToken")
+    suspend fun testPush(delaySeconds: Int = 0): PushTestDto = authorized { api, accessToken ->
+        api.tutorTestPush("Bearer $accessToken", delaySeconds)
     }
 
     suspend fun unregisterPushToken(fcmToken: String) {

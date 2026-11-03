@@ -361,6 +361,8 @@ class PushTestOut(BaseModel):
     sent: int
     invalid: int
     tokens: int
+    scheduled: bool = False
+    delay_seconds: int = 0
 
 
 class GuardMark(BaseModel):
