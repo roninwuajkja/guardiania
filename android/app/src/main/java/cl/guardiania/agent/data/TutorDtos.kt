@@ -107,6 +107,19 @@ data class TutorDeviceDto(
     @SerialName("vinculacion_estado") val bindingState: String? = null,
     @SerialName("ultima_conexion") val lastSeen: String? = null,
     @SerialName("creado_en") val createdAt: String? = null,
+    @SerialName("unlink_code_set") val unlinkCodeSet: Boolean = false,
+    @SerialName("notificaciones_activas") val notificationsActive: Boolean? = null,
+    val dnd: Boolean? = null,
+    @SerialName("estado_reportado_en") val statusReportedAt: String? = null,
+    @SerialName("ultima_notificacion_en") val lastNotificationAt: String? = null,
+)
+
+@Serializable
+data class PushTestDto(
+    val enabled: Boolean,
+    val sent: Int = 0,
+    val invalid: Int = 0,
+    val tokens: Int = 0,
 )
 
 @Serializable

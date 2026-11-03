@@ -23,6 +23,7 @@ object TutorNotifications {
 
     const val ALERT_CHANNEL = "guardiania_alerts"
     const val SYNC_CHANNEL = "guardiania_sync"
+    const val GUARD_CHANNEL = "guardiania_guard"
 
     private val nextId = AtomicInteger(1000)
 
@@ -49,7 +50,17 @@ object TutorNotifications {
             setShowBadge(false)
         }
 
-        manager.createNotificationChannels(listOf(alerts, sync))
+        val guard = NotificationChannel(
+            GUARD_CHANNEL,
+            context.getString(R.string.guard_channel_name),
+            NotificationManager.IMPORTANCE_LOW,
+        ).apply {
+            description = context.getString(R.string.guard_channel_description)
+            setShowBadge(false)
+            setSound(null, null)
+        }
+
+        manager.createNotificationChannels(listOf(alerts, sync, guard))
     }
 
     fun showReconnected(context: Context, deviceAlias: String?) {

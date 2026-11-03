@@ -75,6 +75,7 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cl.guardiania.agent.TutorTab
@@ -108,6 +109,7 @@ fun TutorShell(
     onResendVerification: () -> Unit,
     onChangePassword: (String, String) -> Unit,
     onExport: () -> Unit,
+    onTestPush: () -> Unit,
 ) {
     Scaffold(
         containerColor = Paper,
@@ -143,6 +145,7 @@ fun TutorShell(
                     onResendVerification = onResendVerification,
                     onChangePassword = onChangePassword,
                     onExport = onExport,
+                    onTestPush = onTestPush,
                 )
             }
             if (state.busy) {
@@ -438,25 +441,45 @@ private fun CompactAlert(alert: TutorAlertDto) {
     Surface(
         shape = RoundedCornerShape(14.dp),
         color = Card,
-        border = androidx.compose.foundation.BorderStroke(1.dp, Line),
+        border = androidx.compose.foundation.BorderStroke(
+            1.dp,
+            if (alert.isCritical()) Oxblood.copy(alpha = 0.28f) else Line,
+        ),
     ) {
-        Row(Modifier.padding(14.dp), verticalAlignment = Alignment.Top) {
-            Icon(
-                if (alert.isCritical()) Icons.Outlined.Warning else Icons.Outlined.Notifications,
-                contentDescription = null,
-                tint = severityColor(alert.severidad),
-                modifier = Modifier.size(19.dp),
-            )
-            Spacer(Modifier.width(10.dp))
-            Column(Modifier.weight(1f)) {
-                Text(alert.resumen, color = Ink, fontSize = 13.sp, lineHeight = 19.sp, maxLines = 3)
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    "${alert.ownerLine()} · ${prettyTime(alert.createdAt)}",
-                    color = Muted,
-                    fontSize = 10.5.sp,
-                )
+        Column(Modifier.padding(14.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    Modifier
+                        .background(
+                            severityColor(alert.severidad).copy(alpha = 0.12f),
+                            RoundedCornerShape(6.dp),
+                        )
+                        .padding(horizontal = 7.dp, vertical = 3.dp),
+                ) {
+                    Text(
+                        alert.severidad,
+                        color = severityColor(alert.severidad),
+                        fontFamily = Mono,
+                        fontSize = 8.sp,
+                        letterSpacing = 0.7.sp,
+                    )
+                }
+                Spacer(Modifier.width(8.dp))
+                Text(categoryLabel(alert.categoria), color = Muted, fontSize = 10.5.sp)
+                Spacer(Modifier.weight(1f))
+                Text(prettyTime(alert.createdAt), color = Muted, fontSize = 10.sp)
             }
+            Spacer(Modifier.height(8.dp))
+            Text(
+                alert.resumen,
+                color = Ink,
+                fontSize = 13.sp,
+                lineHeight = 19.sp,
+                maxLines = 3,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Spacer(Modifier.height(6.dp))
+            Text(alert.ownerLine(), color = Muted, fontSize = 10.5.sp)
         }
     }
 }
@@ -923,6 +946,34 @@ private fun DeviceCard(device: TutorDeviceDto, onRevoke: () -> Unit) {
                 color = Muted,
                 fontSize = 10.5.sp,
             )
+            val stale = isOlderThan(device.lastSeen, 60)
+            val statusBits = buildList {
+                if (device.notificationsActive == false) add("Notificaciones desactivadas")
+                else if (device.notificationsActive == true) add("Notificaciones activas")
+                if (device.dnd == true) add("No molestar")
+                if (device.unlinkCodeSet) add("Código de desvinculación activo")
+                device.lastNotificationAt?.let { add("última notificación ${prettyTime(it)}") }
+            }
+            when {
+                stale -> Text(
+                    "Sin señal desde ${prettyTime(device.lastSeen)}",
+                    color = Amber,
+                    fontSize = 10.5.sp,
+                    fontWeight = FontWeight.Medium,
+                )
+                device.notificationsActive == false -> Text(
+                    "Acceso a notificaciones desactivado",
+                    color = Oxblood,
+                    fontSize = 10.5.sp,
+                    fontWeight = FontWeight.Medium,
+                )
+                statusBits.isNotEmpty() -> Text(
+                    statusBits.joinToString(" · "),
+                    color = Muted,
+                    fontSize = 10.sp,
+                    lineHeight = 15.sp,
+                )
+            }
             if (active && device.bindingId != null) {
                 TextButton(
                     onClick = onRevoke,
@@ -949,6 +1000,7 @@ private fun TutorSettings(
     onResendVerification: () -> Unit,
     onChangePassword: (String, String) -> Unit,
     onExport: () -> Unit,
+    onTestPush: () -> Unit,
 ) {
     var confirmLogout by remember { mutableStateOf(false) }
     var confirmChild by remember { mutableStateOf(false) }
@@ -979,6 +1031,31 @@ private fun TutorSettings(
                 Icon(Icons.Outlined.Refresh, contentDescription = null, modifier = Modifier.size(16.dp))
                 Spacer(Modifier.width(5.dp))
                 Text("Actualizar datos de la cuenta")
+            }
+        }
+
+        SurfaceCard {
+            Text("Notificaciones", fontWeight = FontWeight.SemiBold, color = Ink, fontSize = 14.sp)
+            Spacer(Modifier.height(5.dp))
+            Text(
+                "Envía una push de prueba a este teléfono para comprobar que llegan con la app cerrada. Ciérrala después de tocarla.",
+                color = Muted,
+                fontSize = 11.5.sp,
+                lineHeight = 17.sp,
+            )
+            Spacer(Modifier.height(9.dp))
+            OutlinedButton(
+                onClick = onTestPush,
+                enabled = !state.busy,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Icon(Icons.Outlined.Notifications, contentDescription = null, modifier = Modifier.size(17.dp))
+                Spacer(Modifier.width(6.dp))
+                Text("Probar notificación push")
+            }
+            state.message?.let { message ->
+                Spacer(Modifier.height(6.dp))
+                Text(message, color = Pine700, fontSize = 11.5.sp, lineHeight = 16.sp)
             }
         }
 
@@ -1412,6 +1489,11 @@ private fun prettyTime(value: String?): String {
             .format(instant)
     }.getOrElse { value.take(16).replace('T', ' ') }
 }
+
+private fun isOlderThan(value: String?, minutes: Long): Boolean = runCatching {
+    val instant = OffsetDateTime.parse(value).toInstant()
+    instant.isBefore(java.time.Instant.now().minusSeconds(minutes * 60))
+}.getOrDefault(false)
 
 private fun qrBitmap(payload: String, size: Int = 720): Bitmap? = runCatching {
     val matrix = QRCodeWriter().encode(payload, BarcodeFormat.QR_CODE, size, size)

@@ -168,17 +168,39 @@ class FirebasePushService:
             return PushResult(failed=len(tokens))
 
         payload_data = _stringify(data)
+        severity = str(data.get("severidad") or "").upper()
+        alias = str(data.get("device_alias") or "el teléfono")
+        is_test = str(data.get("tipo") or "") == "test"
+        if is_test:
+            title = "IA Guardian · Prueba"
+            body = "Si ves esto, las notificaciones push funcionan."
+        elif severity in {"ALTA", "CRITICA"}:
+            title = "IA Guardian · Señal alta"
+            body = f"Señal {severity.lower()} en {alias}"
+        else:
+            title = "IA Guardian"
+            body = f"Nueva señal en {alias}"
+        if not is_test:
+            payload_data.setdefault("open_alerts", "1")
         semaphore = asyncio.Semaphore(5)
 
         async def send_one(token: str) -> tuple[bool, bool]:
-            # Data-only: Android decide cómo mostrarlo y puede deduplicar contra
-            # el WebSocket. Un payload `notification` lo pintaría el sistema sin
-            # pasar por la app, incluso con el stream abierto.
+            # data + notification: el sistema pinta la notificación sin despertar
+            # la app (llega en segundos aunque esté cerrada); el data permite
+            # abrir el detalle y deduplicar contra el WebSocket si está abierta.
             message = {
                 "message": {
                     "token": token,
                     "data": payload_data,
-                    "android": {"priority": "high"},
+                    "notification": {"title": title, "body": body},
+                    "android": {
+                        "priority": "high",
+                        "ttl": "300s",
+                        "notification": {
+                            "channel_id": "guardiania_alerts",
+                            "sound": "default",
+                        },
+                    },
                 }
             }
             async with semaphore:

@@ -68,7 +68,8 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        openAlerts = intent?.getBooleanExtra(TutorNotifications.EXTRA_OPEN_ALERTS, false) == true
+        openAlerts = intent?.getBooleanExtra(TutorNotifications.EXTRA_OPEN_ALERTS, false) == true ||
+            intent?.getStringExtra("open_alerts") == "1"
         setContent {
             GuardianTheme {
                 GuardianAgentApp(
@@ -86,7 +87,9 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
-        if (intent.getBooleanExtra(TutorNotifications.EXTRA_OPEN_ALERTS, false)) {
+        if (intent.getBooleanExtra(TutorNotifications.EXTRA_OPEN_ALERTS, false) ||
+            intent.getStringExtra("open_alerts") == "1"
+        ) {
             intent.removeExtra(TutorNotifications.EXTRA_OPEN_ALERTS)
             openAlerts = true
         }
@@ -258,6 +261,7 @@ private fun GuardianAgentApp(
                             onResendVerification = tutorVm::resendVerification,
                             onChangePassword = tutorVm::changePassword,
                             onExport = { tutorVm.export(onReady = { shareExport(context, it) }) },
+                            onTestPush = tutorVm::testPush,
                         )
                     }
                 }

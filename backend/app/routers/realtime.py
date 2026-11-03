@@ -3,12 +3,13 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..config import settings
-from ..db import get_db
+from ..db import get_db, utcnow
 from ..deps import current_tutor
 from ..models import PushToken, User
 from ..ratelimit import enforce
-from ..schemas import PushTokenOut, PushTokenRequest, RealtimeTicketResponse
+from ..schemas import PushTestOut, PushTokenOut, PushTokenRequest, RealtimeTicketResponse
 from ..security import create_alert_ws_ticket
+from ..services.push import push_service
 
 router = APIRouter(tags=["Tiempo real"])
 
@@ -107,3 +108,46 @@ async def unregister_token(
         row.activo = False
         await db.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+@router.post("/push/test", response_model=PushTestOut)
+async def test_push(tutor: User = Depends(current_tutor), db: AsyncSession = Depends(get_db)):
+    """Envía una push de prueba solo a los tokens del tutor autenticado."""
+
+    await enforce(f"push:test:{tutor.id}", 5, 60)
+    rows = list(
+        (
+            await db.execute(
+                select(PushToken).where(PushToken.usuario_id == tutor.id, PushToken.activo.is_(True))
+            )
+        ).scalars()
+    )
+    tokens = [row.token for row in rows]
+
+    if not push_service.enabled:
+        return PushTestOut(enabled=False, sent=0, invalid=0, tokens=len(tokens))
+    if not tokens:
+        return PushTestOut(enabled=True, sent=0, invalid=0, tokens=0)
+
+    result = await push_service.send(
+        tokens,
+        data={
+            "tipo": "test",
+            "severidad": "BAJA",
+            "categoria": "test",
+            "device_alias": "IA Guardian",
+            "ts": utcnow().isoformat(),
+        },
+    )
+    if result.invalid_tokens:
+        invalid = set(result.invalid_tokens)
+        for row in rows:
+            if row.token in invalid:
+                row.activo = False
+        await db.commit()
+
+    return PushTestOut(
+        enabled=True,
+        sent=result.sent,
+        invalid=len(result.invalid_tokens),
+        tokens=len(tokens),
+    )
