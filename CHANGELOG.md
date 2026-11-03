@@ -32,6 +32,12 @@ Todas las versiones relevantes de IA Guardian. El detalle técnico vive en
   launcher y a la marca interna.
 - Versión `1.4.0` (`versionCode` 5), APK release firmada.
 
+### Correcciones de UI
+
+- El QR del panel web ahora incluye `viewBox` y escala completo dentro de su tarjeta.
+- El código manual de la app Android quedó centrado, junto con su etiqueta y el botón de copiar.
+- En “Señales recientes”, el mensaje solo se puede expandir si no cabe en dos líneas; al expandirlo se ve una sola vez, sin duplicar el texto.
+
 ### Documentación y presentación
 
 - README sin capturas: solo queda el banner de portada y la documentación.
