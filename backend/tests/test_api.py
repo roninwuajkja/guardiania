@@ -993,3 +993,35 @@ def test_status_alerts_when_notification_access_is_lost(client, auth_headers):
     assert report(notificaciones_activas=True, dnd=True).status_code == 204
     alerts = client.get("/api/v1/alerts?limit=50", headers=auth_headers).json()
     assert len([a for a in alerts if a["categoria"] == "acceso_desactivado"]) == 2
+
+def test_status_keeps_the_last_notification_timestamp(client, auth_headers):
+    generated = generate_pairing(client, auth_headers)
+    verified = verify_manual(client, generated["manual_code"]).json()
+    device_headers = {"Authorization": f"Bearer {verified['access_token']}"}
+    stamp = datetime.now(timezone.utc) - timedelta(minutes=5)
+
+    def report(extra=None):
+        body = {
+            "notificaciones_activas": True,
+            "uso_activo": True,
+            "dnd": False,
+            "accesibilidad": False,
+        }
+        if extra is not None:
+            body.update(extra)
+        return client.post("/api/v1/devices/self/status", json=body, headers=device_headers)
+
+    assert report({"ultima_notificacion_en": stamp.isoformat()}).status_code == 204
+    row = next(
+        d for d in client.get("/api/v1/devices", headers=auth_headers).json()
+        if d["id"] == verified["device_id"]
+    )
+    assert row["ultima_notificacion_en"] is not None
+
+    # Un reporte sin el campo no borra el latido anterior.
+    assert report().status_code == 204
+    row = next(
+        d for d in client.get("/api/v1/devices", headers=auth_headers).json()
+        if d["id"] == verified["device_id"]
+    )
+    assert row["ultima_notificacion_en"] is not None

@@ -56,6 +56,7 @@ data class DeviceStatusRequest(
     @SerialName("uso_activo") val usoActivo: Boolean,
     val dnd: Boolean,
     val accesibilidad: Boolean,
+    @SerialName("ultima_notificacion_en") val ultimaNotificacionEn: String? = null,
 )
 
 @Serializable

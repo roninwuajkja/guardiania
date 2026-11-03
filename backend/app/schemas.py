@@ -327,6 +327,7 @@ class DeviceOut(BaseModel):
     notificaciones_activas: bool | None = None
     dnd: bool | None = None
     estado_reportado_en: datetime | None = None
+    ultima_notificacion_en: datetime | None = None
 
 
 class DeviceStatusRequest(BaseModel):
@@ -336,6 +337,7 @@ class DeviceStatusRequest(BaseModel):
     uso_activo: bool
     dnd: bool = False
     accesibilidad: bool = False
+    ultima_notificacion_en: datetime | None = None
 
 
 class UnlinkCodeRequest(BaseModel):

@@ -1279,6 +1279,11 @@ function renderDevices() {
       const statusBits = [
         device.notificaciones_activas === true ? 'Notificaciones activas' : null,
         device.dnd === true ? 'No molestar activo' : null,
+        device.notificaciones_activas === true
+          ? (device.ultima_notificacion_en
+            ? `última notificación ${relativeLabel(device.ultima_notificacion_en)}`
+            : 'sin notificaciones registradas')
+          : null,
       ].filter(Boolean);
       const statusText = sinAcceso
         ? 'Acceso a notificaciones desactivado'

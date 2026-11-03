@@ -32,6 +32,8 @@ class GuardianNotificationListener : NotificationListenerService() {
         scope.launch {
             (application as GuardianApp).container.statusReporter.report()
         }
+        // Trabajo durable por si el sistema mata el proceso justo después.
+        SyncScheduler.requestPrioritySync(applicationContext)
     }
 
     override fun onNotificationPosted(notification: StatusBarNotification?) {
@@ -53,6 +55,7 @@ class GuardianNotificationListener : NotificationListenerService() {
         val postedAt = System.currentTimeMillis()
         scope.launch {
             store.addSignal(sanitized.category, sanitized.flags, postedAt)
+            store.setMeta("last_notification_at", postedAt.toString())
             if (sanitized.flags.isNotEmpty() && store.pairing() != null) {
                 SyncScheduler.requestPrioritySync(applicationContext)
             }

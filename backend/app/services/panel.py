@@ -13,6 +13,7 @@ from ..models import (
     DeviceStatus,
     FeatureCapture,
     HiddenDevice,
+    ListenerHeartbeat,
     OfflineNotice,
     RiskAlert,
     Severidad,
@@ -109,6 +110,16 @@ async def list_devices(db: AsyncSession, tutor_id: uuid.UUID) -> list[DeviceOut]
             )
         ).scalars()
     } if rows else {}
+    heartbeats = {
+        beat.device_id: beat
+        for beat in (
+            await db.execute(
+                select(ListenerHeartbeat).where(
+                    ListenerHeartbeat.device_id.in_([device.id for _, device in rows])
+                )
+            )
+        ).scalars()
+    } if rows else {}
     seen: set[uuid.UUID] = set()
     devices: list[DeviceOut] = []
     for binding, device in rows:
@@ -135,6 +146,9 @@ async def list_devices(db: AsyncSession, tutor_id: uuid.UUID) -> list[DeviceOut]
                 dnd=statuses[device.id].dnd if device.id in statuses else None,
                 estado_reportado_en=statuses[device.id].reportado_en
                 if device.id in statuses
+                else None,
+                ultima_notificacion_en=heartbeats[device.id].ultima_notificacion_en
+                if device.id in heartbeats
                 else None,
             )
         )

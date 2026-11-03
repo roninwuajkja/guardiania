@@ -384,3 +384,16 @@ class AccessNotice(Base):
     device_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("dispositivos.id"), primary_key=True)
     vinculacion_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("vinculaciones.id"), nullable=False)
     avisado_en: Mapped[datetime] = mapped_column(UtcDateTime, default=utcnow, nullable=False)
+
+class ListenerHeartbeat(Base):
+    """Última notificación que el listener realmente recibió.
+
+    Sirve para distinguir «no llegan notificaciones» de «el listener está
+    ciego» (por ejemplo, si el fabricante lo bloquea en No molestar).
+    """
+
+    __tablename__ = "latidos_listener"
+
+    device_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("dispositivos.id"), primary_key=True)
+    ultima_notificacion_en: Mapped[datetime | None] = mapped_column(UtcDateTime, nullable=True)
+    actualizado_en: Mapped[datetime] = mapped_column(UtcDateTime, default=utcnow, nullable=False)
