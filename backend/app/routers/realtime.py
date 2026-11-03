@@ -1,4 +1,5 @@
 import asyncio
+import logging
 
 from fastapi import APIRouter, Depends, Query, Response, status
 from sqlalchemy import select
@@ -14,6 +15,10 @@ from ..security import create_alert_ws_ticket
 from ..services.push import push_service
 
 router = APIRouter(tags=["Tiempo real"])
+
+logger = logging.getLogger("guardiania.push")
+# Una tarea programada sin referencia puede ser recolectada antes de ejecutarse.
+_scheduled_push_tests: set[asyncio.Task] = set()
 
 
 def _ws_url() -> str:
@@ -152,11 +157,19 @@ async def test_push(
         async def send_later() -> None:
             await asyncio.sleep(delay_seconds)
             try:
-                await push_service.send(tokens, data=data)
-            except Exception:  # noqa: BLE001 - una prueba no debe tumbar el proceso
-                return
+                result = await push_service.send(tokens, data=data)
+                logger.info(
+                    "push_test_scheduled sent=%d failed=%d tokens=%d",
+                    result.sent,
+                    result.failed,
+                    len(tokens),
+                )
+            except Exception as exc:  # noqa: BLE001 - una prueba no debe tumbar el proceso
+                logger.warning("push_test_scheduled_failed error=%s", type(exc).__name__)
 
-        asyncio.create_task(send_later())
+        task = asyncio.create_task(send_later())
+        _scheduled_push_tests.add(task)
+        task.add_done_callback(_scheduled_push_tests.discard)
         return PushTestOut(
             enabled=True,
             sent=0,
