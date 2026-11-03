@@ -3,7 +3,7 @@
 Regla Cero: este módulo solo recibe ``DerivedFeatureVector``. No existe ningún
 camino de código que envíe texto, nombres, teléfonos o contenido de
 notificaciones a un proveedor externo. ``AI_SEND_SNIPPET`` es una compuerta
-cerrada y sin llamadores en 1.6.1.
+cerrada y sin llamadores en 1.7.0.
 
 Orden de ejecución:
     1. caché en memoria por hash del vector (5 min)
@@ -49,7 +49,9 @@ _FLAG_PRIORITY = (
     "trafficking",
     "radicalization",
     "sexual_content",
+    "sexual_harassment",
     "violence",
+    "threat",
     "weapons",
     "coercion",
     "bullying",
@@ -59,6 +61,7 @@ _FLAG_PRIORITY = (
     "insult_mild",
     "eating_disorder",
     "doxxing",
+    "stalking",
     "runaway",
     "dangerous_challenge",
     "drugs",
@@ -80,6 +83,7 @@ _CATEGORY_BY_FLAG = {
     "grooming": "Contenido_Inapropiado",
     "sextortion": "Contenido_Inapropiado",
     "sexual_content": "Contenido_Inapropiado",
+    "sexual_harassment": "Contenido_Inapropiado",
     "bullying": "Ciberbullying",
     "hate_speech": "Ciberbullying",
     "insult_severe": "Ciberbullying",
@@ -95,7 +99,9 @@ _FLAG_LABELS = {
     "trafficking": "Posible trata o explotación",
     "radicalization": "Posible radicalización",
     "sexual_content": "Contenido sexual",
+    "sexual_harassment": "Acoso sexual",
     "violence": "Violencia o amenazas",
+    "threat": "Amenaza",
     "weapons": "Armas o amenazas con armas",
     "coercion": "Presión o chantaje",
     "bullying": "Acoso escolar",
@@ -105,6 +111,7 @@ _FLAG_LABELS = {
     "insult_mild": "Insulto leve",
     "eating_disorder": "Señales de trastorno alimentario",
     "doxxing": "Exposición de datos personales",
+    "stalking": "Acecho o seguimiento",
     "runaway": "Riesgo de fuga o desaparición",
     "dangerous_challenge": "Reto viral peligroso",
     "drugs": "Drogas o alcohol",
@@ -131,7 +138,9 @@ _SERIOUS_FLAGS = {
     "trafficking",
     "radicalization",
     "sexual_content",
+    "sexual_harassment",
     "violence",
+    "threat",
     "weapons",
     "coercion",
     "bullying",
@@ -139,6 +148,7 @@ _SERIOUS_FLAGS = {
     "insult_severe",
     "eating_disorder",
     "doxxing",
+    "stalking",
     "runaway",
     "dangerous_challenge",
     "drugs",
@@ -197,11 +207,12 @@ Responde EXCLUSIVAMENTE un objeto JSON válido, sin markdown, con esta forma:
 {"nivel_riesgo":"BAJO|MEDIO|ALTO","categoria":"Ciberbullying|Conducta_Riesgo|Contenido_Inapropiado|Sin_Riesgo","descripcion_narrativa":"...","consejo_educativo":"..."}
 
 Señales críticas: autolesión, grooming, sextorsión, abuso o maltrato, trata o
-explotación, radicalización. Señales graves: contenido sexual, violencia o armas,
-presión o chantaje, acoso, insulto grave, discurso de odio, trastorno alimentario,
-exposición de datos, fuga, retos peligrosos y drogas. Señales medias: insulto leve
-o moderado, apuestas, malestar, estafas (puntos, casino, inversión, cuenta, premio,
-envío, trabajo, romance) y contacto desconocido.
+explotación, radicalización. Señales graves: contenido sexual, acoso sexual,
+violencia o armas, amenaza, acecho o seguimiento, presión o chantaje, acoso,
+insulto grave, discurso de odio, trastorno alimentario, exposición de datos,
+fuga, retos peligrosos y drogas. Señales medias: insulto leve o moderado,
+apuestas, malestar, estafas (puntos, casino, inversión, cuenta, premio, envío,
+trabajo, romance) y contacto desconocido.
 
 Cómo decidir (en este orden):
 1. Si hay CUALQUIER señal, el nivel NUNCA es BAJO: como mínimo es MEDIO.
@@ -219,8 +230,8 @@ Cómo decidir (en este orden):
    señal o es de madrugada.
 
 Categoría: Ciberbullying para acoso, insultos y discurso de odio;
-Contenido_Inapropiado para grooming, sextorsión, contenido sexual y trata;
-Conducta_Riesgo para el resto. Sin_Riesgo solo si el nivel es BAJO.
+Contenido_Inapropiado para grooming, sextorsión, contenido sexual, acoso sexual
+y trata; Conducta_Riesgo para el resto. Sin_Riesgo solo si el nivel es BAJO.
 
 Una estafa que pida dinero, códigos, contraseñas o datos, o un insulto grave
 repetido, debe priorizarse como ALTO. Un insulto leve aislado no es ALTO por sí

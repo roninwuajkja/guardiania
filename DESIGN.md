@@ -40,7 +40,7 @@ No hay Redis ni cola externa. El **outbox transaccional** vive en la misma base 
 - Categoría de la app (no el nombre del paquete en el panel, salvo el alias del dispositivo).
 - Conteos y minutos, nunca títulos, remitentes, números ni extractos.
 - Flags léxicos normalizados (`gambling`, `self_harm`, …), no el texto que los activó.
-- Un hash salado y truncado de contacto, solo cuando la app expone un identificador estable. **No implementado en 1.6.1**: el campo va `null` y `contacto_recurrente` está reservada.
+- Un hash salado y truncado de contacto, solo cuando la app expone un identificador estable. **No implementado en 1.7.0**: el campo va `null` y `contacto_recurrente` está reservada.
 - Ventana temporal de máximo 60 minutos y `event_id` determinista para idempotencia.
 
 ### Qué se queda en el teléfono
@@ -108,7 +108,9 @@ Las reglas son deterministas y explicables. Cada alerta guarda el código, la et
 | `trafficking` | Trata, explotación o prostitución | CRÍTICA | 96 |
 | `radicalization` | Reclutamiento o supremacía violenta | CRÍTICA | 92 |
 | `sexual_content` | Términos sexuales explícitos | ALTA | 86 |
+| `sexual_harassment` | Comentarios o tocamientos sexuales no deseados | ALTA | 86 |
 | `violence` | Amenaza, golpiza o pelea | ALTA | 84 |
+| `threat` | Amenaza ambigua o directa | ALTA | 76 |
 | `weapons` | Armas o municiones | ALTA | 86 |
 | `coercion` | Presión o chantaje | ALTA | 82 |
 | `bullying` | Acoso o exclusión | ALTA | 80 |
@@ -118,6 +120,7 @@ Las reglas son deterministas y explicables. Cada alerta guarda el código, la et
 | `insult_mild` | Insultos leves o modismos despectivos | MEDIA | 44 |
 | `eating_disorder` | Conductas de trastorno alimentario | ALTA | 80 |
 | `doxxing` | Exposición de datos personales | ALTA | 82 |
+| `stalking` | Acecho o seguimiento | ALTA | 82 |
 | `runaway` | Fuga o riesgo de desaparición | ALTA | 84 |
 | `dangerous_challenge` | Retos virales peligrosos | ALTA | 86 |
 | `drugs` | Drogas, alcohol, vapeo | ALTA | 74 |

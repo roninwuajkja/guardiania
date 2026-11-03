@@ -2,15 +2,15 @@
 
 ![IA Guardian](docs/screenshots/banner.png)
 
-> **APK Android 1.6.1:** [descargar desde GitHub Releases](https://github.com/roninwuajkja/guardiania/releases/tag/v1.6.1) · [changelog](CHANGELOG.md)
+> **APK Android 1.7.0:** [descargar desde GitHub Releases](https://github.com/roninwuajkja/guardiania/releases/tag/v1.7.0) · [changelog](CHANGELOG.md)
 
 Control parental para Android con **privacidad por diseño**: la conversación nunca sale del teléfono. El agente analiza localmente, descarta el texto y envía solo un vector de señales derivadas. El tutor recibe alertas explicables, no contenido.
 
-> **Proyecto de Título — versión 1.6.1 (defensa).** Los datos de la demo son sintéticos. El motor de riesgo combina reglas explicables y una evaluación de IA que **solo recibe el vector derivado** (nunca texto); si no hay proveedor configurado, opera en modo heurístico. No es un diagnóstico ni reemplaza una conversación familiar. Antes de operar con datos reales de menores se requiere revisión legal chilena y auditoría de seguridad independiente; ver [`docs/compliance/compuerta-lanzamiento.md`](docs/compliance/compuerta-lanzamiento.md).
+> **Proyecto de Título — versión 1.7.0 (defensa).** Los datos de la demo son sintéticos. El motor de riesgo combina reglas explicables y una evaluación de IA que **solo recibe el vector derivado** (nunca texto); si no hay proveedor configurado, opera en modo heurístico. No es un diagnóstico ni reemplaza una conversación familiar. Antes de operar con datos reales de menores se requiere revisión legal chilena y auditoría de seguridad independiente; ver [`docs/compliance/compuerta-lanzamiento.md`](docs/compliance/compuerta-lanzamiento.md).
 
 ## Versiones
 
-La versión actual es **1.6.1**. Las notas de cada versión y las APK anteriores están en [GitHub Releases](https://github.com/roninwuajkja/guardiania/releases); el historial completo está en [`CHANGELOG.md`](CHANGELOG.md).
+La versión actual es **1.7.0**. Las notas de cada versión y las APK anteriores están en [GitHub Releases](https://github.com/roninwuajkja/guardiania/releases); el historial completo está en [`CHANGELOG.md`](CHANGELOG.md).
 
 ## Qué incluye
 
@@ -19,7 +19,7 @@ La versión actual es **1.6.1**. Las notas de cada versión y las APK anteriores
 - **Vinculación con dos voluntades:** el tutor declara tutela y el menor otorga asentimiento. QR corto, código manual de 6 dígitos y confirmación en vivo por WebSocket.
 - **Cuentas de tutor:** registro, verificación de correo, recuperación, cierre de sesiones, consentimientos versionados y auditoría.
 - **Agente Android nativo** (Kotlin + Compose): uso de apps y metadatos de notificaciones, sanitización en memoria, cola offline con SQLCipher.
-- **Motor de riesgo determinista** con evidencias: `self_harm`, `grooming`, `sextortion`, `abuse`, `trafficking`, `radicalization`, `sexual_content`, `violence`, `weapons`, `coercion`, `bullying`, `hate_speech`, `insult_mild`, `insult_moderate`, `insult_severe`, `eating_disorder`, `doxxing`, `runaway`, `dangerous_challenge`, `drugs`, `gambling`, `malestar`, `scam`, `scam_points`, `scam_casino`, `scam_financial`, `scam_account`, `scam_prize`, `scam_delivery`, `scam_job`, `scam_romance`, `unknown_contact`, `uso_nocturno`, `uso_prolongado`, `contacto_recurrente`.
+- **Motor de riesgo determinista** con evidencias: `self_harm`, `grooming`, `sextortion`, `abuse`, `trafficking`, `radicalization`, `sexual_content`, `sexual_harassment`, `violence`, `threat`, `weapons`, `coercion`, `bullying`, `hate_speech`, `insult_mild`, `insult_moderate`, `insult_severe`, `eating_disorder`, `doxxing`, `stalking`, `runaway`, `dangerous_challenge`, `drugs`, `gambling`, `malestar`, `scam`, `scam_points`, `scam_casino`, `scam_financial`, `scam_account`, `scam_prize`, `scam_delivery`, `scam_job`, `scam_romance`, `unknown_contact`, `uso_nocturno`, `uso_prolongado`, `contacto_recurrente`.
 - **Evaluación de IA** con el vector derivado (categoría, flags anonimizados, duración, conteos, hora local, notificaciones por minuto). Cadena Groq → Gemini → OpenAI → Anthropic → heurística local, con caché, circuit breaker y presupuesto de latencia.
 - **Alertas en tiempo real y push:** WebSocket `/ws/tutor` con ticket efímero y FCM con `notification` + `data` para todas las severidades.
 - **Backend FastAPI async** con PostgreSQL en producción y SQLite solo para demo local.
@@ -226,7 +226,7 @@ Estados de vinculación: `PENDIENTE`, `ACTIVO`, `REVOCADO`, `EXPIRADO`. Un códi
 cd backend
 .\.venv\Scripts\python.exe -m pytest -q
 
-# Android: 53 pruebas unitarias + 1 instrumentada (QR con ML Kit)
+# Android: 61 pruebas unitarias + 1 instrumentada (QR con ML Kit)
 cd android
 .\gradlew.bat :app:testDebugUnitTest
 .\gradlew.bat :app:connectedDebugAndroidTest
