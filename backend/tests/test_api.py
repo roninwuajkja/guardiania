@@ -518,7 +518,7 @@ def evaluate_payload(device_id, *, flags=("self_harm",), event_id=None, age_minu
         "lexical_flag_count": len(flags),
         "flags": list(flags),
         "usage_duration_minutes": 15,
-        "integrity": {"attestation_ok": True, "app_version": "1.2.0"},
+        "integrity": {"attestation_ok": True, "app_version": "1.4.0"},
     }
 
 
@@ -612,7 +612,7 @@ def test_sync_publishes_medium_rule_alert_to_stream(client, auth_headers):
                 "usage_duration_minutes": 12,
                 "notification_count": 3,
                 "event_count": 3,
-                "integrity": {"attestation_ok": True, "app_version": "1.2.0"},
+                "integrity": {"attestation_ok": True, "app_version": "1.4.0"},
             }
         ],
     }
@@ -629,6 +629,42 @@ def test_sync_publishes_medium_rule_alert_to_stream(client, auth_headers):
         assert event["type"] == "risk_alert"
         assert event["data"]["categoria"] == "gambling"
         assert event["data"]["severidad"] == "MEDIA"
+
+
+def test_sync_sextortion_flag_creates_critical_alert(client, auth_headers):
+    generated = generate_pairing(client, auth_headers)
+    verified = verify_manual(client, generated["manual_code"]).json()
+    device_headers = {"Authorization": f"Bearer {verified['access_token']}"}
+
+    synced = client.post(
+        "/api/v1/captures/sync",
+        json=_sync_payload(verified["device_id"], flags=["sextortion"]),
+        headers=device_headers,
+    )
+    assert synced.status_code == 200, synced.text
+
+    alerts = client.get("/api/v1/alerts?limit=50", headers=auth_headers).json()
+    row = next(alert for alert in alerts if alert["categoria"] == "sextortion")
+    assert row["severidad"] == "CRITICA"
+    assert row["reglas"][0]["label"] == "Sextorsión o chantaje con imágenes"
+
+
+def test_sync_unknown_flag_is_not_silently_ignored(client, auth_headers):
+    generated = generate_pairing(client, auth_headers)
+    verified = verify_manual(client, generated["manual_code"]).json()
+    device_headers = {"Authorization": f"Bearer {verified['access_token']}"}
+
+    synced = client.post(
+        "/api/v1/captures/sync",
+        json=_sync_payload(verified["device_id"], flags=["senal_futura"]),
+        headers=device_headers,
+    )
+    assert synced.status_code == 200, synced.text
+
+    alerts = client.get("/api/v1/alerts?limit=50", headers=auth_headers).json()
+    row = next(alert for alert in alerts if alert["categoria"] == "senal_futura")
+    assert row["severidad"] == "MEDIA"
+    assert row["reglas"][0]["label"] == "Señal de riesgo no catalogada"
 
 
 def test_capture_evaluate_dedupes_and_rejects_raw_text(client, auth_headers, monkeypatch):
@@ -765,7 +801,7 @@ def _sync_payload(device_id: str, *, flags: list[str] | None = None) -> dict:
                 "usage_duration_minutes": 5,
                 "notification_count": 1,
                 "event_count": 1,
-                "integrity": {"attestation_ok": True, "app_version": "1.2.0"},
+                "integrity": {"attestation_ok": True, "app_version": "1.4.0"},
             }
         ],
     }

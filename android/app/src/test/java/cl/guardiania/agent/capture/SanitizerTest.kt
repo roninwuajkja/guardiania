@@ -112,4 +112,170 @@ class SanitizerTest {
         assertTrue(result.flags.isEmpty())
         assertFalse(result.flags.contains(""))
     }
+
+    @Test
+    fun `sextortion threat publishes intimate images`() {
+        val result = Sanitizer.sanitize(
+            "com.whatsapp",
+            "Desconocido",
+            "Si no me pagas, voy a publicar tus fotos",
+        )
+
+        assertTrue(result.flags.contains("sextortion"))
+    }
+
+    @Test
+    fun `family abuse and isolation are detected`() {
+        val result = Sanitizer.sanitize(
+            "com.whatsapp",
+            "Sofía",
+            "Mi padrastro me pega y no me deja salir de la casa",
+        )
+
+        assertTrue(result.flags.contains("abuse"))
+    }
+
+    @Test
+    fun `eating disorder behavior is detected`() {
+        val result = Sanitizer.sanitize(
+            "com.instagram.android",
+            null,
+            "No he comido en tres días y me provoco el vómito",
+        )
+
+        assertTrue(result.flags.contains("eating_disorder"))
+    }
+
+    @Test
+    fun `hate speech against a group is detected`() {
+        val result = Sanitizer.sanitize(
+            "com.discord",
+            null,
+            "Muerte a los inmigrantes",
+        )
+
+        assertTrue(result.flags.contains("hate_speech"))
+        assertTrue(result.flags.contains("radicalization"))
+    }
+
+    @Test
+    fun `weapon mention is detected`() {
+        val result = Sanitizer.sanitize(
+            "org.telegram.messenger",
+            null,
+            "Tengo una pistola y balas",
+        )
+
+        assertTrue(result.flags.contains("weapons"))
+    }
+
+    @Test
+    fun `dangerous challenge is detected`() {
+        val result = Sanitizer.sanitize(
+            "com.zhiliaoapp.musically",
+            null,
+            "Entra al reto de la asfixia, es el blackout challenge",
+        )
+
+        assertTrue(result.flags.contains("dangerous_challenge"))
+    }
+
+    @Test
+    fun `scam message is detected`() {
+        val result = Sanitizer.sanitize(
+            "com.instagram.android",
+            null,
+            "Ganaste un premio, envía el código de verificación",
+        )
+
+        assertTrue(result.flags.contains("scam"))
+    }
+
+    @Test
+    fun `doxxing threat is detected`() {
+        val result = Sanitizer.sanitize(
+            "com.whatsapp",
+            null,
+            "Sé dónde vives, voy a publicar tu dirección",
+        )
+
+        assertTrue(result.flags.contains("doxxing"))
+    }
+
+    @Test
+    fun `runaway risk is detected`() {
+        val result = Sanitizer.sanitize(
+            "com.whatsapp",
+            null,
+            "Me voy a arrancar de casa, no vuelvo más",
+        )
+
+        assertTrue(result.flags.contains("runaway"))
+    }
+
+    @Test
+    fun `trafficking threat is detected`() {
+        val result = Sanitizer.sanitize(
+            "org.telegram.messenger",
+            null,
+            "Te van a vender a otro país para trabajar",
+        )
+
+        assertTrue(result.flags.contains("trafficking"))
+    }
+
+    @Test
+    fun `history homework is not radicalization`() {
+        val result = Sanitizer.sanitize(
+            "com.google.android.apps.docs",
+            null,
+            "Estudiamos la Segunda Guerra Mundial, Hitler y el nazismo",
+        )
+
+        assertTrue(result.flags.isEmpty())
+    }
+
+    @Test
+    fun `turn taking is not abuse`() {
+        val result = Sanitizer.sanitize(
+            "com.whatsapp",
+            "Matías",
+            "Me tocó el turno de estudiar hoy",
+        )
+
+        assertFalse(result.flags.contains("abuse"))
+    }
+
+    @Test
+    fun `family dinner is not drugs`() {
+        val result = Sanitizer.sanitize(
+            "com.whatsapp",
+            "Mamá",
+            "Vino mi abuela a comer pizza",
+        )
+
+        assertFalse(result.flags.contains("drugs"))
+    }
+
+    @Test
+    fun `waking up early is not self harm`() {
+        val result = Sanitizer.sanitize(
+            "com.whatsapp",
+            "Matías",
+            "No quiero despertar temprano mañana",
+        )
+
+        assertFalse(result.flags.contains("self_harm"))
+    }
+
+    @Test
+    fun `weather alert is not violence`() {
+        val result = Sanitizer.sanitize(
+            "com.google.android.youtube",
+            null,
+            "Hay amenaza de lluvia para mañana",
+        )
+
+        assertFalse(result.flags.contains("violence"))
+    }
 }

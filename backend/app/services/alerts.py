@@ -32,7 +32,14 @@ from .risk import FLAG_RULES
 
 logger = logging.getLogger("guardiania.alerts")
 
-_CRITICAL_FLAGS = {"self_harm", "grooming"}
+_CRITICAL_FLAGS = {
+    "self_harm",
+    "grooming",
+    "sextortion",
+    "abuse",
+    "trafficking",
+    "radicalization",
+}
 
 
 @dataclass(frozen=True)

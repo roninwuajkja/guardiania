@@ -3,7 +3,7 @@
 Regla Cero: este módulo solo recibe ``DerivedFeatureVector``. No existe ningún
 camino de código que envíe texto, nombres, teléfonos o contenido de
 notificaciones a un proveedor externo. ``AI_SEND_SNIPPET`` es una compuerta
-cerrada y sin llamadores en 1.3.0.
+cerrada y sin llamadores en 1.4.0.
 
 Orden de ejecución:
     1. caché en memoria por hash del vector (5 min)
@@ -44,51 +44,96 @@ AI_CATEGORIES = ("Ciberbullying", "Conducta_Riesgo", "Contenido_Inapropiado", "S
 _FLAG_PRIORITY = (
     "self_harm",
     "grooming",
+    "sextortion",
+    "abuse",
+    "trafficking",
+    "radicalization",
     "sexual_content",
     "violence",
+    "weapons",
     "coercion",
     "bullying",
+    "hate_speech",
+    "eating_disorder",
+    "doxxing",
+    "runaway",
+    "dangerous_challenge",
     "drugs",
     "gambling",
     "malestar",
+    "scam",
     "unknown_contact",
 )
 
 _CATEGORY_BY_FLAG = {
+    "grooming": "Contenido_Inapropiado",
+    "sextortion": "Contenido_Inapropiado",
     "sexual_content": "Contenido_Inapropiado",
     "bullying": "Ciberbullying",
+    "hate_speech": "Ciberbullying",
 }
 
 _FLAG_LABELS = {
     "self_harm": "Posible autolesión",
     "grooming": "Posible grooming",
+    "sextortion": "Sextorsión o chantaje con imágenes",
+    "abuse": "Posible abuso o maltrato",
+    "trafficking": "Posible trata o explotación",
+    "radicalization": "Posible radicalización",
     "sexual_content": "Contenido sexual",
-    "violence": "Violencia",
-    "bullying": "Acoso escolar",
+    "violence": "Violencia o amenazas",
+    "weapons": "Armas o amenazas con armas",
     "coercion": "Presión o chantaje",
+    "bullying": "Acoso escolar",
+    "hate_speech": "Discurso de odio o discriminación",
+    "eating_disorder": "Señales de trastorno alimentario",
+    "doxxing": "Exposición de datos personales",
+    "runaway": "Riesgo de fuga o desaparición",
+    "dangerous_challenge": "Reto viral peligroso",
     "drugs": "Drogas o alcohol",
     "gambling": "Apuestas",
     "malestar": "Malestar emocional",
+    "scam": "Posible estafa o phishing",
     "unknown_contact": "Contacto desconocido",
 }
 
 # Señales que por sí solas justifican nivel ALTO.
-_SERIOUS_FLAGS = {"self_harm", "grooming", "sexual_content", "violence", "bullying", "coercion"}
+_SERIOUS_FLAGS = {
+    "self_harm",
+    "grooming",
+    "sextortion",
+    "abuse",
+    "trafficking",
+    "radicalization",
+    "sexual_content",
+    "violence",
+    "weapons",
+    "coercion",
+    "bullying",
+    "hate_speech",
+    "eating_disorder",
+    "doxxing",
+    "runaway",
+    "dangerous_challenge",
+    "drugs",
+}
+
+# Señales que, combinadas con cualquier otra, elevan la alerta a CRITICA.
+_CRITICAL_FLAGS = {
+    "self_harm",
+    "grooming",
+    "sextortion",
+    "abuse",
+    "trafficking",
+    "radicalization",
+}
 
 # Volumen de notificaciones que, sin señales léxicas, ya merece una revisión.
 _VOLUME_THRESHOLD = 20
 _NIGHT_VOLUME_THRESHOLD = 8
 
-_HIGH_FLAGS = {
-    "self_harm",
-    "grooming",
-    "sexual_content",
-    "violence",
-    "bullying",
-    "coercion",
-    "drugs",
-}
-_MEDIUM_FLAGS = {"gambling", "unknown_contact", "malestar"}
+_HIGH_FLAGS = _SERIOUS_FLAGS
+_MEDIUM_FLAGS = {"gambling", "malestar", "scam", "unknown_contact"}
 
 _DEFAULT_NARRATIVE = {
     "ALTO": "Se detectaron señales de riesgo alto en la actividad monitoreada.",
@@ -110,28 +155,35 @@ teléfonos ni contenido de mensajes.
 Responde EXCLUSIVAMENTE un objeto JSON válido, sin markdown, con esta forma:
 {"nivel_riesgo":"BAJO|MEDIO|ALTO","categoria":"Ciberbullying|Conducta_Riesgo|Contenido_Inapropiado|Sin_Riesgo","descripcion_narrativa":"...","consejo_educativo":"..."}
 
-Cómo decidir (en este orden):
-1. Si el vector trae CUALQUIER señal (autolesión, grooming, contenido sexual, violencia,
-   presión o chantaje, acoso, drogas, apuestas, malestar emocional o contacto desconocido),
-   el nivel NUNCA es BAJO: como mínimo es MEDIO.
-2. Autolesión, grooming, contenido sexual, violencia, presión o chantaje, o acoso: ALTO.
-3. Dos o más señales distintas: nivel ALTO.
-4. Muchas notificaciones para la ventana (20 o más por hora) en categoría social o
-   mensajería: como mínimo MEDIO, aunque no haya señales léxicas.
-5. Horario nocturno (00:00–05:59) con señales o con notificaciones abundantes: como
-   mínimo MEDIO.
-6. Contacto desconocido presente junto a otras señales, o contacto desconocido con
-   muchas notificaciones: como mínimo MEDIO; si además hay señales graves, ALTO.
-7. Solo responde BAJO cuando no haya ninguna señal y el uso sea razonable.
-   Si `uso_sin_notificaciones` es true (uso alto en app social o de mensajería con
-   cero notificaciones), considera que las notificaciones pueden estar silenciadas:
-   no es una señal grave por sí sola, pero súbela a MEDIO si hay otra señal o es
-   de madrugada.
+Señales críticas: autolesión, grooming, sextorsión, abuso o maltrato, trata o
+explotación, radicalización. Señales graves: contenido sexual, violencia o armas,
+presión o chantaje, acoso, discurso de odio, trastorno alimentario, exposición de
+datos, fuga, retos peligrosos y drogas. Señales medias: apuestas, malestar, estafa y
+contacto desconocido.
 
-No minimices por tratarse de una sola notificación: una sola señal basta para MEDIO.
-No inventes hechos que no estén en el vector. No repitas ni pidas datos personales.
-Español de Chile, tono respetuoso, sin culpabilizar al menor. Máximo 280 caracteres
-en cada texto.
+Cómo decidir (en este orden):
+1. Si hay CUALQUIER señal, el nivel NUNCA es BAJO: como mínimo es MEDIO.
+2. Si hay una señal crítica o grave, o dos o más señales distintas, el nivel es ALTO.
+3. Si hay una sola señal media, el nivel es MEDIO.
+4. Muchas notificaciones (20 o más por hora) en categoría social o mensajería:
+   como mínimo MEDIO; si además hay una señal, ALTO.
+5. Horario nocturno (00:00–05:59) con señales o notificaciones abundantes:
+   como mínimo MEDIO; si hay una señal grave, ALTO.
+6. Contacto desconocido con otras señales o muchas notificaciones: como mínimo
+   MEDIO; si hay señales graves, ALTO.
+7. Solo responde BAJO cuando no haya ninguna señal y el uso sea razonable.
+   Si `uso_sin_notificaciones` es true, considera que las notificaciones pueden
+   estar silenciadas: no es grave por sí sola, pero súbela a MEDIO si hay otra
+   señal o es de madrugada.
+
+Categoría: Ciberbullying para acoso y discurso de odio; Contenido_Inapropiado para
+grooming, sextorsión, contenido sexual y trata; Conducta_Riesgo para el resto.
+Sin_Riesgo solo si el nivel es BAJO.
+
+No minimices por tratarse de una sola notificación. No inventes hechos que no estén
+en el vector. No repitas ni pidas datos personales. Si hay una señal crítica, el
+consejo debe priorizar la seguridad y la ayuda inmediata. Español de Chile, tono
+respetuoso, sin culpabilizar al menor. Máximo 280 caracteres en cada texto.
 """
 
 _CONTROL_CHARS = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
@@ -305,7 +357,7 @@ def apply_policy_floor(assessment: Assessment, vector: DerivedFeatureVector) -> 
     flags = list(dict.fromkeys(vector.flags))
     serious = [flag for flag in flags if flag in _SERIOUS_FLAGS]
 
-    if serious:
+    if serious or len(flags) >= 2:
         minimum = "ALTO"
     elif flags:
         minimum = "MEDIO"
@@ -381,6 +433,9 @@ def vector_payload(vector: DerivedFeatureVector) -> dict[str, Any]:
         "categoria_uso": vector.category,
         "flags": flags,
         "flags_descripcion": [_FLAG_LABELS.get(flag, "Señal local") for flag in flags],
+        "flags_criticos": [flag for flag in flags if flag in _CRITICAL_FLAGS],
+        "flags_graves": [flag for flag in flags if flag in _SERIOUS_FLAGS],
+        "cantidad_flags": len(flags),
         "lexical_flag_count": vector.lexical_flag_count,
         "contacto_desconocido_presente": bool(vector.hashed_contact_id),
         "usage_duration_minutes": vector.usage_duration_minutes,
