@@ -4,6 +4,24 @@ Todas las versiones relevantes de IA Guardian. El detalle técnico vive en
 [`docs/architecture.md`](docs/architecture.md) y
 [`docs/arquitectura-ia.md`](docs/arquitectura-ia.md).
 
+## 1.5.0 — 2026-11-03
+
+### Panel del tutor
+
+- **Guardia de hoy** rediseñada: 24 columnas horarias con barras apiladas de
+  actividad, atención y alertas, conteos visibles y eje 00–24.
+- La banda nocturna se conserva y las marcas se agrupan por hora para evitar
+  solapamientos cuando hay muchas señales.
+- Se consolidan los ajustes de lectura: QR web escalable, código manual centrado
+  en Android, mensajes de alerta sin duplicado y detalle solo cuando aporta
+  evidencia o consejo.
+
+### Versión y distribución
+
+- Backend y Android **1.5.0**; APK `versionCode` 6.
+- Nuevo tag y release `v1.5.0` con APK firmada y changelog adjunto.
+- `v1.4.0` queda como release anterior y no se vuelve a mover.
+
 ## 1.4.0 — 2026-11-03
 
 ### Detección de riesgo

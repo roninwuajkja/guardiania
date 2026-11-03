@@ -2,11 +2,17 @@
 
 ![IA Guardian](docs/screenshots/banner.png)
 
-> **APK Android 1.4.0:** [descargar desde GitHub Releases](https://github.com/roninwuajkja/guardiania/releases/tag/v1.4.0) · [changelog](CHANGELOG.md)
+> **APK Android 1.5.0:** [descargar desde GitHub Releases](https://github.com/roninwuajkja/guardiania/releases/tag/v1.5.0) · [changelog](CHANGELOG.md)
 
 Control parental para Android con **privacidad por diseño**: la conversación nunca sale del teléfono. El agente analiza localmente, descarta el texto y envía solo un vector de señales derivadas. El tutor recibe alertas explicables, no contenido.
 
-> **Proyecto de Título — versión 1.4.0 (defensa).** Los datos de la demo son sintéticos. El motor de riesgo combina reglas explicables y una evaluación de IA que **solo recibe el vector derivado** (nunca texto); si no hay proveedor configurado, opera en modo heurístico. No es un diagnóstico ni reemplaza una conversación familiar. Antes de operar con datos reales de menores se requiere revisión legal chilena y auditoría de seguridad independiente; ver [`docs/compliance/compuerta-lanzamiento.md`](docs/compliance/compuerta-lanzamiento.md).
+> **Proyecto de Título — versión 1.5.0 (defensa).** Los datos de la demo son sintéticos. El motor de riesgo combina reglas explicables y una evaluación de IA que **solo recibe el vector derivado** (nunca texto); si no hay proveedor configurado, opera en modo heurístico. No es un diagnóstico ni reemplaza una conversación familiar. Antes de operar con datos reales de menores se requiere revisión legal chilena y auditoría de seguridad independiente; ver [`docs/compliance/compuerta-lanzamiento.md`](docs/compliance/compuerta-lanzamiento.md).
+
+## Novedades de 1.5.0
+
+- **Guardia de hoy renovada:** panel por hora con barras apiladas y conteos separados de **actividad, atención y alertas**, eje 00–24 y banda nocturna.
+- **Lectura más limpia:** QR web que escala completo, código manual centrado en Android y mensajes de alerta sin duplicados; el detalle solo aparece cuando aporta evidencia o consejo.
+- **Versión y release ordenados:** nuevo tag `v1.5.0`, APK firmada y changelog. El release `v1.4.0` queda como versión anterior.
 
 ## Novedades de 1.4.0
 
