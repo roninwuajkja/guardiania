@@ -40,7 +40,7 @@ No hay Redis ni cola externa. El **outbox transaccional** vive en la misma base 
 - Categoría de la app (no el nombre del paquete en el panel, salvo el alias del dispositivo).
 - Conteos y minutos, nunca títulos, remitentes, números ni extractos.
 - Flags léxicos normalizados (`gambling`, `self_harm`, …), no el texto que los activó.
-- Un hash salado y truncado de contacto, solo cuando la app expone un identificador estable. **No implementado en 1.3.0**: el campo va `null` y `contacto_recurrente` está reservada.
+- Un hash salado y truncado de contacto, solo cuando la app expone un identificador estable. **No implementado en 1.4.0**: el campo va `null` y `contacto_recurrente` está reservada.
 - Ventana temporal de máximo 60 minutos y `event_id` determinista para idempotencia.
 
 ### Qué se queda en el teléfono
@@ -101,13 +101,26 @@ Las reglas son deterministas y explicables. Cada alerta guarda el código, la et
 
 | Regla | Disparador | Severidad | Score |
 | --- | --- | --- | --- |
-| `self_harm` | Frase de autolesión en el texto normalizado | CRÍTICA | 95 |
-| `grooming` | Frase de secreto/aislamiento o solicitud de fotos | CRÍTICA | 92 |
-| `sexual_content` | Términos sexuales explícitos | ALTA | 82 |
-| `violence` | Amenaza o golpiza | ALTA | 78 |
-| `bullying` | Acoso o exclusión | ALTA | 74 |
-| `drugs` | Drogas, alcohol, vapeo | ALTA | 70 |
+| `self_harm` | Frase de autolesión o plan suicida | CRÍTICA | 98 |
+| `grooming` | Secreto/aislamiento o solicitud de fotos | CRÍTICA | 96 |
+| `sextortion` | Chantaje con imágenes íntimas | CRÍTICA | 97 |
+| `abuse` | Abuso o maltrato físico/sexual en el entorno cercano | CRÍTICA | 97 |
+| `trafficking` | Trata, explotación o prostitución | CRÍTICA | 96 |
+| `radicalization` | Reclutamiento o supremacía violenta | CRÍTICA | 92 |
+| `sexual_content` | Términos sexuales explícitos | ALTA | 86 |
+| `violence` | Amenaza, golpiza o pelea | ALTA | 84 |
+| `weapons` | Armas o municiones | ALTA | 86 |
+| `coercion` | Presión o chantaje | ALTA | 82 |
+| `bullying` | Acoso o exclusión | ALTA | 80 |
+| `hate_speech` | Discurso de odio o discriminación | ALTA | 78 |
+| `eating_disorder` | Conductas de trastorno alimentario | ALTA | 80 |
+| `doxxing` | Exposición de datos personales | ALTA | 82 |
+| `runaway` | Fuga o riesgo de desaparición | ALTA | 84 |
+| `dangerous_challenge` | Retos virales peligrosos | ALTA | 86 |
+| `drugs` | Drogas, alcohol, vapeo | ALTA | 74 |
 | `gambling` | Apuestas, casino, ruleta | MEDIA | 58 |
+| `malestar` | Malestar emocional | MEDIA | 54 |
+| `scam` | Estafa o phishing | MEDIA | 56 |
 | `unknown_contact` | Regla reservada para contacto desconocido | MEDIA | 50 |
 | `uso_nocturno` | Inicio local entre 00:00 y 06:00 con ≥ 20 min de uso | MEDIA | 55 |
 | `uso_prolongado` | ≥ 180 min en la ventana | MEDIA / ALTA | 60 / 72 |

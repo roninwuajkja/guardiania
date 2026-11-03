@@ -4,10 +4,11 @@
 
 Control parental para Android con **privacidad por diseño**: la conversación nunca sale del teléfono. El agente analiza localmente, descarta el texto y envía solo un vector de señales derivadas. El tutor recibe alertas explicables, no contenido.
 
-> **Proyecto de Título — versión 1.3.0 (defensa).** Los datos de la demo son sintéticos. El motor de riesgo combina reglas explicables y una evaluación de IA que **solo recibe el vector derivado** (nunca texto); si no hay proveedor configurado, opera en modo heurístico. No es un diagnóstico ni reemplaza una conversación familiar. Antes de operar con datos reales de menores se requiere revisión legal chilena y auditoría de seguridad independiente; ver [`docs/compliance/compuerta-lanzamiento.md`](docs/compliance/compuerta-lanzamiento.md).
+> **Proyecto de Título — versión 1.4.0 (defensa).** Los datos de la demo son sintéticos. El motor de riesgo combina reglas explicables y una evaluación de IA que **solo recibe el vector derivado** (nunca texto); si no hay proveedor configurado, opera en modo heurístico. No es un diagnóstico ni reemplaza una conversación familiar. Antes de operar con datos reales de menores se requiere revisión legal chilena y auditoría de seguridad independiente; ver [`docs/compliance/compuerta-lanzamiento.md`](docs/compliance/compuerta-lanzamiento.md).
 
-## Novedades de 1.3.0
+## Novedades de 1.4.0
 
+- **Detección ampliada:** el teléfono reconoce 21 señales de riesgo (antes 10), incluidas sextorsión, abuso o maltrato, trata, radicalización, armas, discurso de odio, trastorno alimentario, doxxing, fuga, retos virales peligrosos y estafas. La IA recibe solo esas señales derivadas.
 - **QR de vinculación legible:** token corto firmado (59 caracteres, 37×37 módulos) en vez de un JWT de 89×89 que ningún lector podía decodificar.
 - **Revinculación del mismo teléfono:** un código nuevo del tutor reemplaza la vinculación anterior en vez de responder 409.
 - **Código de desvinculación:** el tutor define un PIN de 6 dígitos; el teléfono lo pide para desvincularse (5 intentos y bloqueo de 15 min). El tutor siempre puede revocar sin él.
@@ -26,7 +27,7 @@ Control parental para Android con **privacidad por diseño**: la conversación n
 - **Vinculación con dos voluntades:** el tutor declara tutela y el menor otorga asentimiento. QR corto, código manual de 6 dígitos y confirmación en vivo por WebSocket.
 - **Cuentas de tutor:** registro, verificación de correo, recuperación, cierre de sesiones, consentimientos versionados y auditoría.
 - **Agente Android nativo** (Kotlin + Compose): uso de apps y metadatos de notificaciones, sanitización en memoria, cola offline con SQLCipher.
-- **Motor de riesgo determinista** con evidencias: `self_harm`, `grooming`, `sexual_content`, `violence`, `coercion`, `bullying`, `drugs`, `gambling`, `malestar`, `unknown_contact`, `uso_nocturno`, `uso_prolongado`, `contacto_recurrente`.
+- **Motor de riesgo determinista** con evidencias: `self_harm`, `grooming`, `sextortion`, `abuse`, `trafficking`, `radicalization`, `sexual_content`, `violence`, `weapons`, `coercion`, `bullying`, `hate_speech`, `eating_disorder`, `doxxing`, `runaway`, `dangerous_challenge`, `drugs`, `gambling`, `malestar`, `scam`, `unknown_contact`, `uso_nocturno`, `uso_prolongado`, `contacto_recurrente`.
 - **Evaluación de IA** con el vector derivado (categoría, flags anonimizados, duración, conteos, hora local, notificaciones por minuto). Cadena Groq → Gemini → OpenAI → Anthropic → heurística local, con caché, circuit breaker y presupuesto de latencia.
 - **Alertas en tiempo real y push:** WebSocket `/ws/tutor` con ticket efímero y FCM con `notification` + `data` para todas las severidades.
 - **Backend FastAPI async** con PostgreSQL en producción y SQLite solo para demo local.
@@ -239,11 +240,11 @@ Estados de vinculación: `PENDIENTE`, `ACTIVO`, `REVOCADO`, `EXPIRADO`. Un códi
 ## Pruebas
 
 ```powershell
-# Backend: 95 pruebas
+# Backend: 103 pruebas
 cd backend
 .\.venv\Scripts\python.exe -m pytest -q
 
-# Android: 24 pruebas unitarias + 1 instrumentada (QR con ML Kit)
+# Android: 39 pruebas unitarias + 1 instrumentada (QR con ML Kit)
 cd android
 .\gradlew.bat :app:testDebugUnitTest
 .\gradlew.bat :app:connectedDebugAndroidTest

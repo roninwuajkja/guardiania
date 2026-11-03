@@ -10,16 +10,37 @@ from ..schemas import DerivedFeatureVector
 
 # code -> (human label, severity, score, advice)
 FLAG_RULES: dict[str, tuple[str, Severidad, int, str]] = {
-    "self_harm": ("Posible autolesión", Severidad.CRITICA, 95, "Acércate y conversa hoy. Si hay riesgo inmediato, contacta a un adulto de confianza o a salud."),
-    "grooming": ("Posible grooming", Severidad.CRITICA, 92, "Revisa con calma con quién conversa y recuerda que no estás solo en esto."),
-    "sexual_content": ("Contenido sexual", Severidad.ALTA, 82, "Abre la conversación sin castigo y revisa la configuración de la app."),
-    "violence": ("Violencia", Severidad.ALTA, 78, "Pregunta cómo está y qué pasó. Evita reaccionar en caliente."),
-    "bullying": ("Acoso escolar", Severidad.ALTA, 74, "Escucha sin minimizar y considera avisar al colegio si se repite."),
-    "coercion": ("Presión o chantaje", Severidad.ALTA, 76, "Habla con calma sobre esa relación y deja claro que puede pedir ayuda sin miedo."),
-    "drugs": ("Drogas o alcohol", Severidad.ALTA, 70, "Conversa sobre lo que vio y ofrece apoyo antes que sanción."),
+    "self_harm": ("Posible autolesión", Severidad.CRITICA, 98, "Acércate y conversa hoy. Si hay riesgo inmediato, contacta a un adulto de confianza o a salud."),
+    "grooming": ("Posible grooming", Severidad.CRITICA, 96, "Revisa con calma con quién conversa y recuerda que no estás solo en esto."),
+    "sextortion": ("Sextorsión o chantaje con imágenes", Severidad.CRITICA, 97, "No borres la evidencia y busca apoyo urgente; no cedas al chantaje."),
+    "abuse": ("Posible abuso o maltrato", Severidad.CRITICA, 97, "Prioriza la seguridad del menor y busca ayuda profesional o denuncia si hay riesgo inmediato."),
+    "trafficking": ("Posible trata o explotación", Severidad.CRITICA, 96, "Actúa de inmediato y contacta a las autoridades o a un adulto de confianza."),
+    "radicalization": ("Posible radicalización", Severidad.CRITICA, 92, "Conversa sin confrontar y busca orientación especializada."),
+    "sexual_content": ("Contenido sexual", Severidad.ALTA, 86, "Abre la conversación sin castigo y revisa la configuración de la app."),
+    "violence": ("Violencia o amenazas", Severidad.ALTA, 84, "Pregunta cómo está y qué pasó. Evita reaccionar en caliente."),
+    "weapons": ("Armas o amenazas con armas", Severidad.ALTA, 86, "Verifica la situación y resguarda la seguridad; considera ayuda externa."),
+    "coercion": ("Presión o chantaje", Severidad.ALTA, 82, "Habla con calma sobre esa relación y deja claro que puede pedir ayuda sin miedo."),
+    "bullying": ("Acoso escolar", Severidad.ALTA, 80, "Escucha sin minimizar y considera avisar al colegio si se repite."),
+    "hate_speech": ("Discurso de odio o discriminación", Severidad.ALTA, 78, "Conversa sobre el respeto y busca apoyo si el discurso se repite."),
+    "eating_disorder": ("Señales de trastorno alimentario", Severidad.ALTA, 80, "Evita comentar el cuerpo y busca orientación profesional."),
+    "doxxing": ("Exposición de datos personales", Severidad.ALTA, 82, "Revisa qué se publicó y ayuda a proteger sus datos y cuentas."),
+    "runaway": ("Riesgo de fuga o desaparición", Severidad.ALTA, 84, "Habla con calma y asegúrate de que esté en un lugar seguro."),
+    "dangerous_challenge": ("Reto viral peligroso", Severidad.ALTA, 86, "Conversa sobre el riesgo real y revisa qué está viendo en redes."),
+    "drugs": ("Drogas o alcohol", Severidad.ALTA, 74, "Conversa sobre lo que vio y ofrece apoyo antes que sanción."),
     "gambling": ("Apuestas", Severidad.MEDIA, 58, "Revisa si hay dinero involucrado y pon límites claros."),
     "malestar": ("Malestar emocional", Severidad.MEDIA, 54, "Pregúntale cómo se siente y qué necesita; no minimices lo que cuenta."),
+    "scam": ("Posible estafa o phishing", Severidad.MEDIA, 56, "No compartas datos ni códigos; verifica el remitente por otro canal."),
     "unknown_contact": ("Contacto desconocido", Severidad.MEDIA, 50, "Pregunta quién es y cómo se conocieron."),
+}
+
+# Flags que el servidor calcula por contexto y que no deben generar una alerta
+# genérica si llegan desde una versión nueva de la app.
+_SERVER_FLAGS = {
+    "uso_nocturno",
+    "uso_prolongado",
+    "uso_sin_notificaciones",
+    "contacto_recurrente",
+    "sin_senal",
 }
 
 ADVICE_GENERIC = "Revisa la situación con calma y conversa con tu hijo o hija."
@@ -92,6 +113,26 @@ async def evaluate_capture(db: AsyncSession, ctx, vector: DerivedFeatureVector) 
             score=score,
             advice=advice,
             detail={"flag": flag, "ventana": vector.time_window.start.isoformat()},
+        )
+        if alert:
+            created.append(alert)
+
+    # Una app más nueva puede enviar una señal que este servidor aún no
+    # conoce. No se ignora: se crea una alerta MEDIA genérica para que el tutor
+    # revise el contexto. Las señales calculadas por el servidor se excluyen.
+    for flag in vector.flags:
+        if flag in FLAG_RULES or flag in _SERVER_FLAGS:
+            continue
+        alert = await _create_alert(
+            db,
+            ctx=ctx,
+            vector=vector,
+            categoria=flag[:40],
+            label="Señal de riesgo no catalogada",
+            severity=Severidad.MEDIA,
+            score=50,
+            advice="Revisa la situación con calma y conversa con tu hijo o hija.",
+            detail={"flag": flag, "origen": "app"},
         )
         if alert:
             created.append(alert)

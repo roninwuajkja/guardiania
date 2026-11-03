@@ -191,6 +191,9 @@ def test_vector_payload_has_no_text_fields():
         "categoria_uso",
         "flags",
         "flags_descripcion",
+        "flags_criticos",
+        "flags_graves",
+        "cantidad_flags",
         "lexical_flag_count",
         "contacto_desconocido_presente",
         "usage_duration_minutes",
@@ -205,6 +208,81 @@ def test_vector_payload_has_no_text_fields():
     }
     assert not any("snippet" in key or "text" in key or "raw" in key for key in payload)
     assert payload["flags_descripcion"] == ["Acoso escolar"]
+
+
+def test_vector_payload_separates_critical_and_serious_flags():
+    payload = vector_payload(make_vector(flags=["sextortion", "gambling"]))
+
+    assert payload["flags_criticos"] == ["sextortion"]
+    assert payload["flags_graves"] == ["sextortion"]
+    assert payload["cantidad_flags"] == 2
+
+
+def test_new_critical_flags_are_high_risk():
+    for flag in ("sextortion", "abuse", "trafficking", "radicalization"):
+        result = asyncio.run(HeuristicProvider().classify(make_vector(flags=[flag])))
+        assert result.nivel_riesgo == "ALTO", flag
+        assert result.categoria != "Sin_Riesgo", flag
+
+
+def test_new_serious_flags_are_high_risk():
+    for flag in (
+        "weapons",
+        "hate_speech",
+        "eating_disorder",
+        "doxxing",
+        "runaway",
+        "dangerous_challenge",
+    ):
+        result = asyncio.run(HeuristicProvider().classify(make_vector(flags=[flag])))
+        assert result.nivel_riesgo == "ALTO", flag
+
+
+def test_scam_flag_is_medium_risk():
+    result = asyncio.run(HeuristicProvider().classify(make_vector(flags=["scam"])))
+    assert result.nivel_riesgo == "MEDIO"
+
+
+def test_two_medium_flags_raise_the_floor_to_high():
+    vector = make_vector(flags=["gambling", "malestar"])
+    floored = apply_policy_floor(assessment(level="BAJO", category="Sin_Riesgo"), vector)
+
+    assert floored.nivel_riesgo == "ALTO"
+    assert floored.categoria != "Sin_Riesgo"
+
+
+def test_every_known_flag_has_a_server_rule():
+    from app.services.risk import FLAG_RULES
+
+    expected = {
+        "self_harm",
+        "grooming",
+        "sextortion",
+        "abuse",
+        "trafficking",
+        "radicalization",
+        "sexual_content",
+        "violence",
+        "weapons",
+        "coercion",
+        "bullying",
+        "hate_speech",
+        "eating_disorder",
+        "doxxing",
+        "runaway",
+        "dangerous_challenge",
+        "drugs",
+        "gambling",
+        "malestar",
+        "scam",
+        "unknown_contact",
+    }
+    assert expected <= set(FLAG_RULES)
+    for flag in expected:
+        label, severity, score, advice = FLAG_RULES[flag]
+        assert label and advice
+        assert 0 <= score <= 100
+        assert severity.value in {"BAJA", "MEDIA", "ALTA", "CRITICA"}
 
 
 def test_circuit_breaker_skips_dead_provider_until_cooldown():
