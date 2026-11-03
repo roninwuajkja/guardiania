@@ -962,9 +962,9 @@ function guardStrip(overview) {
       const label = `${String(bucket.hour).padStart(2, '0')}:00 · ${bucket.activity} actividad · ${bucket.attention} atención · ${bucket.alert} alerta`;
       return `<div class="guard-col${bucket.hour < 6 ? ' is-night' : ''}" title="${escapeAttr(label)}" aria-label="${escapeAttr(label)}">
         ${total ? `<div class="guard-col-bars" style="height:${height.toFixed(1)}%">
-          ${bucket.alert ? `<span class="guard-bar guard-bar--alert" style="flex:${bucket.alert}"></span>` : ''}
-          ${bucket.attention ? `<span class="guard-bar guard-bar--attention" style="flex:${bucket.attention}"></span>` : ''}
           ${bucket.activity ? `<span class="guard-bar guard-bar--activity" style="flex:${bucket.activity}"></span>` : ''}
+          ${bucket.attention ? `<span class="guard-bar guard-bar--attention" style="flex:${bucket.attention}"></span>` : ''}
+          ${bucket.alert ? `<span class="guard-bar guard-bar--alert" style="flex:${bucket.alert}"></span>` : ''}
         </div>` : ''}
       </div>`;
     })
