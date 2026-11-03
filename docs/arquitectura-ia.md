@@ -124,6 +124,31 @@ El sistema Android no permite impedir estos cambios sin ser *device owner*
 (MDM). La app no bloquea: **detecta y avisa** para que la guardia no parezca
 completa cuando no lo está.
 
+### Push en tiempo real
+
+El push de alertas viaja como **`notification` + `data`**:
+
+- El bloque `notification` lo pinta el sistema aunque la app esté cerrada; no
+  necesita despertarla.
+- El `data` lleva `alert_id`, severidad, categoría, alias y `open_alerts` para
+  abrir la pestaña de alertas al tocar.
+- Prioridad `high`, TTL de 5 minutos y canal `guardiania_alerts`.
+- Con la app abierta, el WebSocket ya actualizó la lista; el sistema no muestra
+  una segunda notificación.
+
+`POST /api/v1/push/test` envía una push solo a los tokens del tutor autenticado y
+responde `{enabled, sent, invalid, tokens}`. La app lo expone en Ajustes →
+Notificaciones.
+
+### Servicio en primer plano del menor
+
+`GuardianForegroundService` mantiene vivo el proceso con una notificación
+persistente de baja prioridad (“IA Guardian está activo”). Arranca al abrir la
+app con una vinculación, al reiniciar el teléfono y al actualizar el APK; se
+detiene al desvincular. Evita que el fabricante duerma el listener y retrase el
+sync prioritario. En Samsung conviene sumar la app a “Apps que nunca se
+suspenden”.
+
 ## 4. Captura → evaluación → alerta
 
 ### Secuencia
