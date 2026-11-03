@@ -547,6 +547,38 @@ function restoreOpenAlertIds(ids) {
   });
 }
 
+function expandedSummaryIds() {
+  return new Set(
+    Array.from(document.querySelectorAll('#view .alert-summary.is-expanded'))
+      .map((node) => node.closest('.alert-summary-block')?.dataset.alertId)
+      .filter(Boolean),
+  );
+}
+
+function restoreExpandedSummaries(ids) {
+  if (!ids.size) return;
+  document.querySelectorAll('#view .alert-summary-block').forEach((block) => {
+    if (!ids.has(block.dataset.alertId)) return;
+    const summary = block.querySelector('.alert-summary');
+    const button = block.querySelector('[data-action="expand-alert-summary"]');
+    if (summary) summary.classList.add('is-expanded');
+    if (button) button.textContent = 'Ver menos';
+  });
+}
+
+function enhanceCompactSummaries() {
+  document.querySelectorAll('#view .alert-summary-block').forEach((block) => {
+    const summary = block.querySelector('.alert-summary');
+    const button = block.querySelector('[data-action="expand-alert-summary"]');
+    if (!summary || !button) return;
+    const expanded = summary.classList.contains('is-expanded');
+    const overflowing = summary.scrollHeight > summary.clientHeight + 1;
+    button.hidden = !overflowing && !expanded;
+    button.textContent = expanded ? 'Ver menos' : 'Ver mensaje completo';
+    if (!overflowing && !expanded) summary.classList.remove('is-expanded');
+  });
+}
+
 function rerenderCurrent() {
   const view = $('#view');
   if (!view || document.hidden) return;
@@ -592,6 +624,7 @@ function startAutoRefresh() {
   }, AUTO_REFRESH_MS);
   document.addEventListener('visibilitychange', onVisibilityChange);
   window.addEventListener('focus', onWindowFocus);
+  window.addEventListener('resize', onWindowResize);
 }
 
 function stopAutoRefresh() {
@@ -599,6 +632,7 @@ function stopAutoRefresh() {
   state.autoTimer = null;
   document.removeEventListener('visibilitychange', onVisibilityChange);
   window.removeEventListener('focus', onWindowFocus);
+  window.removeEventListener('resize', onWindowResize);
 }
 
 function onVisibilityChange() {
@@ -609,6 +643,10 @@ function onVisibilityChange() {
 
 function onWindowFocus() {
   if (!document.hidden) refreshFromServer();
+}
+
+function onWindowResize() {
+  if (!document.hidden && state.route === 'resumen') enhanceCompactSummaries();
 }
 
 async function connectTutorStream() {
@@ -824,6 +862,7 @@ function renderOverview() {
     : `<div class="alert-empty"><strong>Sin dispositivos</strong>Vincula el teléfono de tu hijo o hija para empezar.</div>`;
 
   const openDetails = openAlertIds();
+  const expandedSummaries = expandedSummaryIds();
   $('#view').innerHTML = `
     <section class="hero">
       <div class="hero-copy">
@@ -861,6 +900,9 @@ function renderOverview() {
     </div>
   `;
   restoreOpenAlertIds(openDetails);
+  restoreExpandedSummaries(expandedSummaries);
+  enhanceCompactSummaries();
+  requestAnimationFrame(enhanceCompactSummaries);
 }
 
 function statCard({ label, value, unit, note, series, alert = false, seriesAlert = false }) {
@@ -960,14 +1002,19 @@ function alertRow(alert, { compact = false } = {}) {
           ${compact && alert.estado !== 'NUEVA' ? `<span>${alertStateLabel(alert.estado)}</span>` : ''}
         </div>
         <h3 class="alert-title">${escapeHtml(alertRuleLabel(alert))}</h3>
-        <p class="alert-summary">${escapeHtml(alert.resumen)}</p>
-        <details class="alert-why" data-alert-id="${escapeAttr(alert.id)}">
-          <summary>Por qué se generó</summary>
-          <p class="alert-why-text">${escapeHtml(alert.resumen)}</p>
-          <p class="alert-evidence">${escapeHtml(evidence || 'Regla heurística del motor de riesgo local.')}</p>
-          ${advice ? `<p class="alert-why-advice">${escapeHtml(advice)}</p>` : ''}
-          <p class="alert-note">Sin contenido del mensaje: solo señales derivadas.</p>
-        </details>
+        ${compact ? `
+          <div class="alert-summary-block" data-alert-id="${escapeAttr(alert.id)}">
+            <p class="alert-summary">${escapeHtml(alert.resumen)}</p>
+            <button class="alert-expand" type="button" data-action="expand-alert-summary" hidden>Ver mensaje completo</button>
+          </div>` : `
+          <p class="alert-summary">${escapeHtml(alert.resumen)}</p>
+          <details class="alert-why" data-alert-id="${escapeAttr(alert.id)}">
+            <summary>Por qué se generó</summary>
+            <p class="alert-why-text">${escapeHtml(alert.resumen)}</p>
+            <p class="alert-evidence">${escapeHtml(evidence || 'Regla heurística del motor de riesgo local.')}</p>
+            ${advice ? `<p class="alert-why-advice">${escapeHtml(advice)}</p>` : ''}
+            <p class="alert-note">Sin contenido del mensaje: solo señales derivadas.</p>
+          </details>`}
         ${compact ? '' : `
           <div class="alert-actions">
             ${alert.estado === 'NUEVA' ? `<button class="btn btn-sm btn-secondary" type="button" data-action="alert-state" data-id="${alert.id}" data-state="VISTA">Marcar vista</button>` : ''}
@@ -1743,6 +1790,13 @@ function bindEvents() {
       await hideDevice(trigger.dataset.id, trigger.dataset.name);
     } else if (action === 'hide-revoked') {
       await hideRevokedDevices();
+    } else if (action === 'expand-alert-summary') {
+      const block = trigger.closest('.alert-summary-block');
+      const summary = block?.querySelector('.alert-summary');
+      if (!summary) return;
+      const expanded = summary.classList.toggle('is-expanded');
+      trigger.textContent = expanded ? 'Ver menos' : 'Ver mensaje completo';
+      enhanceCompactSummaries();
     } else if (action === 'alert-state') {
       trigger.disabled = true;
       await setAlertState(trigger.dataset.id, trigger.dataset.state);
