@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -22,6 +23,7 @@ import androidx.compose.material.icons.outlined.Accessibility
 import androidx.compose.material.icons.outlined.BarChart
 import androidx.compose.material.icons.outlined.BatterySaver
 import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.LinkOff
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Notifications
@@ -141,6 +143,41 @@ fun StatusScreen(
         }
 
         Column(Modifier.padding(horizontal = 18.dp, vertical = 20.dp)) {
+            if (!permissions.notificationAccess) {
+                PaperCard {
+                    Row(
+                        Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.Top,
+                    ) {
+                        Icon(
+                            Icons.Outlined.ErrorOutline,
+                            contentDescription = null,
+                            tint = Oxblood,
+                            modifier = Modifier.size(20.dp),
+                        )
+                        Spacer(Modifier.width(10.dp))
+                        Column(Modifier.weight(1f)) {
+                            Text(
+                                "La guardia está incompleta",
+                                color = Ink,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 13.5.sp,
+                            )
+                            Spacer(Modifier.height(3.dp))
+                            Text(
+                                "El acceso a notificaciones está desactivado. La IA no puede ver las señales de las apps hasta que lo reactives.",
+                                color = Muted,
+                                fontSize = 12.sp,
+                                lineHeight = 16.sp,
+                            )
+                        }
+                        TextButton(onClick = { openNotificationAccess(context) }) {
+                            Text("Activar", color = Pine700, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                        }
+                    }
+                }
+                Spacer(Modifier.height(14.dp))
+            }
             PaperCard {
                 Column(Modifier.padding(18.dp)) {
                     Eyebrow("Permisos del teléfono")

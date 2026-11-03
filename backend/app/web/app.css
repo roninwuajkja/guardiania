@@ -1559,6 +1559,15 @@ svg {
   font-style: italic;
 }
 
+.device-status-line {
+  color: var(--muted);
+}
+
+.device-alert {
+  color: var(--oxblood);
+  font-weight: 600;
+}
+
 .panel-address {
   display: flex;
   align-items: center;

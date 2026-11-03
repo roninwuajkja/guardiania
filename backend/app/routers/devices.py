@@ -9,8 +9,9 @@ from ..db import get_db, utcnow
 from ..deps import DeviceContext, current_device
 from ..models import Binding, Device, EstadoVinculacion
 from ..ratelimit import enforce
-from ..schemas import DeviceRefreshResponse, RefreshRequest, UnlinkSelfRequest
+from ..schemas import DeviceRefreshResponse, DeviceStatusRequest, RefreshRequest, UnlinkSelfRequest
 from ..security import create_device_token, hash_refresh_token
+from ..services.device_status import report_status
 from ..services.unlink import unlink_from_device
 
 router = APIRouter(prefix="/devices", tags=["Dispositivos"])
@@ -73,4 +74,16 @@ async def unlink_self(
 
     await enforce(f"devices:unlink:{ctx.device.id}", 10, 900)
     await unlink_from_device(db, ctx, body.codigo)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+@router.post("/self/status", status_code=status.HTTP_204_NO_CONTENT)
+async def report_device_status(
+    body: DeviceStatusRequest,
+    ctx: DeviceContext = Depends(current_device),
+    db: AsyncSession = Depends(get_db),
+):
+    """El teléfono informa permisos y No molestar; si pierde notificaciones, se avisa."""
+
+    await enforce(f"devices:status:{ctx.device.id}", 60, 3600)
+    await report_status(db, ctx, body)
     return Response(status_code=status.HTTP_204_NO_CONTENT)

@@ -108,6 +108,22 @@ batería, la app cerrada por el sistema o desinstalada. Tras
   app fue desinstalada; no es posible distinguirlo desde el servidor»*.
 - Con FCM configurado, el aviso llega aunque la app del tutor esté cerrada.
 
+### Permisos y No molestar
+
+Cada sincronización (y al conectar o desconectar el listener) el teléfono reporta
+`notificaciones_activas`, `uso_activo`, `dnd` y `accesibilidad`. Si el acceso a
+notificaciones se desactiva, se crea una alerta `acceso_desactivado` (ALTA, una
+por episodio) y se cierra al reactivarlo con un evento `device_status`.
+
+No molestar se muestra como contexto y **no** genera alerta: es normal de noche
+o en clases. Si hay uso alto en una app social o de mensajería y cero
+notificaciones, el vector viaja con `uso_sin_notificaciones` para que la IA
+considere que las notificaciones pueden estar silenciadas.
+
+El sistema Android no permite impedir estos cambios sin ser *device owner*
+(MDM). La app no bloquea: **detecta y avisa** para que la guardia no parezca
+completa cuando no lo está.
+
 ## 4. Captura → evaluación → alerta
 
 ### Secuencia

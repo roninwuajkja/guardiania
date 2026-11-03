@@ -10,6 +10,7 @@ from ..db import utcnow
 from ..models import (
     Binding,
     Device,
+    DeviceStatus,
     FeatureCapture,
     HiddenDevice,
     OfflineNotice,
@@ -98,6 +99,16 @@ async def list_devices(db: AsyncSession, tutor_id: uuid.UUID) -> list[DeviceOut]
             )
         ).scalars()
     )
+    statuses = {
+        status.device_id: status
+        for status in (
+            await db.execute(
+                select(DeviceStatus).where(
+                    DeviceStatus.device_id.in_([device.id for _, device in rows])
+                )
+            )
+        ).scalars()
+    } if rows else {}
     seen: set[uuid.UUID] = set()
     devices: list[DeviceOut] = []
     for binding, device in rows:
@@ -118,6 +129,13 @@ async def list_devices(db: AsyncSession, tutor_id: uuid.UUID) -> list[DeviceOut]
                 ultima_conexion=device.ultima_conexion,
                 creado_en=device.creado_en,
                 unlink_code_set=binding.id in protected,
+                notificaciones_activas=statuses[device.id].notificaciones_activas
+                if device.id in statuses
+                else None,
+                dnd=statuses[device.id].dnd if device.id in statuses else None,
+                estado_reportado_en=statuses[device.id].reportado_en
+                if device.id in statuses
+                else None,
             )
         )
     return devices
