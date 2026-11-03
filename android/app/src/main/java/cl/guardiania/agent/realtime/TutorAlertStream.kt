@@ -24,12 +24,13 @@ import okhttp3.WebSocketListener
 import java.util.concurrent.TimeUnit
 import kotlin.coroutines.resume
 
-/** Evento mínimo de alerta recibido por el stream del tutor. */
+/** Evento mínimo recibido por el stream del tutor. */
 data class TutorRealtimeAlert(
     val alertId: String?,
     val severity: String?,
     val deviceAlias: String?,
     val category: String?,
+    val kind: String = "risk_alert",
 )
 
 /**
@@ -143,15 +144,17 @@ class TutorAlertStream(
 
     private fun parseAlert(text: String): TutorRealtimeAlert? {
         val root = runCatching { json.parseToJsonElement(text).jsonObject }.getOrNull() ?: return null
-        if (root["type"]?.jsonPrimitive?.contentOrNull != "risk_alert") return null
+        val kind = root["type"]?.jsonPrimitive?.contentOrNull ?: return null
+        if (kind != "risk_alert" && kind != "device_reconnected") return null
         val data = root["data"] as? JsonObject ?: return null
         fun field(name: String): String? =
             data[name]?.jsonPrimitive?.contentOrNull?.takeIf { it.isNotBlank() }
         return TutorRealtimeAlert(
             alertId = field("alert_id"),
             severity = field("severidad"),
-            deviceAlias = field("device_alias"),
+            deviceAlias = field("etiqueta_menor") ?: field("device_alias"),
             category = field("categoria"),
+            kind = kind,
         )
     }
 

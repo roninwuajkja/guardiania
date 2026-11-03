@@ -276,6 +276,7 @@ private fun GuardianAgentApp(
                     onSync = vm::syncNow,
                     onTestSignal = vm::sendTestSignal,
                     onUnpair = vm::unpair,
+                    onCancelUnlinkPin = vm::cancelUnlinkPin,
                     onSwitchToTutor = { vm.chooseRole(AppRole.TUTOR) },
                 )
             }

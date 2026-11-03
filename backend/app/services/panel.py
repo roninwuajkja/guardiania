@@ -7,7 +7,16 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..db import utcnow
-from ..models import Binding, Device, FeatureCapture, RiskAlert, Severidad
+from ..models import (
+    Binding,
+    Device,
+    FeatureCapture,
+    HiddenDevice,
+    OfflineNotice,
+    RiskAlert,
+    Severidad,
+    UnlinkCode,
+)
 from ..schemas import (
     AlertOut,
     DayPoint,
@@ -77,10 +86,22 @@ async def list_devices(db: AsyncSession, tutor_id: uuid.UUID) -> list[DeviceOut]
             .order_by(Binding.creado_en.desc())
         )
     ).all()
+    hidden = set(
+        (await db.execute(select(HiddenDevice.device_id).where(HiddenDevice.tutor_id == tutor_id))).scalars()
+    )
+    protected = set(
+        (
+            await db.execute(
+                select(UnlinkCode.binding_id)
+                .join(Binding, UnlinkCode.binding_id == Binding.id)
+                .where(Binding.tutor_id == tutor_id)
+            )
+        ).scalars()
+    )
     seen: set[uuid.UUID] = set()
     devices: list[DeviceOut] = []
     for binding, device in rows:
-        if device.id in seen:
+        if device.id in seen or device.id in hidden:
             continue
         seen.add(device.id)
         devices.append(
@@ -96,9 +117,71 @@ async def list_devices(db: AsyncSession, tutor_id: uuid.UUID) -> list[DeviceOut]
                 vinculacion_estado=binding.estado,
                 ultima_conexion=device.ultima_conexion,
                 creado_en=device.creado_en,
+                unlink_code_set=binding.id in protected,
             )
         )
     return devices
+
+
+async def hide_device(db: AsyncSession, tutor_id: uuid.UUID, device_id: uuid.UUID) -> None:
+    """Quita un dispositivo del panel sin borrar su historial.
+
+    Solo se permite cuando no queda ninguna vinculación ACTIVA: primero se
+    revoca y luego se limpia la lista.
+    """
+
+    rows = (
+        await db.execute(
+            select(Binding).where(Binding.tutor_id == tutor_id, Binding.dispositivo_id == device_id)
+        )
+    ).scalars().all()
+    if not rows:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Dispositivo no encontrado")
+    if any(binding.estado == "ACTIVO" for binding in rows):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Revoca la vinculación antes de quitarla del panel",
+        )
+
+    existing = await db.get(HiddenDevice, device_id)
+    if existing is None:
+        db.add(HiddenDevice(device_id=device_id, tutor_id=tutor_id))
+        await db.commit()
+
+
+async def hide_revoked_devices(db: AsyncSession, tutor_id: uuid.UUID) -> int:
+    """Oculta de una vez todos los dispositivos sin vinculación activa."""
+
+    active = set(
+        (
+            await db.execute(
+                select(Binding.dispositivo_id).where(
+                    Binding.tutor_id == tutor_id,
+                    Binding.estado == "ACTIVO",
+                    Binding.dispositivo_id.is_not(None),
+                )
+            )
+        ).scalars()
+    )
+    candidates = set(
+        (
+            await db.execute(
+                select(Binding.dispositivo_id).where(
+                    Binding.tutor_id == tutor_id,
+                    Binding.dispositivo_id.is_not(None),
+                )
+            )
+        ).scalars()
+    )
+    hidden = set(
+        (await db.execute(select(HiddenDevice.device_id).where(HiddenDevice.tutor_id == tutor_id))).scalars()
+    )
+    pending = [device_id for device_id in candidates - active - hidden]
+    for device_id in pending:
+        db.add(HiddenDevice(device_id=device_id, tutor_id=tutor_id))
+    if pending:
+        await db.commit()
+    return len(pending)
 
 
 async def update_alert_state(
@@ -141,6 +224,12 @@ async def revoke_binding(db: AsyncSession, tutor_id: uuid.UUID, binding_id: uuid
             device.estado = "REVOCADO"
             device.refresh_token_hash = None
             device.refresh_expira_en = None
+            notice = await db.get(OfflineNotice, device.id)
+            if notice is not None:
+                await db.delete(notice)
+    code = await db.get(UnlinkCode, binding.id)
+    if code is not None:
+        await db.delete(code)
     db.add(
         pairing_event(
             "binding_revoked",

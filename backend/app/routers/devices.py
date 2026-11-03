@@ -1,15 +1,17 @@
 from datetime import timedelta
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..config import settings
 from ..db import get_db, utcnow
+from ..deps import DeviceContext, current_device
 from ..models import Binding, Device, EstadoVinculacion
 from ..ratelimit import enforce
-from ..schemas import DeviceRefreshResponse, RefreshRequest
+from ..schemas import DeviceRefreshResponse, RefreshRequest, UnlinkSelfRequest
 from ..security import create_device_token, hash_refresh_token
+from ..services.unlink import unlink_from_device
 
 router = APIRouter(prefix="/devices", tags=["Dispositivos"])
 
@@ -60,3 +62,15 @@ async def refresh_device(
         access_token=create_device_token(device.id, binding.id),
         expires_in=settings.device_token_minutes * 60,
     )
+
+@router.post("/self/unlink", status_code=status.HTTP_204_NO_CONTENT)
+async def unlink_self(
+    body: UnlinkSelfRequest,
+    ctx: DeviceContext = Depends(current_device),
+    db: AsyncSession = Depends(get_db),
+):
+    """Desvincula el teléfono. Exige el código del tutor si está definido."""
+
+    await enforce(f"devices:unlink:{ctx.device.id}", 10, 900)
+    await unlink_from_device(db, ctx, body.codigo)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

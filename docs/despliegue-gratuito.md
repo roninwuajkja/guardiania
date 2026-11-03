@@ -35,6 +35,9 @@ Se configuran en Render → Environment. Los valores **no** van al repositorio.
 | `COOKIE_SECURE`, `CORS_ORIGINS`, `TRUSTED_HOSTS` | Cookies `__Host-` y orígenes permitidos |
 | `ENVIRONMENT=dev`, `SEED_DEMO=true` | Cuenta demo sembrada para la defensa |
 | `AI_ENABLED`, `GROQ_API_KEY` | Motor de IA (opcional; sin clave degrada a heurística) |
+| `OFFLINE_ALERT_MINUTES` | Minutos sin sincronizar para avisar «teléfono sin señal» (30 para la demo, 60 normal) |
+| `MAINTENANCE_KEY` | Clave del endpoint `/api/v1/maintenance/sweep` que puede llamar el pinger |
+| `FCM_ENABLED`, `FIREBASE_CREDENTIALS_JSON` | Push del tutor con la app cerrada (ver abajo) |
 | `PUBLIC_BASE_URL` | Se deriva de `RENDER_EXTERNAL_URL`; no hace falta fijarla |
 
 ### Formato de `DATABASE_URL`
@@ -52,6 +55,40 @@ Dos errores que cuestan tiempo:
   sesión: se usa el host directo del proyecto.
 
 Si la clave trae caracteres especiales, hay que percent-encodearla.
+
+## Push del tutor (FCM)
+
+Sin push, el tutor ve la alerta al abrir el panel o la app. Para que llegue con
+la app cerrada:
+
+1. Firebase Console → Configuración del proyecto → **Cuentas de servicio** →
+   *Generar nueva clave privada*. Se descarga un JSON.
+2. En Render → Environment, crear `FIREBASE_CREDENTIALS_JSON` con el contenido
+   del JSON (o su base64). No se sube al repositorio.
+3. Dejar `FCM_ENABLED=false`: el backend activa FCM solo cuando materializa la
+   credencial en `/tmp/firebase-service-account.json`.
+4. El teléfono del tutor debe tener instalada la app con `google-services.json`
+   y haber iniciado sesión: ahí registra su token.
+
+Si algo falla, el push es *best effort*: la alerta sigue en el panel y en la
+lista de la app.
+
+## Aviso de «teléfono sin señal» y pinger
+
+El barrido se ejecuta al abrir el panel, al abrir la app del tutor y en cada
+sincronización de cualquier teléfono. Si nadie hace nada, no hay barrido: por
+eso existe `POST /api/v1/maintenance/sweep` con la cabecera
+`X-Maintenance-Key: $MAINTENANCE_KEY`.
+
+Para la defensa, programar en cron-job.org (solo ese día, 08:00–20:00) un job
+cada 5–10 min contra:
+
+```
+POST https://guardiania-74l4.onrender.com/api/v1/maintenance/sweep
+X-Maintenance-Key: <MAINTENANCE_KEY>
+```
+
+Ese mismo job mantiene el servicio despierto. **Desactivarlo al terminar.**
 
 ## Límites reales del plan gratuito
 

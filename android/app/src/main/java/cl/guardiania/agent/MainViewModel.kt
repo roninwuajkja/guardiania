@@ -5,6 +5,8 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import cl.guardiania.agent.data.PairingRecord
 import cl.guardiania.agent.data.SessionRevokedException
+import cl.guardiania.agent.data.UnlinkRequest
+import cl.guardiania.agent.data.unlinkError
 import cl.guardiania.agent.data.userMessage
 import cl.guardiania.agent.sync.SyncOutcome
 import cl.guardiania.agent.sync.SyncScheduler
@@ -14,6 +16,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import retrofit2.HttpException
 
 const val DEFAULT_BASE_URL = "http://10.0.2.2:8000"
 
@@ -30,6 +33,9 @@ data class AgentUiState(
     val lastSyncAt: Long? = null,
     val role: AppRole? = null,
     val hasTutorSession: Boolean = false,
+    val unlinkPinRequired: Boolean = false,
+    val unlinkError: String? = null,
+    val unlinkAttemptsLeft: Int? = null,
 )
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
@@ -167,21 +173,70 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun unpair() {
+    fun unpair(codigo: String? = null) {
+        if (_ui.value.busy) return
         viewModelScope.launch {
-            withContext(Dispatchers.IO) { store.clearPairing() }
-            SyncScheduler.cancel(app)
-            _ui.update {
-                it.copy(
-                    pairing = null,
-                    pending = 0,
-                    lastSyncAt = null,
-                    role = if (it.hasTutorSession) AppRole.TUTOR else null,
-                    error = null,
-                    message = "Teléfono desvinculado. Se borraron los datos locales.",
-                )
+            _ui.update { it.copy(busy = true, error = null, unlinkError = null) }
+            try {
+                withContext(Dispatchers.IO) {
+                    container.session.authorized { api, token ->
+                        val response = api.unlinkSelf("Bearer $token", UnlinkRequest(codigo))
+                        if (!response.isSuccessful) throw HttpException(response)
+                    }
+                }
+                withContext(Dispatchers.IO) { store.clearPairing() }
+                SyncScheduler.cancel(app)
+                _ui.update {
+                    it.copy(
+                        busy = false,
+                        pairing = null,
+                        pending = 0,
+                        lastSyncAt = null,
+                        role = if (it.hasTutorSession) AppRole.TUTOR else null,
+                        error = null,
+                        unlinkPinRequired = false,
+                        unlinkError = null,
+                        unlinkAttemptsLeft = null,
+                        message = "Teléfono desvinculado. Se borraron los datos locales.",
+                    )
+                }
+            } catch (error: HttpException) {
+                val pin = error.unlinkError()
+                if (pin != null && pin.code in setOf("pin_required", "pin_invalid", "pin_locked")) {
+                    _ui.update {
+                        it.copy(
+                            busy = false,
+                            error = null,
+                            unlinkPinRequired = true,
+                            unlinkError = pin.message,
+                            unlinkAttemptsLeft = pin.attemptsLeft,
+                        )
+                    }
+                } else {
+                    _ui.update { it.copy(busy = false, error = error.userMessage()) }
+                }
+            } catch (error: SessionRevokedException) {
+                // El servidor ya la había revocado: se limpia lo local igual.
+                withContext(Dispatchers.IO) { store.clearPairing() }
+                SyncScheduler.cancel(app)
+                _ui.update {
+                    it.copy(
+                        busy = false,
+                        pairing = null,
+                        pending = 0,
+                        role = if (it.hasTutorSession) AppRole.TUTOR else null,
+                        unlinkPinRequired = false,
+                        message = "Teléfono desvinculado. Se borraron los datos locales.",
+                    )
+                }
+            } catch (error: Exception) {
+                _ui.update { it.copy(busy = false, error = error.userMessage()) }
             }
         }
+    }
+
+    fun cancelUnlinkPin() {
+        _ui.update { it.copy(unlinkPinRequired = false, unlinkError = null, unlinkAttemptsLeft = null) }
     }
 
     fun clearError() {

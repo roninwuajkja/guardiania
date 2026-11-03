@@ -57,6 +57,22 @@ services:
       - key: GROQ_BASE_URL
         value: https://api.groq.com/openai/v1
 
+      # --- Aviso de teléfono sin señal --------------------------------------
+      # 30 minutos para la demo; en uso normal 60 es menos ruidoso.
+      - key: OFFLINE_ALERT_MINUTES
+        value: "30"
+      # Clave para que el pinger dispare /api/v1/maintenance/sweep.
+      - key: MAINTENANCE_KEY
+        sync: false
+
+      # --- Push del tutor (FCM) ---------------------------------------------
+      # La cuenta de servicio viaja como variable (JSON o base64) y el backend
+      # la escribe en /tmp al arrancar: Render gratuito no tiene disco.
+      - key: FCM_ENABLED
+        value: "false"
+      - key: FIREBASE_CREDENTIALS_JSON
+        sync: false
+
       # --- Secretos: se completan en el dashboard, nunca en el repo ----------
       - key: DATABASE_URL
         sync: false

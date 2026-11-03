@@ -323,6 +323,23 @@ class DeviceOut(BaseModel):
     vinculacion_estado: str | None
     ultima_conexion: datetime | None
     creado_en: datetime
+    unlink_code_set: bool = False
+
+
+class UnlinkCodeRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    codigo: str = Field(pattern=r"^\d{6}$")
+
+
+class UnlinkSelfRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    codigo: str | None = Field(default=None, pattern=r"^\d{6}$")
+
+
+class HideResult(BaseModel):
+    ocultos: int
 
 
 class GuardMark(BaseModel):

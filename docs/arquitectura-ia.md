@@ -89,6 +89,25 @@ Reglas de seguridad:
 > También se publican las alertas de reglas MEDIA; el push FCM queda reservado a
 > ALTA/CRITICA.
 
+### Teléfono sin señal
+
+Un teléfono que deja de sincronizar no revela la causa: puede ser internet,
+batería, la app cerrada por el sistema o desinstalada. Tras
+`OFFLINE_ALERT_MINUTES` (30 en la demo, 60 normal) se crea **una** alerta
+`sin_senal` de severidad MEDIA por corte:
+
+- `avisos_sin_senal` guarda la `ultima_conexion` ya avisada; un segundo barrido
+  del mismo corte no repite.
+- Al volver a sincronizar se borra la marca y se publica `device_reconnected`
+  (aviso suave en panel y app del tutor).
+- El barrido corre al abrir el panel, al abrir la app, en cada sincronización y
+  en `POST /api/v1/maintenance/sweep` (protegido con `MAINTENANCE_KEY`).
+- Un equipo recién vinculado tiene un margen igual al umbral para su primera
+  sincronización.
+- El texto es explícito: *«puede ser falta de internet, batería agotada o que la
+  app fue desinstalada; no es posible distinguirlo desde el servidor»*.
+- Con FCM configurado, el aviso llega aunque la app del tutor esté cerrada.
+
 ## 4. Captura → evaluación → alerta
 
 ### Secuencia

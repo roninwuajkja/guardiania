@@ -1380,6 +1380,9 @@ private fun categoryLabel(raw: String): String = when (raw.trim().lowercase()) {
     "grooming" -> "Contacto riesgoso"
     "self_harm", "autolesion", "autolesión" -> "Autolesión"
     "violence", "violencia" -> "Violencia"
+    "coercion" -> "Presión o chantaje"
+    "malestar" -> "Malestar emocional"
+    "sin_senal" -> "Teléfono sin señal"
     "substance", "drogas", "consumo" -> "Consumo"
     "night_use", "horario_nocturno" -> "Uso nocturno"
     else -> raw.replace('_', ' ').replaceFirstChar { it.uppercase() }

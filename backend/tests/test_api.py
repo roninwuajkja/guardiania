@@ -721,3 +721,229 @@ def test_push_token_rejects_jwt_shaped_credentials(client, auth_headers):
     )
     assert response.status_code == 422
     assert "FCM" in response.text
+
+# --- Seguridad del panel: código de desvinculación, ocultar y sin señal ---
+
+
+def _set_last_connection(device_id: str, when: datetime) -> None:
+    import asyncio
+
+    from app.db import SessionFactory
+    from app.models import Device
+
+    async def run() -> None:
+        async with SessionFactory() as db:
+            device = await db.get(Device, uuid.UUID(device_id))
+            assert device is not None
+            device.ultima_conexion = when
+            device.creado_en = when - timedelta(hours=1)
+            await db.commit()
+
+    asyncio.run(run())
+
+
+def _sync_payload(device_id: str, *, flags: list[str] | None = None) -> dict:
+    now = datetime.now(timezone.utc)
+    start = now - timedelta(minutes=10)
+    return {
+        "schema_version": 1,
+        "batch_id": str(uuid.uuid4()),
+        "device_clock": now.isoformat().replace("+00:00", "Z"),
+        "captures": [
+            {
+                "schema_version": 1,
+                "event_id": str(uuid.uuid4()),
+                "device_id": device_id,
+                "time_window": {
+                    "start": start.isoformat().replace("+00:00", "Z"),
+                    "end": now.isoformat().replace("+00:00", "Z"),
+                    "tz_offset_minutes": -180,
+                },
+                "category": "social",
+                "lexical_flag_count": len(flags or []),
+                "flags": flags or [],
+                "usage_duration_minutes": 5,
+                "notification_count": 1,
+                "event_count": 1,
+                "integrity": {"attestation_ok": True, "app_version": "1.2.0"},
+            }
+        ],
+    }
+
+
+def test_unlink_requires_tutor_code(client, auth_headers):
+    generated = generate_pairing(client, auth_headers)
+    verified = verify_manual(client, generated["manual_code"]).json()
+    device_headers = {"Authorization": f"Bearer {verified['access_token']}"}
+    binding_id = verified["vinculacion_id"]
+
+    assert client.put(
+        f"/api/v1/devices/{binding_id}/unlink-code",
+        json={"codigo": "481516"},
+        headers=auth_headers,
+    ).status_code == 204
+
+    devices = client.get("/api/v1/devices", headers=auth_headers).json()
+    assert next(d for d in devices if d["id"] == verified["device_id"])["unlink_code_set"] is True
+
+    missing = client.post("/api/v1/devices/self/unlink", json={}, headers=device_headers)
+    assert missing.status_code == 403
+    assert missing.json()["detail"]["code"] == "pin_required"
+
+    wrong = client.post(
+        "/api/v1/devices/self/unlink", json={"codigo": "000000"}, headers=device_headers
+    )
+    assert wrong.status_code == 403
+    assert wrong.json()["detail"]["code"] == "pin_invalid"
+    assert wrong.json()["detail"]["attempts_left"] == 4
+
+    ok = client.post(
+        "/api/v1/devices/self/unlink", json={"codigo": "481516"}, headers=device_headers
+    )
+    assert ok.status_code == 204, ok.text
+
+    revoked = client.get("/api/v1/devices", headers=auth_headers).json()
+    row = next(d for d in revoked if d["id"] == verified["device_id"])
+    assert row["vinculacion_estado"] == "REVOCADO"
+    assert row["unlink_code_set"] is False
+
+    stale = client.post(
+        "/api/v1/captures/sync",
+        json={
+            "batch_id": str(uuid.uuid4()),
+            "device_clock": datetime.now(timezone.utc).isoformat(),
+            "captures": [],
+        },
+        headers=device_headers,
+    )
+    assert stale.status_code in (401, 410)
+
+
+def test_unlink_code_locks_after_five_failures(client, auth_headers):
+    generated = generate_pairing(client, auth_headers)
+    verified = verify_manual(client, generated["manual_code"]).json()
+    device_headers = {"Authorization": f"Bearer {verified['access_token']}"}
+    binding_id = verified["vinculacion_id"]
+
+    client.put(
+        f"/api/v1/devices/{binding_id}/unlink-code",
+        json={"codigo": "481516"},
+        headers=auth_headers,
+    )
+
+    for _ in range(4):
+        wrong = client.post(
+            "/api/v1/devices/self/unlink", json={"codigo": "999999"}, headers=device_headers
+        )
+        assert wrong.status_code == 403
+
+    fifth = client.post(
+        "/api/v1/devices/self/unlink", json={"codigo": "999999"}, headers=device_headers
+    )
+    assert fifth.status_code == 403
+    assert fifth.json()["detail"]["locked"] is True
+
+    correct_but_locked = client.post(
+        "/api/v1/devices/self/unlink", json={"codigo": "481516"}, headers=device_headers
+    )
+    assert correct_but_locked.status_code == 429
+    assert correct_but_locked.json()["detail"]["code"] == "pin_locked"
+
+
+def test_hide_revoked_device_keeps_history_out_of_the_list(client, auth_headers):
+    generated = generate_pairing(client, auth_headers)
+    verified = verify_manual(client, generated["manual_code"]).json()
+
+    active = client.post(f"/api/v1/devices/{verified['device_id']}/hide", headers=auth_headers)
+    assert active.status_code == 409
+
+    assert client.post(
+        f"/api/v1/devices/{verified['vinculacion_id']}/revoke", headers=auth_headers
+    ).status_code == 204
+    assert client.post(
+        f"/api/v1/devices/{verified['device_id']}/hide", headers=auth_headers
+    ).status_code == 204
+
+    devices = client.get("/api/v1/devices", headers=auth_headers).json()
+    assert all(d["id"] != verified["device_id"] for d in devices)
+    overview = client.get("/api/v1/overview", headers=auth_headers).json()
+    assert all(d["id"] != verified["device_id"] for d in overview["devices"])
+
+    # Idempotente.
+    assert client.post(
+        f"/api/v1/devices/{verified['device_id']}/hide", headers=auth_headers
+    ).status_code == 204
+
+
+def test_hide_all_revoked_devices(client, auth_headers):
+    for _ in range(2):
+        generated = generate_pairing(client, auth_headers)
+        verified = verify_manual(client, generated["manual_code"]).json()
+        client.post(f"/api/v1/devices/{verified['vinculacion_id']}/revoke", headers=auth_headers)
+
+    result = client.post("/api/v1/devices/hide-revoked", headers=auth_headers)
+    assert result.status_code == 200
+    assert result.json()["ocultos"] == 2
+    assert client.get("/api/v1/devices", headers=auth_headers).json() == []
+
+
+def test_offline_alert_is_sent_once_and_reconnect_is_announced(client, auth_headers):
+    generated = generate_pairing(client, auth_headers, etiqueta="Sin señal")
+    verified = verify_manual(client, generated["manual_code"]).json()
+    device_headers = {"Authorization": f"Bearer {verified['access_token']}"}
+    _set_last_connection(verified["device_id"], datetime.now(timezone.utc) - timedelta(hours=3))
+
+    ticket = client.post("/api/v1/realtime/ticket", headers=auth_headers).json()
+    with client.websocket_connect(
+        ticket["ws_url"], subprotocols=["guardiania", ticket["ws_ticket"]]
+    ) as websocket:
+        assert websocket.receive_json()["type"] == "tutor_ready"
+
+        client.get("/api/v1/overview", headers=auth_headers)
+        event = websocket.receive_json()
+        assert event["type"] == "risk_alert"
+        assert event["data"]["categoria"] == "sin_senal"
+        assert event["data"]["severidad"] == "MEDIA"
+
+        alerts = client.get("/api/v1/alerts?limit=50", headers=auth_headers).json()
+        assert len([a for a in alerts if a["categoria"] == "sin_senal"]) == 1
+
+        # Un segundo barrido no repite el aviso del mismo corte.
+        client.get("/api/v1/overview", headers=auth_headers)
+        alerts = client.get("/api/v1/alerts?limit=50", headers=auth_headers).json()
+        assert len([a for a in alerts if a["categoria"] == "sin_senal"]) == 1
+
+        synced = client.post(
+            "/api/v1/captures/sync",
+            json=_sync_payload(verified["device_id"]),
+            headers=device_headers,
+        )
+        assert synced.status_code == 200, synced.text
+
+        reconnected = websocket.receive_json()
+        assert reconnected["type"] == "device_reconnected"
+        assert reconnected["data"]["device_alias"]
+
+def test_fresh_device_is_not_reported_offline(client, auth_headers):
+    generated = generate_pairing(client, auth_headers)
+    verified = verify_manual(client, generated["manual_code"]).json()
+
+    client.get("/api/v1/overview", headers=auth_headers)
+    alerts = client.get("/api/v1/alerts?limit=50", headers=auth_headers).json()
+    assert [a for a in alerts if a["categoria"] == "sin_senal"] == []
+    assert verified["device_id"]
+
+def test_maintenance_sweep_requires_the_key(client, monkeypatch):
+    from app.config import settings
+
+    monkeypatch.setattr(settings, "maintenance_key", "clave-de-prueba")
+
+    assert client.post("/api/v1/maintenance/sweep").status_code == 404
+    assert client.post(
+        "/api/v1/maintenance/sweep", headers={"X-Maintenance-Key": "otra"}
+    ).status_code == 404
+    ok = client.post(
+        "/api/v1/maintenance/sweep", headers={"X-Maintenance-Key": "clave-de-prueba"}
+    )
+    assert ok.status_code == 200
+    assert "avisos" in ok.json()

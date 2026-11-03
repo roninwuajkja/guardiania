@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Accessibility
@@ -32,6 +33,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -47,6 +49,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -58,7 +61,8 @@ fun StatusScreen(
     state: AgentUiState,
     onSync: () -> Unit,
     onTestSignal: () -> Unit,
-    onUnpair: () -> Unit,
+    onUnpair: (String?) -> Unit,
+    onCancelUnlinkPin: () -> Unit = {},
     onSwitchToTutor: (() -> Unit)? = null,
 ) {
     val pairing = state.pairing ?: return
@@ -368,20 +372,57 @@ fun StatusScreen(
             title = { Text("¿Desvincular este teléfono?") },
             text = {
                 Text(
-                    "Se borran los datos locales y se detiene el envío de señales. El tutor puede volver a vincularlo cuando quiera.",
+                    "Se borran los datos locales y se detiene el envío de señales. Si tu tutor definió un código, te lo pediremos ahora.",
                 )
             },
             confirmButton = {
                 TextButton(
                     onClick = {
                         confirmUnpair = false
-                        onUnpair()
+                        onUnpair(null)
                     },
                     colors = ButtonDefaults.textButtonColors(contentColor = Oxblood),
                 ) { Text("Desvincular") }
             },
             dismissButton = {
                 TextButton(onClick = { confirmUnpair = false }) { Text("Cancelar") }
+            },
+        )
+    }
+
+    if (state.unlinkPinRequired) {
+        var pin by remember { mutableStateOf("") }
+        AlertDialog(
+            onDismissRequest = { onCancelUnlinkPin() },
+            title = { Text("Código del tutor") },
+            text = {
+                Column {
+                    Text(
+                        "Escribe el código de 6 dígitos que definió tu tutor. Sin él, el teléfono no puede desvincularse desde la app.",
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    OutlinedTextField(
+                        value = pin,
+                        onValueChange = { value -> pin = value.filter(Char::isDigit).take(6) },
+                        label = { Text("Código de 6 dígitos") },
+                        singleLine = true,
+                        isError = state.unlinkError != null,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+                    )
+                    state.unlinkError?.let { message ->
+                        Spacer(Modifier.height(8.dp))
+                        Text(message, color = Oxblood, fontSize = 12.sp)
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = { onUnpair(pin) },
+                    enabled = pin.length == 6 && !state.busy,
+                ) { Text("Desvincular") }
+            },
+            dismissButton = {
+                TextButton(onClick = { onCancelUnlinkPin() }) { Text("Cancelar") }
             },
         )
     }

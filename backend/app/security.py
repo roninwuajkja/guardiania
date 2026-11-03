@@ -205,6 +205,20 @@ def hash_pairing_code(code: str) -> str:
     return hmac.new(settings.pairing_pepper.encode(), code.encode(), hashlib.sha256).hexdigest()
 
 
+def hash_unlink_code(binding_id: uuid.UUID, code: str) -> str:
+    """HMAC del código de desvinculación, atado a la vinculación."""
+
+    return hmac.new(
+        f"unlink:{settings.pairing_pepper}:{binding_id}".encode(),
+        code.encode(),
+        hashlib.sha256,
+    ).hexdigest()
+
+
+def verify_unlink_code(binding_id: uuid.UUID, code: str, expected: str) -> bool:
+    return hmac.compare_digest(hash_unlink_code(binding_id, code), expected)
+
+
 def hash_install_id(install_id: str) -> str:
     return hmac.new(settings.pairing_pepper.encode(), install_id.encode(), hashlib.sha256).hexdigest()
 

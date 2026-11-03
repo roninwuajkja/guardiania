@@ -322,3 +322,42 @@ class PushToken(Base):
     activo: Mapped[bool] = mapped_column(default=True, nullable=False)
     creado_en: Mapped[datetime] = mapped_column(UtcDateTime, default=utcnow, nullable=False)
     actualizado_en: Mapped[datetime] = mapped_column(UtcDateTime, default=utcnow, onupdate=utcnow, nullable=False)
+
+class UnlinkCode(Base):
+    """Código que el tutor define para autorizar la desvinculación.
+
+    Se guarda solo el HMAC. Nunca se devuelve en claro. El bloqueo por intentos
+    evita fuerza bruta sobre 6 dígitos.
+    """
+
+    __tablename__ = "codigos_desvinculacion"
+    __table_args__ = (CheckConstraint("intentos >= 0", name="intentos_no_negativos"),)
+
+    binding_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("vinculaciones.id"), primary_key=True)
+    codigo_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    intentos: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    max_intentos: Mapped[int] = mapped_column(Integer, default=5, nullable=False)
+    bloqueado_hasta: Mapped[datetime | None] = mapped_column(UtcDateTime, nullable=True)
+    creado_en: Mapped[datetime] = mapped_column(UtcDateTime, default=utcnow, nullable=False)
+    actualizado_en: Mapped[datetime] = mapped_column(UtcDateTime, default=utcnow, onupdate=utcnow, nullable=False)
+
+
+class HiddenDevice(Base):
+    """Dispositivo que el tutor quitó del panel sin borrar su historial."""
+
+    __tablename__ = "dispositivos_ocultos"
+
+    device_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("dispositivos.id"), primary_key=True)
+    tutor_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("usuarios.id"), nullable=False, index=True)
+    oculto_en: Mapped[datetime] = mapped_column(UtcDateTime, default=utcnow, nullable=False)
+
+
+class OfflineNotice(Base):
+    """Marca el último aviso de «sin señal» para no repetirlo en el mismo corte."""
+
+    __tablename__ = "avisos_sin_senal"
+
+    device_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("dispositivos.id"), primary_key=True)
+    vinculacion_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("vinculaciones.id"), nullable=False)
+    ultima_conexion_avisada: Mapped[datetime | None] = mapped_column(UtcDateTime, nullable=True)
+    avisado_en: Mapped[datetime] = mapped_column(UtcDateTime, default=utcnow, nullable=False)

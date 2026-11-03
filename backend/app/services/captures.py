@@ -10,6 +10,7 @@ from ..db import utcnow
 from ..models import FeatureCapture
 from ..schemas import DerivedFeatureVector, RejectedItem, SyncRequest, SyncResponse
 from .alerts import dispatch_rule_alerts
+from .offline import mark_online, sweep_offline
 from .risk import evaluate_capture
 
 
@@ -97,6 +98,10 @@ async def sync_captures(db: AsyncSession, ctx, payload: SyncRequest) -> SyncResp
 
     ctx.device.ultima_conexion = now
     await db.commit()
+
+    # Si el teléfono venía de un corte, se cierra el episodio y se avisa.
+    await mark_online(db, ctx)
+    await sweep_offline(db, tutor_id=ctx.binding.tutor_id)
 
     await dispatch_rule_alerts(
         db,
