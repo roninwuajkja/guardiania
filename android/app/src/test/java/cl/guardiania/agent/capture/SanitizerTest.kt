@@ -414,4 +414,15 @@ class SanitizerTest {
 
         assertFalse(result.flags.contains("scam_points"))
     }
+
+    @Test
+    fun `delayed project is not a severe insult`() {
+        val result = Sanitizer.sanitize(
+            "com.google.android.apps.docs",
+            null,
+            "El proyecto está retrasado para la entrega",
+        )
+
+        assertFalse(result.flags.contains("insult_severe"))
+    }
 }
