@@ -251,6 +251,15 @@ def test_two_medium_flags_raise_the_floor_to_high():
     assert floored.categoria != "Sin_Riesgo"
 
 
+def test_critical_flags_are_reported_as_critical_severity():
+    from app.services.alerts import severity_for
+
+    for flag in ("self_harm", "grooming", "sextortion", "abuse", "trafficking", "radicalization"):
+        vector = make_vector(flags=[flag])
+        result = assessment(level="ALTO", provider="fake")
+        assert severity_for(result, vector).value == "CRITICA", flag
+
+
 def test_every_known_flag_has_a_server_rule():
     from app.services.risk import FLAG_RULES
 
