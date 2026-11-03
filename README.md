@@ -8,25 +8,9 @@ Control parental para Android con **privacidad por diseño**: la conversación n
 
 > **Proyecto de Título — versión 1.5.0 (defensa).** Los datos de la demo son sintéticos. El motor de riesgo combina reglas explicables y una evaluación de IA que **solo recibe el vector derivado** (nunca texto); si no hay proveedor configurado, opera en modo heurístico. No es un diagnóstico ni reemplaza una conversación familiar. Antes de operar con datos reales de menores se requiere revisión legal chilena y auditoría de seguridad independiente; ver [`docs/compliance/compuerta-lanzamiento.md`](docs/compliance/compuerta-lanzamiento.md).
 
-## Novedades de 1.5.0
+## Versiones
 
-- **Guardia de hoy renovada:** panel por hora con barras apiladas y conteos separados de **actividad, atención y alertas**, eje 00–24 y banda nocturna.
-- **Lectura más limpia:** QR web que escala completo, código manual centrado en Android y mensajes de alerta sin duplicados; el detalle solo aparece cuando aporta evidencia o consejo.
-- **Versión y release ordenados:** nuevo tag `v1.5.0`, APK firmada y changelog. El release `v1.4.0` queda como versión anterior.
-
-## Novedades de 1.4.0
-
-- **Detección ampliada:** el teléfono reconoce 21 señales de riesgo (antes 10), incluidas sextorsión, abuso o maltrato, trata, radicalización, armas, discurso de odio, trastorno alimentario, doxxing, fuga, retos virales peligrosos y estafas. La IA recibe solo esas señales derivadas.
-- **QR de vinculación legible:** token corto firmado (59 caracteres, 37×37 módulos) en vez de un JWT de 89×89 que ningún lector podía decodificar.
-- **Revinculación del mismo teléfono:** un código nuevo del tutor reemplaza la vinculación anterior en vez de responder 409.
-- **Código de desvinculación:** el tutor define un PIN de 6 dígitos desde el panel web o la app Android; el teléfono lo pide para desvincularse (5 intentos y bloqueo de 15 min). El tutor siempre puede revocar sin él.
-- **Panel limpio:** los equipos desvinculados se pueden quitar de la lista sin borrar alertas ni historial.
-- **Aviso de teléfono sin señal:** 30 min (demo) / 60 min, una vez por corte, con reconexión avisada.
-- **Permisos y No molestar:** el teléfono reporta si perdió el acceso a notificaciones; se genera una alerta ALTA. No molestar se muestra como contexto y no alarma. Un uso alto sin notificaciones se envía como `uso_sin_notificaciones`.
-- **Servicio en primer plano** en el teléfono del menor para que Samsung no duerma el listener ni el sync prioritario.
-- **Push de todas las severidades** con categoría legible, severidad y resumen derivado; botón **Probar push** en la app.
-- **Panel en vivo:** WebSocket + respaldo cada 15 s, chip “En vivo” y estáticos versionados para no quedar con JS viejo tras un despliegue.
-- **IA más asertiva:** mínimos por contexto (una señal impide BAJO; las graves son ALTO; volumen alto o madrugada son MEDIO) y red de seguridad determinista.
+La versión actual es **1.5.0**. Las notas de cada versión y las APK anteriores están en [GitHub Releases](https://github.com/roninwuajkja/guardiania/releases); el historial completo está en [`CHANGELOG.md`](CHANGELOG.md).
 
 ## Qué incluye
 
