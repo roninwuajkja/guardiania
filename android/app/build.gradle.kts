@@ -78,6 +78,14 @@ android {
             signingConfig = signingConfigs.findByName("release")
         }
 
+        // El emulador del PC es x86_64. El release se queda solo en ARM para
+        // no cargar 15 MB de bibliotecas que un teléfono no usa.
+        debug {
+            ndk {
+                abiFilters += listOf("x86_64")
+            }
+        }
+
         // Mismo paquete y misma firma que release, sin R8 y depurable: se instala
         // encima sin borrar la vinculación y conserva los Log. Sirve para ver por
         // qué un QR no se detecta. No se distribuye.
