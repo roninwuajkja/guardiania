@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -90,7 +91,11 @@ fun StatusScreen(
                 .background(Pine950),
         ) {
             PineBackdrop(Modifier.matchParentSize())
-            Column(Modifier.padding(horizontal = 22.dp, vertical = 24.dp)) {
+            Column(
+                Modifier
+                    .statusBarsPadding()
+                    .padding(horizontal = 22.dp, vertical = 24.dp),
+            ) {
                 BrandLockup(dark = true)
                 Spacer(Modifier.height(30.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {

@@ -672,24 +672,30 @@ private fun TutorDevices(
     }
 
     if (revokeTarget != null) {
-        AlertDialog(
-            onDismissRequest = { revokeTarget = null },
-            title = { Text("¿Revocar este dispositivo?") },
-            text = {
-                Text(
+        GuardianDialog(
+            icon = Icons.Outlined.Delete,
+            title = "¿Revocar este dispositivo?",
+            onDismiss = { revokeTarget = null },
+            iconTint = Oxblood,
+            iconBackground = OxbloodSoft,
+            content = {
+                DialogBodyText(
                     "El teléfono dejará de sincronizar de inmediato. Sus datos locales se borrarán en la próxima apertura de la app.",
                 )
+                Spacer(Modifier.height(10.dp))
+                DialogNote("Las alertas y el historial se conservan.")
             },
-            confirmButton = {
-                TextButton(
+            actions = {
+                DialogPrimaryButton(
+                    text = "Revocar",
                     onClick = {
                         revokeTarget?.bindingId?.let(onRevoke)
                         revokeTarget = null
                     },
-                    colors = ButtonDefaults.textButtonColors(contentColor = Oxblood),
-                ) { Text("Revocar") }
+                    destructive = true,
+                )
+                DialogSecondaryButton("Cancelar") { revokeTarget = null }
             },
-            dismissButton = { TextButton(onClick = { revokeTarget = null }) { Text("Cancelar") } },
         )
     }
 }
@@ -1227,31 +1233,47 @@ private fun TutorSettings(
     }
 
     if (confirmLogout) {
-        AlertDialog(
-            onDismissRequest = { confirmLogout = false },
-            title = { Text("¿Cerrar sesión?") },
-            text = { Text("Se borrarán las credenciales del tutor de este teléfono. La sesión del menor, si existe, se mantiene.") },
-            confirmButton = {
-                TextButton(
-                    onClick = { confirmLogout = false; onLogout() },
-                    colors = ButtonDefaults.textButtonColors(contentColor = Oxblood),
-                ) { Text("Cerrar sesión") }
+        GuardianDialog(
+            icon = Icons.AutoMirrored.Outlined.Logout,
+            title = "¿Cerrar sesión?",
+            onDismiss = { confirmLogout = false },
+            iconTint = Oxblood,
+            iconBackground = OxbloodSoft,
+            content = {
+                DialogBodyText(
+                    "Se borrarán las credenciales del tutor de este teléfono. La sesión del menor, si existe, se mantiene.",
+                )
             },
-            dismissButton = { TextButton(onClick = { confirmLogout = false }) { Text("Cancelar") } },
+            actions = {
+                DialogPrimaryButton(
+                    text = "Cerrar sesión",
+                    onClick = { confirmLogout = false; onLogout() },
+                    destructive = true,
+                )
+                DialogSecondaryButton("Cancelar") { confirmLogout = false }
+            },
         )
     }
     if (confirmLogoutAll) {
-        AlertDialog(
-            onDismissRequest = { confirmLogoutAll = false },
-            title = { Text("¿Cerrar todas las sesiones?") },
-            text = { Text("Revocará esta sesión y cualquier otra del tutor en la web o en otro teléfono. Tendrás que volver a entrar.") },
-            confirmButton = {
-                TextButton(
-                    onClick = { confirmLogoutAll = false; onLogoutAll() },
-                    colors = ButtonDefaults.textButtonColors(contentColor = Oxblood),
-                ) { Text("Cerrar todas") }
+        GuardianDialog(
+            icon = Icons.AutoMirrored.Outlined.Logout,
+            title = "¿Cerrar todas las sesiones?",
+            onDismiss = { confirmLogoutAll = false },
+            iconTint = Oxblood,
+            iconBackground = OxbloodSoft,
+            content = {
+                DialogBodyText(
+                    "Revocará esta sesión y cualquier otra del tutor en la web o en otro teléfono. Tendrás que volver a entrar.",
+                )
             },
-            dismissButton = { TextButton(onClick = { confirmLogoutAll = false }) { Text("Cancelar") } },
+            actions = {
+                DialogPrimaryButton(
+                    text = "Cerrar todas",
+                    onClick = { confirmLogoutAll = false; onLogoutAll() },
+                    destructive = true,
+                )
+                DialogSecondaryButton("Cancelar") { confirmLogoutAll = false }
+            },
         )
     }
     if (changePasswordOpen) {
@@ -1259,58 +1281,57 @@ private fun TutorSettings(
         var next by remember { mutableStateOf("") }
         var confirm by remember { mutableStateOf("") }
         var dialogError by remember { mutableStateOf<String?>(null) }
-        AlertDialog(
-            onDismissRequest = { changePasswordOpen = false },
-            title = { Text("Cambiar contraseña") },
-            text = {
-                Column {
-                    Text(
-                        "Al cambiarla se cierran todas las sesiones del tutor, incluida esta. Vuelve a entrar con la nueva.",
-                        color = Muted,
-                        fontSize = 11.sp,
-                        lineHeight = 16.sp,
-                    )
-                    Spacer(Modifier.height(10.dp))
-                    OutlinedTextField(
-                        value = current,
-                        onValueChange = { current = it; dialogError = null },
-                        modifier = Modifier.fillMaxWidth(),
-                        label = { Text("Contraseña actual") },
-                        visualTransformation = PasswordVisualTransformation(),
-                        singleLine = true,
-                        shape = RoundedCornerShape(11.dp),
-                        colors = dialogFieldColors(),
-                    )
+        GuardianDialog(
+            icon = Icons.Outlined.Lock,
+            title = "Cambiar contraseña",
+            onDismiss = { changePasswordOpen = false },
+            iconTint = Pine700,
+            iconBackground = SageSoft,
+            content = {
+                DialogBodyText(
+                    "Al cambiarla se cierran todas las sesiones del tutor, incluida esta. Vuelve a entrar con la nueva.",
+                )
+                Spacer(Modifier.height(12.dp))
+                OutlinedTextField(
+                    value = current,
+                    onValueChange = { current = it; dialogError = null },
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("Contraseña actual") },
+                    visualTransformation = PasswordVisualTransformation(),
+                    singleLine = true,
+                    shape = RoundedCornerShape(11.dp),
+                    colors = dialogFieldColors(),
+                )
+                Spacer(Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = next,
+                    onValueChange = { next = it; dialogError = null },
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("Contraseña nueva (mínimo 12)") },
+                    visualTransformation = PasswordVisualTransformation(),
+                    singleLine = true,
+                    shape = RoundedCornerShape(11.dp),
+                    colors = dialogFieldColors(),
+                )
+                Spacer(Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = confirm,
+                    onValueChange = { confirm = it; dialogError = null },
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("Repetir contraseña nueva") },
+                    visualTransformation = PasswordVisualTransformation(),
+                    singleLine = true,
+                    shape = RoundedCornerShape(11.dp),
+                    colors = dialogFieldColors(),
+                )
+                if (dialogError != null) {
                     Spacer(Modifier.height(8.dp))
-                    OutlinedTextField(
-                        value = next,
-                        onValueChange = { next = it; dialogError = null },
-                        modifier = Modifier.fillMaxWidth(),
-                        label = { Text("Contraseña nueva (mínimo 12)") },
-                        visualTransformation = PasswordVisualTransformation(),
-                        singleLine = true,
-                        shape = RoundedCornerShape(11.dp),
-                        colors = dialogFieldColors(),
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    OutlinedTextField(
-                        value = confirm,
-                        onValueChange = { confirm = it; dialogError = null },
-                        modifier = Modifier.fillMaxWidth(),
-                        label = { Text("Repetir contraseña nueva") },
-                        visualTransformation = PasswordVisualTransformation(),
-                        singleLine = true,
-                        shape = RoundedCornerShape(11.dp),
-                        colors = dialogFieldColors(),
-                    )
-                    if (dialogError != null) {
-                        Spacer(Modifier.height(6.dp))
-                        Text(dialogError.orEmpty(), color = Oxblood, fontSize = 11.sp)
-                    }
+                    DialogErrorText(dialogError.orEmpty())
                 }
             },
-            confirmButton = {
-                TextButton(
+            actions = {
+                DialogPrimaryButton(
+                    text = "Cambiar contraseña",
                     onClick = {
                         when {
                             current.isBlank() -> dialogError = "Escribe tu contraseña actual."
@@ -1323,20 +1344,30 @@ private fun TutorSettings(
                             }
                         }
                     },
-                ) { Text("Cambiar") }
+                )
+                DialogSecondaryButton("Cancelar") { changePasswordOpen = false }
             },
-            dismissButton = { TextButton(onClick = { changePasswordOpen = false }) { Text("Cancelar") } },
         )
     }
     if (confirmChild) {
-        AlertDialog(
-            onDismissRequest = { confirmChild = false },
-            title = { Text("¿Usar este teléfono como dispositivo del menor?") },
-            text = { Text("Se abrirá la vinculación. El tutor debe estar presente y el menor debe dar su asentimiento en este equipo.") },
-            confirmButton = {
-                TextButton(onClick = { confirmChild = false; onSwitchToChild() }) { Text("Continuar") }
+        GuardianDialog(
+            icon = Icons.Outlined.PhoneAndroid,
+            title = "¿Usar este teléfono como dispositivo del menor?",
+            onDismiss = { confirmChild = false },
+            iconTint = Pine700,
+            iconBackground = SageSoft,
+            content = {
+                DialogBodyText(
+                    "Se abrirá la vinculación. El tutor debe estar presente y el menor debe dar su asentimiento en este equipo.",
+                )
             },
-            dismissButton = { TextButton(onClick = { confirmChild = false }) { Text("Cancelar") } },
+            actions = {
+                DialogPrimaryButton(
+                    text = "Continuar",
+                    onClick = { confirmChild = false; onSwitchToChild() },
+                )
+                DialogSecondaryButton("Cancelar") { confirmChild = false }
+            },
         )
     }
 }

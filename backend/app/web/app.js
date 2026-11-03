@@ -898,6 +898,9 @@ function alertRow(alert, { compact = false } = {}) {
       return entries ? `${rule.label} (${entries})` : rule.label;
     })
     .join(' · ');
+  const advice = (alert.reglas || [])
+    .map((rule) => rule.consejo_educativo)
+    .find((value) => typeof value === 'string' && value.trim());
   const canAct = ['NUEVA', 'VISTA'].includes(alert.estado);
   return `
     <article class="alert-row">
@@ -914,7 +917,10 @@ function alertRow(alert, { compact = false } = {}) {
         <p class="alert-summary">${escapeHtml(alert.resumen)}</p>
         <details class="alert-why">
           <summary>Por qué se generó</summary>
-          <p class="alert-evidence">${escapeHtml(evidence || 'Regla heurística del motor de riesgo local.')}<br>Sin contenido del mensaje: solo señales derivadas.</p>
+          <p class="alert-why-text">${escapeHtml(alert.resumen)}</p>
+          <p class="alert-evidence">${escapeHtml(evidence || 'Regla heurística del motor de riesgo local.')}</p>
+          ${advice ? `<p class="alert-why-advice">${escapeHtml(advice)}</p>` : ''}
+          <p class="alert-note">Sin contenido del mensaje: solo señales derivadas.</p>
         </details>
         ${compact ? '' : `
           <div class="alert-actions">
