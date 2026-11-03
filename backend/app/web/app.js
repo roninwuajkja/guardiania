@@ -601,6 +601,7 @@ async function connectTutorStream() {
       let message;
       try { message = JSON.parse(event.data); } catch { return; }
       if (message.type === 'risk_alert') handleLiveAlert(message.data);
+      else if (message.type === 'device_reconnected') handleReconnected(message.data);
     };
     socket.onclose = () => {
       if (state.stream !== socket) return;
@@ -669,8 +670,16 @@ function handleLiveAlert(data) {
   }
 }
 
+function handleReconnected(data) {
+  if (!data) return;
+  const who = data.etiqueta_menor || data.device_alias || 'El teléfono';
+  toast(`${who} volvió a conectarse`);
+  refreshFromServer({ force: true });
+}
+
 function prettyAlertLabel(code) {
   const labels = {
+    sin_senal: 'teléfono sin señal',
     self_harm: 'posible autolesión',
     grooming: 'posible grooming',
     sexual_content: 'contenido sexual',
@@ -1242,19 +1251,51 @@ async function renderDevicesPage() {
 }
 
 function renderDevices() {
-  const devices = state.devices;
-  const rows = devices
+  const isActive = (device) => device.estado === 'ACTIVO' && device.vinculacion_estado === 'ACTIVO';
+  const active = state.devices.filter(isActive);
+  const revoked = state.devices.filter((device) => !isActive(device));
+
+  const activeRows = active
     .map((device) => {
-      const active = device.estado === 'ACTIVO' && device.vinculacion_estado === 'ACTIVO';
+      const name = device.etiqueta_menor || device.alias;
       return `
         <article class="device-row">
           <span class="device-icon">${icon('device', 18)}</span>
           <div class="device-info">
-            <strong>${escapeHtml(device.etiqueta_menor || device.alias)}</strong>
-            <span>${escapeHtml(device.model_family || 'Android')} · Android API ${device.api_level} · ${active ? `sincronizó ${relativeLabel(device.ultima_conexion)}` : `vinculado ${relativeLabel(device.creado_en)}`}</span>
+            <strong>${escapeHtml(name)}</strong>
+            <span>${escapeHtml(device.model_family || 'Android')} · Android API ${device.api_level} · sincronizó ${relativeLabel(device.ultima_conexion)}</span>
           </div>
-          <span class="device-state ${active ? '' : 'is-revoked'}"><i class="dot"></i>${active ? 'Activo' : 'Revocado'}</span>
-          ${active ? `<button class="btn btn-sm btn-danger" type="button" data-action="revoke" data-id="${device.vinculacion_id}" data-name="${escapeAttr(device.etiqueta_menor || device.alias)}">Revocar</button>` : ''}
+          <span class="device-state"><i class="dot"></i>Activo</span>
+          <button class="btn btn-sm btn-danger" type="button" data-action="revoke" data-id="${device.vinculacion_id}" data-name="${escapeAttr(name)}">Revocar</button>
+        </article>
+        <div class="device-code">
+          <div class="device-code-copy">
+            <strong>Código de desvinculación</strong>
+            <span>${device.unlink_code_set
+              ? 'Activo: el teléfono lo pedirá para desvincularse.'
+              : 'Sin código: el teléfono puede desvincularse desde la app.'}</span>
+          </div>
+          <div class="device-code-actions">
+            <button class="btn btn-sm btn-secondary" type="button" data-action="set-unlink-code" data-id="${device.vinculacion_id}" data-name="${escapeAttr(name)}">${device.unlink_code_set ? 'Cambiar' : 'Definir código'}</button>
+            ${device.unlink_code_set ? `<button class="btn btn-sm btn-secondary" type="button" data-action="remove-unlink-code" data-id="${device.vinculacion_id}" data-name="${escapeAttr(name)}">Quitar</button>` : ''}
+          </div>
+          <p class="device-code-note">Este código impide desvincular <em>desde la app</em>. No impide desinstalar la app, borrar sus datos desde Ajustes ni restablecer el teléfono. Si el teléfono deja de sincronizar, el panel lo mostrará como sin señal.</p>
+        </div>`;
+    })
+    .join('');
+
+  const revokedRows = revoked
+    .map((device) => {
+      const name = device.etiqueta_menor || device.alias;
+      return `
+        <article class="device-row">
+          <span class="device-icon">${icon('device', 18)}</span>
+          <div class="device-info">
+            <strong>${escapeHtml(name)}</strong>
+            <span>${escapeHtml(device.model_family || 'Android')} · vinculado ${relativeLabel(device.creado_en)}</span>
+          </div>
+          <span class="device-state is-revoked"><i class="dot"></i>Desvinculado</span>
+          <button class="btn btn-sm btn-secondary" type="button" data-action="hide-device" data-id="${device.id}" data-name="${escapeAttr(name)}">Quitar del panel</button>
         </article>`;
     })
     .join('');
@@ -1268,13 +1309,22 @@ function renderDevices() {
     </section>
     <section class="card">
       <header class="card-head" style="padding:16px 18px;border-bottom:1px solid var(--line)">
-        <h2>${devices.length} ${devices.length === 1 ? 'dispositivo' : 'dispositivos'}</h2>
+        <h2>${active.length} ${active.length === 1 ? 'dispositivo activo' : 'dispositivos activos'}</h2>
         <span class="eyebrow">Retención 90 días</span>
       </header>
       <div class="device-list">
-        ${rows || `<div class="alert-empty"><strong>Aún no hay dispositivos</strong>Vincula el primero para empezar a recibir señales.</div>`}
+        ${activeRows || `<div class="alert-empty"><strong>No hay dispositivos activos</strong>Vincula uno nuevo para empezar a recibir señales.</div>`}
       </div>
     </section>
+    ${revoked.length ? `
+    <section class="card" style="margin-top:16px">
+      <header class="card-head" style="padding:16px 18px;border-bottom:1px solid var(--line)">
+        <h2>Desvinculados (${revoked.length})</h2>
+        <button class="btn btn-sm btn-secondary" type="button" data-action="hide-revoked">Quitar todos</button>
+      </header>
+      <div class="device-list">${revokedRows}</div>
+      <div class="privacy-line" style="margin:14px 16px 16px">${icon('shield', 15)}<span>Se quitan de la lista; sus alertas y el historial agregado se conservan.</span></div>
+    </section>` : ''}
     <div class="privacy-line" style="margin-top:20px">${icon('shield', 15)}<span>Revocar no borra el historial agregado de alertas, pero el teléfono deja de enviar datos en el siguiente intento de sincronización.</span></div>`;
 }
 
@@ -1291,6 +1341,76 @@ async function revokeDevice(bindingId, name) {
     await refreshCore();
     if (state.route === 'dispositivos') renderDevices();
     if (state.route === 'resumen') renderOverview();
+  } catch (error) {
+    toast(error.message);
+  }
+}
+
+async function setUnlinkCode(bindingId, name) {
+  const code = await promptAction({
+    title: 'Código de desvinculación',
+    text: `Define un código de 6 dígitos para ${name}. El teléfono lo pedirá para desvincularse; tú siempre puedes revocar desde aquí.`,
+    ok: 'Guardar código',
+  });
+  if (code === null) return;
+  if (!/^\d{6}$/.test(code)) {
+    toast('El código debe tener exactamente 6 dígitos.');
+    return;
+  }
+  try {
+    await api(`/devices/${bindingId}/unlink-code`, { method: 'PUT', body: { codigo: code } });
+    toast('Código guardado');
+    await refreshCore();
+    if (state.route === 'dispositivos') renderDevices();
+  } catch (error) {
+    toast(error.message);
+  }
+}
+
+async function removeUnlinkCode(bindingId, name) {
+  const confirmed = await confirmAction({
+    title: '¿Quitar el código?',
+    text: `${name} podrá desvincularse desde la app sin pedir código.`,
+    ok: 'Quitar código',
+  });
+  if (!confirmed) return;
+  try {
+    await api(`/devices/${bindingId}/unlink-code`, { method: 'DELETE' });
+    toast('Código eliminado');
+    await refreshCore();
+    if (state.route === 'dispositivos') renderDevices();
+  } catch (error) {
+    toast(error.message);
+  }
+}
+
+async function hideDevice(deviceId, name) {
+  const confirmed = await confirmAction({
+    title: '¿Quitar este teléfono del panel?',
+    text: `${name} desaparecerá de la lista. Sus alertas y el historial se conservan.`,
+    ok: 'Quitar del panel',
+  });
+  if (!confirmed) return;
+  try {
+    await api(`/devices/${deviceId}/hide`, { method: 'POST' });
+    toast('Teléfono quitado del panel');
+    await refreshFromServer({ force: true });
+  } catch (error) {
+    toast(error.message);
+  }
+}
+
+async function hideRevokedDevices() {
+  const confirmed = await confirmAction({
+    title: '¿Quitar todos los desvinculados?',
+    text: 'Desaparecen de la lista. Sus alertas y el historial se conservan.',
+    ok: 'Quitar todos',
+  });
+  if (!confirmed) return;
+  try {
+    const result = await api('/devices/hide-revoked', { method: 'POST' });
+    toast(`${result.ocultos} teléfono(s) quitados del panel`);
+    await refreshFromServer({ force: true });
   } catch (error) {
     toast(error.message);
   }
@@ -1355,6 +1475,36 @@ async function setAlertState(id, newState) {
 }
 
 /* ---------- Confirm dialog ---------- */
+
+function promptAction({ title, text, ok, placeholder = '000000' }) {
+  const dialog = document.createElement('dialog');
+  dialog.className = 'dialog';
+  dialog.innerHTML = `
+    <form method="dialog">
+      <h2>${escapeHtml(title)}</h2>
+      <p class="muted">${escapeHtml(text)}</p>
+      <label class="field">
+        <span>Código de 6 dígitos</span>
+        <input name="codigo" inputmode="numeric" autocomplete="off" pattern="\\d{6}" maxlength="6" placeholder="${escapeAttr(placeholder)}" required>
+      </label>
+      <div class="dialog-actions">
+        <button class="btn btn-secondary" value="cancel" type="submit">Cancelar</button>
+        <button class="btn btn-primary" value="confirm" type="submit">${escapeHtml(ok || 'Guardar')}</button>
+      </div>
+    </form>`;
+  document.body.appendChild(dialog);
+  dialog.showModal();
+  const input = dialog.querySelector('input');
+  input.focus();
+  return new Promise((resolve) => {
+    dialog.addEventListener('close', () => {
+      const value = dialog.returnValue === 'confirm' ? input.value.trim() : null;
+      dialog.remove();
+      resolve(value);
+    });
+  });
+}
+
 
 function confirmAction({ title, text, ok }) {
   const dialog = $('#confirm-dialog');
@@ -1493,6 +1643,14 @@ function bindEvents() {
       await cancelPairing();
     } else if (action === 'revoke') {
       await revokeDevice(trigger.dataset.id, trigger.dataset.name);
+    } else if (action === 'set-unlink-code') {
+      await setUnlinkCode(trigger.dataset.id, trigger.dataset.name);
+    } else if (action === 'remove-unlink-code') {
+      await removeUnlinkCode(trigger.dataset.id, trigger.dataset.name);
+    } else if (action === 'hide-device') {
+      await hideDevice(trigger.dataset.id, trigger.dataset.name);
+    } else if (action === 'hide-revoked') {
+      await hideRevokedDevices();
     } else if (action === 'alert-state') {
       trigger.disabled = true;
       await setAlertState(trigger.dataset.id, trigger.dataset.state);
@@ -1525,13 +1683,6 @@ function bindEvents() {
 
   window.addEventListener('hashchange', () => {
     navigate().catch((error) => toast(error.message));
-  });
-
-  document.addEventListener('visibilitychange', () => {
-    if (!document.hidden && state.tutor) {
-      updateSyncChip();
-      if (state.route === 'resumen') refreshCore().then(renderOverview).catch(() => {});
-    }
   });
 }
 
