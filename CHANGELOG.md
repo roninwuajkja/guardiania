@@ -14,6 +14,8 @@ Todas las versiones relevantes de IA Guardian. El detalle técnico vive en
   tutor pueda cerrar la app antes de que FCM la entregue.
 - La app muestra “Push programada” y el número de tokens; si no hay token o FCM
   no está configurado, lo indica explícitamente.
+- La tarea programada se mantiene viva hasta que FCM confirma el envío, incluso
+  después de responder la petición.
 - Las notificaciones de insultos y estafas usan su etiqueta específica en lugar
   de “Señal de riesgo”.
 - Android `1.6.1` (`versionCode` 8) y backend `1.6.1`.
