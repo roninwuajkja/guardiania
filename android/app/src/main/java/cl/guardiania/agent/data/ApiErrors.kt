@@ -1,5 +1,10 @@
 package cl.guardiania.agent.data
 
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.intOrNull
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import org.json.JSONObject
 import retrofit2.HttpException
 import java.io.IOException
@@ -9,6 +14,30 @@ import java.net.UnknownHostException
 class NotPairedException : IllegalStateException("Este teléfono no está vinculado")
 
 class SessionRevokedException : IllegalStateException("La vinculación fue revocada")
+
+/** Error de desvinculación con código del tutor (respuesta `detail` estructurada). */
+data class UnlinkError(
+    val code: String,
+    val message: String,
+    val attemptsLeft: Int?,
+    val retryAfterSeconds: Int?,
+)
+
+private val errorJson = Json { ignoreUnknownKeys = true }
+
+fun HttpException.unlinkError(): UnlinkError? = runCatching {
+    val body = response()?.errorBody()?.string().orEmpty()
+    val detail = errorJson.parseToJsonElement(body).jsonObject["detail"]?.jsonObject
+        ?: return@runCatching null
+    val code = detail["code"]?.jsonPrimitive?.contentOrNull ?: return@runCatching null
+    UnlinkError(
+        code = code,
+        message = detail["message"]?.jsonPrimitive?.contentOrNull
+            ?: "No se pudo desvincular el teléfono.",
+        attemptsLeft = detail["attempts_left"]?.jsonPrimitive?.intOrNull,
+        retryAfterSeconds = detail["retry_after_seconds"]?.jsonPrimitive?.intOrNull,
+    )
+}.getOrNull()
 
 private fun HttpException.serverDetail(): String? = runCatching {
     val body = response()?.errorBody()?.string().orEmpty()

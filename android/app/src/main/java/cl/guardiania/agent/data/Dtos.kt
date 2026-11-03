@@ -46,6 +46,11 @@ data class RefreshRequest(
 )
 
 @Serializable
+data class UnlinkRequest(
+    val codigo: String? = null,
+)
+
+@Serializable
 data class RefreshResponse(
     @SerialName("access_token") val accessToken: String,
     @SerialName("token_type") val tokenType: String = "bearer",

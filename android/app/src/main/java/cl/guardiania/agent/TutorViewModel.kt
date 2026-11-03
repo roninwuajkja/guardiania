@@ -12,6 +12,7 @@ import cl.guardiania.agent.data.TutorPairingStatusDto
 import cl.guardiania.agent.data.TutorSessionExpiredException
 import cl.guardiania.agent.data.TutorSessionRecord
 import cl.guardiania.agent.data.tutorMessage
+import cl.guardiania.agent.notifications.TutorNotifications
 import cl.guardiania.agent.realtime.TutorRealtimeAlert
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -92,8 +93,13 @@ class TutorViewModel(application: Application) : AndroidViewModel(application) {
 
     private fun onRealtimeAlert(event: TutorRealtimeAlert) {
         val alias = event.deviceAlias?.takeIf { it.isNotBlank() } ?: "un equipo"
-        _ui.update {
-            it.copy(message = "Nueva alerta ${severityLabel(event.severity)} · $alias")
+        if (event.kind == "device_reconnected") {
+            _ui.update { it.copy(message = "$alias volvió a conectarse") }
+            TutorNotifications.showReconnected(getApplication<Application>(), alias)
+        } else {
+            _ui.update {
+                it.copy(message = "Nueva alerta ${severityLabel(event.severity)} · $alias")
+            }
         }
         alertRefreshJob?.cancel()
         alertRefreshJob = viewModelScope.launch {

@@ -52,6 +52,41 @@ object TutorNotifications {
         manager.createNotificationChannels(listOf(alerts, sync))
     }
 
+    fun showReconnected(context: Context, deviceAlias: String?) {
+        val manager = NotificationManagerCompat.from(context)
+        if (!manager.areNotificationsEnabled()) return
+
+        val alias = deviceAlias?.trim()?.takeIf { it.isNotEmpty() } ?: "tu equipo"
+        val body = "$alias volvió a enviar señales al panel."
+        val intent = Intent(context, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        val pending = PendingIntent.getActivity(
+            context,
+            alias.hashCode(),
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+
+        val notification = NotificationCompat.Builder(context, SYNC_CHANNEL)
+            .setSmallIcon(R.drawable.ic_stat_guardiania)
+            .setContentTitle("IA Guardian · Teléfono reconectado")
+            .setContentText(body)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(body))
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setCategory(NotificationCompat.CATEGORY_STATUS)
+            .setAutoCancel(true)
+            .setContentIntent(pending)
+            .setColor(0xFF0F3D2E.toInt())
+            .build()
+
+        try {
+            manager.notify(nextId.incrementAndGet(), notification)
+        } catch (_: SecurityException) {
+            // Sin POST_NOTIFICATIONS: el aviso igual aparece dentro de la app.
+        }
+    }
+
     fun showRiskAlert(
         context: Context,
         alertId: String?,
@@ -111,9 +146,12 @@ object TutorNotifications {
         "grooming" -> "Posible grooming"
         "sexual_content" -> "Contenido sexual"
         "violence" -> "Violencia"
+        "coercion" -> "Presión o chantaje"
         "bullying" -> "Acoso escolar"
         "drugs" -> "Drogas"
         "gambling" -> "Apuestas"
+        "malestar" -> "Malestar emocional"
+        "sin_senal" -> "Teléfono sin señal"
         "unknown_contact" -> "Contacto desconocido"
         else -> null
     }

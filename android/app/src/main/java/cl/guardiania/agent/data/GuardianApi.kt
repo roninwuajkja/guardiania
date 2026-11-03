@@ -30,6 +30,12 @@ interface GuardianApi {
         @Body body: CaptureVector,
     ): EvaluationResponse
 
+    @POST("api/v1/devices/self/unlink")
+    suspend fun unlinkSelf(
+        @Header("Authorization") authorization: String,
+        @Body body: UnlinkRequest,
+    ): Response<Unit>
+
     @POST("api/v1/auth/login")
     suspend fun tutorLogin(@Body body: TutorLoginRequest): TutorAuthDto
 
