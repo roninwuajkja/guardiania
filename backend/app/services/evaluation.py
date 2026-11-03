@@ -83,7 +83,7 @@ async def evaluate_vector(db: AsyncSession, ctx, vector: DerivedFeatureVector) -
             alert=alert,
             device_alias=ctx.device.alias,
             etiqueta_menor=ctx.binding.etiqueta_menor,
-            allow_push=assessment.nivel_riesgo == "ALTO",
+            allow_push=True,
         )
         notified = result.notified
 

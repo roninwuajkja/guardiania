@@ -4,9 +4,9 @@ Motivo: el proyecto ya depende de PyJWT + cryptography; agregar firebase-admin
 implicaría otra cadena de dependencias (gRPC) solo para firmar un JWT y hacer un
 POST. Este cliente hace exactamente eso y se apaga solo si no hay credenciales.
 
-Privacidad: el payload contiene como máximo ``alert_id``, severidad, categoría y
-el alias del dispositivo. Nunca narrativa, texto, nombres de contactos ni el
-contenido que originó la señal.
+Privacidad: el payload incluye ``alert_id``, severidad, categoría, alias y el
+resumen **derivado** de la alerta (nunca el texto, nombres de contactos ni el
+contenido que originó la señal).
 """
 
 from __future__ import annotations
@@ -29,6 +29,31 @@ logger = logging.getLogger("guardiania.push")
 
 FCM_SCOPE = "https://www.googleapis.com/auth/firebase.messaging"
 _REQUIRED_FIELDS = ("project_id", "client_email", "private_key", "token_uri")
+
+_SEVERITY_LABELS = {
+    "BAJA": "baja",
+    "MEDIA": "media",
+    "ALTA": "alta",
+    "CRITICA": "crítica",
+}
+
+_CATEGORY_LABELS = {
+    "self_harm": "Posible autolesión",
+    "grooming": "Posible grooming",
+    "sexual_content": "Contenido sexual",
+    "violence": "Violencia",
+    "coercion": "Presión o chantaje",
+    "bullying": "Acoso escolar",
+    "drugs": "Drogas o alcohol",
+    "gambling": "Apuestas",
+    "malestar": "Malestar emocional",
+    "unknown_contact": "Contacto desconocido",
+    "uso_nocturno": "Uso nocturno",
+    "uso_prolongado": "Uso prolongado",
+    "contacto_recurrente": "Contacto recurrente",
+    "sin_senal": "Teléfono sin señal",
+    "acceso_desactivado": "Acceso a notificaciones desactivado",
+}
 
 
 @dataclass(frozen=True)
@@ -174,12 +199,15 @@ class FirebasePushService:
         if is_test:
             title = "IA Guardian · Prueba"
             body = "Si ves esto, las notificaciones push funcionan."
-        elif severity in {"ALTA", "CRITICA"}:
-            title = "IA Guardian · Señal alta"
-            body = f"Señal {severity.lower()} en {alias}"
         else:
-            title = "IA Guardian"
-            body = f"Nueva señal en {alias}"
+            category = str(data.get("categoria") or "").lower()
+            category_label = _CATEGORY_LABELS.get(category, "Señal de riesgo")
+            severity_label = _SEVERITY_LABELS.get(severity, "de riesgo")
+            summary = str(data.get("resumen") or "").strip()
+            title = f"IA Guardian · {category_label}"
+            body = f"Señal {severity_label} · {alias}"
+            if summary:
+                body = f"{body}: {summary}"
         if not is_test:
             payload_data.setdefault("open_alerts", "1")
         semaphore = asyncio.Semaphore(5)
