@@ -107,7 +107,7 @@ object Sanitizer {
         Rule(
             "insult_severe",
             Regex(
-                """\b(hijo de puta|hija de puta|hijos de puta|conchetumadre|conchetumare|culiao|culiada|maricon|maricona|maricon de mierda|(eres|es|son|que) (un|una|unos|unas)? (puto|puta|perra|zorra|fleto|fleta)|perra de mierda|zorra de mierda|chupapico|chupapija|malparido|malparida|bastardo|bastarda|escoria|basura humana|retrasado|retrasada|mongolico|mongolica|sudaca|veneco|indio de mierda|negro de mierda|ojala te mueras|ojala te maten|muerete (de verdad|luego|ahora)|te voy a matar)\b""",
+                """\b(hijo de puta|hija de puta|hijos de puta|conchetumadre|conchetumare|culiao|culiada|maricon|maricona|maricon de mierda|(eres|es|son|que) (un|una|unos|unas)? (puto|puta|perra|zorra|fleto|fleta|retrasado|retrasada)|retrasado mental|retrasada mental|perra de mierda|zorra de mierda|chupapico|chupapija|malparido|malparida|bastardo|bastarda|escoria|basura humana|mongolico|mongolica|sudaca|veneco|indio de mierda|negro de mierda|ojala te mueras|ojala te maten|muerete (de verdad|luego|ahora)|te voy a matar)\b""",
             ),
         ),
         Rule(

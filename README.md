@@ -226,7 +226,7 @@ Estados de vinculación: `PENDIENTE`, `ACTIVO`, `REVOCADO`, `EXPIRADO`. Un códi
 cd backend
 .\.venv\Scripts\python.exe -m pytest -q
 
-# Android: 52 pruebas unitarias + 1 instrumentada (QR con ML Kit)
+# Android: 53 pruebas unitarias + 1 instrumentada (QR con ML Kit)
 cd android
 .\gradlew.bat :app:testDebugUnitTest
 .\gradlew.bat :app:connectedDebugAndroidTest
