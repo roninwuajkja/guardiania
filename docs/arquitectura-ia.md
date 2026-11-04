@@ -140,12 +140,14 @@ detiene al desvincular. Evita que el fabricante duerma el listener y retrase el
 sync prioritario. En Samsung conviene sumar la app a “Apps que nunca se
 suspenden”.
 
-El listener pide **reconexión explícita** cuando el sistema lo desenlaza, el
-servicio reintenta cada 5 minutos y, además, **escanea las notificaciones
-activas** al conectar y cada 3 minutos. Ese escaneo recupera avisos que Samsung
-no entregó con la pantalla bloqueada. La deduplicación usa la clave y la hora
-real del aviso, con una marca persistida para no repetir alertas tras un
-reinicio.
+El listener pide **reconexión explícita** cuando el sistema lo desenlaza y el
+servicio reintenta cada 5 minutos. El servicio en primer plano también ejecuta
+un **escaneo de notificaciones activas** a los 30 segundos y cada 3 minutos;
+el listener escanea al conectar. Ese escaneo recupera avisos que Samsung no
+entregó con la pantalla bloqueada. Se hace desde el servicio porque Samsung
+puede recrear el listener y reiniciar su temporizador. La deduplicación usa la
+clave y la hora real del aviso, con una marca persistida para no repetir
+alertas tras un reinicio.
 
 ## 4. Captura → evaluación → alerta
 

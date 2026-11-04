@@ -417,6 +417,17 @@ class SanitizerTest {
     }
 
     @Test
+    fun `plural lures and bare short link are detected`() {
+        val result = Sanitizer.sanitize(
+            "com.whatsapp",
+            null,
+            "Tienes saldos y premios disponibles. Registrate en bit.ly/abc123",
+        )
+
+        assertTrue(result.flags.contains("scam_link"))
+    }
+
+    @Test
     fun `short link without a lure is not flagged`() {
         val result = Sanitizer.sanitize(
             "com.whatsapp",

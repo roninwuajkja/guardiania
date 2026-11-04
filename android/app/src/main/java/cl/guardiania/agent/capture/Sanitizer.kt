@@ -26,14 +26,16 @@ object Sanitizer {
             "v\\.gd|soo\\.gd|clck\\.ru|t\\.ly|short\\.gy|1link\\.st"
 
     private val scamLinkLures =
-        "saldo|giros?|bono|bonos|premio|sorteo|reclama|registro|registrate|verifica|verificacion|" +
-            "cuenta|suspendida|bloqueada|paquete|aduana|inversion|invierte|cripto|bitcoin|apuesta|" +
-            "casino|tragamonedas|jackpot|ganaste|felicidades|beneficiario|tarjeta de regalo|gift card|" +
-            "cupon|descuento|beneficio|urgente|ultimas horas|confirma|contrasena|codigo|otp|soporte|" +
-            "banco|transferencia|pago|deuda|prestamo|trabajo|ingresos|deposita|recarga|retira|ganancias|" +
-            "fortune horse|fortune tiger|fortune rabbit|fortune mouse|blaze|betano|sportingbet|pixbet|" +
-            "superbet|novibet|parimatch|melbet|mostbet|1win|pin-up|vavada|aviator|mines|tigrinho|" +
-            "jogo do bicho|betnacional|estrela bet|galera bet|vaidebet|esportes da sorte|brasil bet"
+        "saldos?|giros?|bonos?|premios?|sorteos?|reclama|reclamos?|registro|registros?|registrate|" +
+            "registrar|verifica|verificacion|cuentas?|suspendida|suspendido|bloqueada|bloqueado|" +
+            "paquetes?|aduana|inversiones?|invierte|cripto|bitcoin|apuestas?|casino|tragamonedas|" +
+            "jackpot|ganaste|has ganado|felicidades|beneficiario|tarjetas? de regalo|gift cards?|" +
+            "cupones?|descuentos?|beneficios?|urgente|ultimas horas|confirma|contrasena|codigos?|" +
+            "otp|soporte|banco|transferencias?|pagos?|deudas?|prestamos?|trabajos?|ingresos|" +
+            "deposita|recarga|retira|ganancias|fortune horse|fortune tiger|fortune rabbit|" +
+            "fortune mouse|blaze|betano|sportingbet|pixbet|superbet|novibet|parimatch|melbet|" +
+            "mostbet|1win|pin-up|vavada|aviator|mines|tigrinho|jogo do bicho|betnacional|" +
+            "estrela bet|galera bet|vaidebet|esportes da sorte|brasil bet"
 
     private val suspiciousLinkPattern =
         "(?:" +
