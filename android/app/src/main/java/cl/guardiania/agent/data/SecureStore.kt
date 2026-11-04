@@ -353,6 +353,13 @@ class SecureStore private constructor(
     @Synchronized
     fun setLastSyncAt(value: Long) = setMeta("last_sync_at", value.toString())
 
+    /** Avanza la marca de última notificación sin retroceder ante escrituras concurrentes. */
+    @Synchronized
+    fun advanceLastNotification(at: Long) {
+        val previous = meta("last_notification_at")?.toLongOrNull() ?: 0L
+        if (at > previous) setMeta("last_notification_at", at.toString())
+    }
+
     @Synchronized
     fun usageHour(): String? = meta("usage_hour")
 
