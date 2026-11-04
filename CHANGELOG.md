@@ -6,6 +6,26 @@ Todas las versiones relevantes de IA Guardian. El detalle técnico vive en
 
 > Las notas de cada versión se publican en [GitHub Releases](https://github.com/roninwuajkja/guardiania/releases). Este archivo conserva el historial completo.
 
+## 1.7.3 — 2026-11-03
+
+### Detección de enlaces sospechosos
+
+- Nueva señal local `scam_link`: enlaces acortados (bit.ly, tinyurl, cutt.ly,
+  rb.gy, etc.) o hosts sospechosos (IP, punycode, TLD de riesgo, userinfo)
+  combinados con señuelos de saldo, giros, registro, premio, cuenta, paquete,
+  inversión, apuestas o urgencia.
+- Detecta el mensaje: “Ya tienes CLP$3.000 de saldo y 50 giros disponibles en
+  Fortune Horse por 24 horas. Completa tu registro: https://bit.ly/4hyJu6V”.
+- No marca links legítimos de video, colegio o reuniones, ni un acortador
+  aislado sin señuelo.
+- Etiqueta **Enlace sospechoso** (MEDIA, 64) en app, push, panel y web.
+- Android `1.7.3` (`versionCode` 12); backend `1.7.3`.
+
+### Verificación
+
+- 69 pruebas unitarias Android (8 nuevas de enlaces) y 109 backend.
+- Prueba de extremo a extremo con una notificación real en el teléfono.
+
 ## 1.7.2 — 2026-11-03
 
 ### Notificaciones del menor

@@ -394,6 +394,95 @@ class SanitizerTest {
     }
 
     @Test
+    fun `casino balance short link is detected`() {
+        val result = Sanitizer.sanitize(
+            "com.whatsapp",
+            null,
+            "Ya tienes CLP$3.000 de saldo y 50 giros disponibles en Fortune Horse " +
+                "por 24 horas. Completa tu registro: https://bit.ly/4hyJu6V",
+        )
+
+        assertTrue(result.flags.contains("scam_link"))
+    }
+
+    @Test
+    fun `bare short link with a lure is detected`() {
+        val result = Sanitizer.sanitize(
+            "org.telegram.messenger",
+            null,
+            "Reclama tu saldo en bit.ly/abc123",
+        )
+
+        assertTrue(result.flags.contains("scam_link"))
+    }
+
+    @Test
+    fun `short link without a lure is not flagged`() {
+        val result = Sanitizer.sanitize(
+            "com.whatsapp",
+            null,
+            "Mira este link https://bit.ly/abc123",
+        )
+
+        assertFalse(result.flags.contains("scam_link"))
+    }
+
+    @Test
+    fun `legitimate video link is not a scam link`() {
+        val result = Sanitizer.sanitize(
+            "com.google.android.youtube",
+            null,
+            "Mira este video https://www.youtube.com/watch?v=abc123",
+        )
+
+        assertFalse(result.flags.contains("scam_link"))
+    }
+
+    @Test
+    fun `school registration link is not a scam link`() {
+        val result = Sanitizer.sanitize(
+            "com.google.android.apps.docs",
+            null,
+            "Completa tu registro en https://classroom.google.com/u/0/",
+        )
+
+        assertFalse(result.flags.contains("scam_link"))
+    }
+
+    @Test
+    fun `ip address login link with account lure is detected`() {
+        val result = Sanitizer.sanitize(
+            "com.whatsapp",
+            null,
+            "Tu cuenta será bloqueada, verifica en http://192.168.1.10/login",
+        )
+
+        assertTrue(result.flags.contains("scam_link"))
+    }
+
+    @Test
+    fun `punycode link with prize lure is detected`() {
+        val result = Sanitizer.sanitize(
+            "com.instagram.android",
+            null,
+            "Ganaste un premio en https://xn--80ak6aa92e.com/registro",
+        )
+
+        assertTrue(result.flags.contains("scam_link"))
+    }
+
+    @Test
+    fun `suspicious tld with delivery lure is detected`() {
+        val result = Sanitizer.sanitize(
+            "com.whatsapp",
+            null,
+            "Paquete retenido, paga en https://seguimiento.xyz/track",
+        )
+
+        assertTrue(result.flags.contains("scam_link"))
+    }
+
+    @Test
     fun `circus clown is not an insult`() {
         val result = Sanitizer.sanitize(
             "com.google.android.youtube",

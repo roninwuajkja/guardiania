@@ -39,6 +39,7 @@ FLAG_RULES: dict[str, tuple[str, Severidad, int, str]] = {
     "scam_casino": ("Invitación a casino o apuestas", Severidad.MEDIA, 60, "No ingreses dinero ni datos; conversa sobre apuestas y límites."),
     "scam_financial": ("Inversión o cripto sospechosa", Severidad.MEDIA, 62, "Desconfía de ganancias garantizadas y no transfieras dinero."),
     "scam_account": ("Suplantación o phishing", Severidad.MEDIA, 64, "No compartas códigos ni contraseñas; verifica por el canal oficial."),
+    "scam_link": ("Enlace sospechoso", Severidad.MEDIA, 64, "No abras el enlace ni entregues datos; verifica el remitente por un canal oficial."),
     "scam_prize": ("Premio o sorteo sospechoso", Severidad.MEDIA, 58, "No pagues ni entregues datos para reclamar un premio."),
     "scam_delivery": ("Paquete o aduana sospechosa", Severidad.MEDIA, 55, "Verifica el envío en el sitio oficial y no pagues enlaces desconocidos."),
     "scam_job": ("Oferta de trabajo sospechosa", Severidad.MEDIA, 55, "Desconfía de trabajos fáciles que piden dinero o datos personales."),

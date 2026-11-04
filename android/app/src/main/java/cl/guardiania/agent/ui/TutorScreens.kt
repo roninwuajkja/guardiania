@@ -1639,6 +1639,7 @@ private fun categoryLabel(raw: String): String = when (raw.trim().lowercase()) {
     "scam_casino" -> "Invitación a casino"
     "scam_financial" -> "Inversión sospechosa"
     "scam_account" -> "Phishing o suplantación"
+    "scam_link" -> "Enlace sospechoso"
     "scam_prize" -> "Premio sospechoso"
     "scam_delivery" -> "Envío sospechoso"
     "scam_job" -> "Trabajo sospechoso"
