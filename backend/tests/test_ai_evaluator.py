@@ -263,6 +263,7 @@ def test_scam_families_are_medium_risk():
         "scam_casino",
         "scam_financial",
         "scam_account",
+        "scam_link",
         "scam_prize",
         "scam_delivery",
         "scam_job",
@@ -277,6 +278,13 @@ def test_two_scam_signals_raise_the_floor_to_high():
     floored = apply_policy_floor(assessment(level="BAJO", category="Sin_Riesgo"), vector)
 
     assert floored.nivel_riesgo == "ALTO"
+
+
+def test_scam_link_is_medium_risk_and_conducta():
+    result = asyncio.run(HeuristicProvider().classify(make_vector(flags=["scam_link"])))
+
+    assert result.nivel_riesgo == "MEDIO"
+    assert result.categoria == "Conducta_Riesgo"
 
 
 def test_two_insult_levels_raise_the_floor_to_high():
@@ -336,6 +344,7 @@ def test_every_known_flag_has_a_server_rule():
         "scam_casino",
         "scam_financial",
         "scam_account",
+        "scam_link",
         "scam_prize",
         "scam_delivery",
         "scam_job",

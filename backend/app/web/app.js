@@ -791,6 +791,7 @@ function prettyAlertLabel(code) {
     scam_casino: 'invitación a casino',
     scam_financial: 'inversión sospechosa',
     scam_account: 'phishing o suplantación',
+    scam_link: 'enlace sospechoso',
     scam_prize: 'premio sospechoso',
     scam_delivery: 'envío sospechoso',
     scam_job: 'trabajo sospechoso',

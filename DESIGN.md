@@ -40,7 +40,7 @@ No hay Redis ni cola externa. El **outbox transaccional** vive en la misma base 
 - Categoría de la app (no el nombre del paquete en el panel, salvo el alias del dispositivo).
 - Conteos y minutos, nunca títulos, remitentes, números ni extractos.
 - Flags léxicos normalizados (`gambling`, `self_harm`, …), no el texto que los activó.
-- Un hash salado y truncado de contacto, solo cuando la app expone un identificador estable. **No implementado en 1.7.2**: el campo va `null` y `contacto_recurrente` está reservada.
+- Un hash salado y truncado de contacto, solo cuando la app expone un identificador estable. **No implementado en 1.7.3**: el campo va `null` y `contacto_recurrente` está reservada.
 - Ventana temporal de máximo 60 minutos y `event_id` determinista para idempotencia.
 
 ### Qué se queda en el teléfono
@@ -130,6 +130,7 @@ Las reglas son deterministas y explicables. Cada alerta guarda el código, la et
 | `scam_casino` | Invitación a casino o bonos de apuestas | MEDIA | 60 |
 | `scam_financial` | Inversión, cripto o rendimiento garantizado | MEDIA | 62 |
 | `scam_account` | Phishing, suplantación o código de verificación | MEDIA | 64 |
+| `scam_link` | Enlace acortado o host sospechoso con señuelo de saldo, premio o registro | MEDIA | 64 |
 | `scam_prize` | Premios, sorteos o loterías sospechosas | MEDIA | 58 |
 | `scam_delivery` | Paquete retenido, aduana o envío | MEDIA | 55 |
 | `scam_job` | Oferta de trabajo fácil o ingresos rápidos | MEDIA | 55 |

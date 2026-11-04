@@ -3,7 +3,7 @@
 Regla Cero: este módulo solo recibe ``DerivedFeatureVector``. No existe ningún
 camino de código que envíe texto, nombres, teléfonos o contenido de
 notificaciones a un proveedor externo. ``AI_SEND_SNIPPET`` es una compuerta
-cerrada y sin llamadores en 1.7.2.
+cerrada y sin llamadores en 1.7.3.
 
 Orden de ejecución:
     1. caché en memoria por hash del vector (5 min)
@@ -71,6 +71,7 @@ _FLAG_PRIORITY = (
     "scam_casino",
     "scam_financial",
     "scam_account",
+    "scam_link",
     "scam_prize",
     "scam_delivery",
     "scam_job",
@@ -89,6 +90,7 @@ _CATEGORY_BY_FLAG = {
     "insult_severe": "Ciberbullying",
     "insult_moderate": "Ciberbullying",
     "insult_mild": "Ciberbullying",
+    "scam_link": "Conducta_Riesgo",
 }
 
 _FLAG_LABELS = {
@@ -121,6 +123,7 @@ _FLAG_LABELS = {
     "scam_casino": "Invitación a casino o apuestas",
     "scam_financial": "Inversión o cripto sospechosa",
     "scam_account": "Suplantación o phishing",
+    "scam_link": "Enlace sospechoso",
     "scam_prize": "Premio o sorteo sospechoso",
     "scam_delivery": "Paquete o aduana sospechosa",
     "scam_job": "Oferta de trabajo sospechosa",
@@ -178,6 +181,7 @@ _MEDIUM_FLAGS = {
     "scam_casino",
     "scam_financial",
     "scam_account",
+    "scam_link",
     "scam_prize",
     "scam_delivery",
     "scam_job",
@@ -211,8 +215,8 @@ explotación, radicalización. Señales graves: contenido sexual, acoso sexual,
 violencia o armas, amenaza, acecho o seguimiento, presión o chantaje, acoso,
 insulto grave, discurso de odio, trastorno alimentario, exposición de datos,
 fuga, retos peligrosos y drogas. Señales medias: insulto leve o moderado,
-apuestas, malestar, estafas (puntos, casino, inversión, cuenta, premio, envío,
-trabajo, romance) y contacto desconocido.
+apuestas, malestar, enlaces sospechosos y estafas (puntos, casino, inversión,
+cuenta, enlace, premio, envío, trabajo, romance) y contacto desconocido.
 
 Cómo decidir (en este orden):
 1. Si hay CUALQUIER señal, el nivel NUNCA es BAJO: como mínimo es MEDIO.

@@ -45,6 +45,7 @@ object HighRiskPolicy {
         "scam_casino",
         "scam_financial",
         "scam_account",
+        "scam_link",
         "scam_prize",
         "scam_delivery",
         "scam_job",

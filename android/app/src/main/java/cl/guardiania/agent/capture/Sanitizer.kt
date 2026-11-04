@@ -20,6 +20,38 @@ object Sanitizer {
 
     private data class Rule(val code: String, val pattern: Regex)
 
+    private val shortenerHosts =
+        "bit\\.ly|tinyurl\\.com|t\\.co|goo\\.gl|cutt\\.ly|rb\\.gy|is\\.gd|ow\\.ly|buff\\.ly|" +
+            "rebrand\\.ly|shorturl\\.at|tiny\\.cc|bit\\.do|s\\.id|shorte\\.st|adf\\.ly|cutt\\.us|" +
+            "v\\.gd|soo\\.gd|clck\\.ru|t\\.ly|short\\.gy|1link\\.st"
+
+    private val scamLinkLures =
+        "saldo|giros?|bono|bonos|premio|sorteo|reclama|registro|registrate|verifica|verificacion|" +
+            "cuenta|suspendida|bloqueada|paquete|aduana|inversion|invierte|cripto|bitcoin|apuesta|" +
+            "casino|tragamonedas|jackpot|ganaste|felicidades|beneficiario|tarjeta de regalo|gift card|" +
+            "cupon|descuento|beneficio|urgente|ultimas horas|confirma|contrasena|codigo|otp|soporte|" +
+            "banco|transferencia|pago|deuda|prestamo|trabajo|ingresos|deposita|recarga|retira|ganancias|" +
+            "fortune horse|fortune tiger|fortune rabbit|fortune mouse|blaze|betano|sportingbet|pixbet|" +
+            "superbet|novibet|parimatch|melbet|mostbet|1win|pin-up|vavada|aviator|mines|tigrinho|" +
+            "jogo do bicho|betnacional|estrela bet|galera bet|vaidebet|esportes da sorte|brasil bet"
+
+    private val suspiciousLinkPattern =
+        "(?:" +
+            "(?:https?://|www\\.)(?:[a-z0-9-]+\\.)*$shortenerHosts(?:[/?#\\s.,;:!?)]|\\z)" +
+            "|(?:https?://)(?:\\d{1,3}\\.){3}\\d{1,3}(?:[/:?#\\s.,;:!?)]|\\z)" +
+            "|(?:https?://|www\\.)[^/\\s]*xn--[^/\\s]*" +
+            "|(?:https?://)[^/?\\s]+@" +
+            "|(?:https?://|www\\.)(?:[a-z0-9-]+\\.)+(?:top|xyz|click|link|live|buzz|icu|cam|rest|" +
+            "monster|quest|cyou|sbs|cfd|work|support|security|accountant|zip|mov|vip|win|bid|loan|" +
+            "download|racing|review|stream|gdn|men|date|party|science)(?:[/?#\\s.,;:!?)]|\\z)" +
+            "|\\b(?:[a-z0-9-]+\\.)*$shortenerHosts/" +
+            ")"
+
+    private val scamLinkPattern = Regex(
+        """(?=.*$suspiciousLinkPattern)(?=.*\b(?:$scamLinkLures)\b)""",
+        RegexOption.DOT_MATCHES_ALL,
+    )
+
     private val rules = listOf(
         Rule(
             "self_harm",
@@ -195,6 +227,7 @@ object Sanitizer {
                 """\b(tu cuenta (sera|ha sido|fue) (suspendida|bloqueada|cancelada|verificada)|verifica (tu|la) cuenta|confirma (tu|tus) (datos|identidad|informacion)|actualiza (tu|tus) (datos|informacion)|inicia sesion (aqui|en este enlace)|soporte tecnico (de|te)|codigo de verificacion|comparte (el|tu) codigo|otp|token de seguridad|banco (te|le) (informa|solicita)|haz clic (aqui|en el enlace)|enlace (seguro|oficial)|phishing|suplantacion|estafa|recupera tu cuenta|problema con tu pago|tarjeta bloqueada|cargo no reconocido)\b""",
             ),
         ),
+        Rule("scam_link", scamLinkPattern),
         Rule(
             "scam_prize",
             Regex(
@@ -253,15 +286,26 @@ object Sanitizer {
     }
 
     fun sanitize(packageName: String, title: String?, text: String?): Result {
-        val content = normalize(listOfNotNull(title, text).joinToString(" ").take(MAX_SCANNED_CHARS))
+        val raw = listOfNotNull(title, text).joinToString(" ").take(MAX_SCANNED_CHARS)
+        val content = normalize(raw)
+        val linkContent = normalizeForLinks(raw)
         val flags = rules
             .asSequence()
-            .filter { it.pattern.containsMatchIn(content) }
+            .filter { rule ->
+                rule.pattern.containsMatchIn(content) ||
+                    (rule.code == "scam_link" && rule.pattern.containsMatchIn(linkContent))
+            }
             .map { it.code }
             .distinct()
             .take(MAX_FLAGS)
             .toList()
         return Result(categoryFor(packageName), flags)
+    }
+
+    private fun normalizeForLinks(value: String): String {
+        val cleaned = value.replace(zeroWidth, "")
+        val decomposed = Normalizer.normalize(cleaned, Normalizer.Form.NFD)
+        return decomposed.replace(diacritics, "").lowercase(Locale.ROOT)
     }
 
     private fun normalize(value: String): String {
