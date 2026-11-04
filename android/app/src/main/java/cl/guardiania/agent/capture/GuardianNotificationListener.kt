@@ -89,9 +89,15 @@ class GuardianNotificationListener : NotificationListenerService() {
         if (seen.size > MAX_SEEN) seen.clear()
 
         val store = (application as GuardianApp).container.store
-        // Un escaneo puede ver avisos ya procesados antes de reiniciar el
-        // proceso: se descartan los anteriores al piso capturado al inicio.
-        if (fromScan && posted.postTime > 0 && posted.postTime <= scanFloor) return
+        // Un escaneo o una reconexión pueden reenviar avisos ya procesados:
+        // se descartan los anteriores al piso capturado. En el escaneo el piso
+        // se toma una vez por lote; en tiempo real, el valor vigente.
+        val floor = if (fromScan) {
+            scanFloor
+        } else {
+            store.meta("last_notification_at")?.toLongOrNull() ?: 0L
+        }
+        if (posted.postTime > 0 && posted.postTime <= floor) return
 
         val extras = posted.notification.extras
         val title = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString()

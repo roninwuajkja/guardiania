@@ -6,6 +6,25 @@ Todas las versiones relevantes de IA Guardian. El detalle técnico vive en
 
 > Las notas de cada versión se publican en [GitHub Releases](https://github.com/roninwuajkja/guardiania/releases). Este archivo conserva el historial completo.
 
+## 1.7.2 — 2026-11-03
+
+### Notificaciones del menor
+
+- El filtro persistido de deduplicación se aplica también a los avisos en
+  tiempo real: si Samsung reenvía una notificación ya procesada al reconectar
+  el listener, no se genera una alerta duplicada.
+- La marca usa la hora original del aviso y solo avanza, incluso si dos
+  escrituras coinciden.
+- Android `1.7.2` (`versionCode` 11); backend `1.7.2`.
+
+### Verificación
+
+- Un aviso nuevo de “Te voy a tocar” generó exactamente **una** alerta de
+  amenaza.
+- Tras desactivar y reactivar el listener con ese aviso ya procesado, no
+  apareció una segunda alerta.
+- 61 pruebas unitarias Android y 108 backend.
+
 ## 1.7.1 — 2026-11-03
 
 ### Notificaciones del menor
