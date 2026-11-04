@@ -222,11 +222,11 @@ Estados de vinculación: `PENDIENTE`, `ACTIVO`, `REVOCADO`, `EXPIRADO`. Un códi
 ## Pruebas
 
 ```powershell
-# Backend: 108 pruebas
+# Backend: 109 pruebas
 cd backend
 .\.venv\Scripts\python.exe -m pytest -q
 
-# Android: 61 pruebas unitarias + 1 instrumentada (QR con ML Kit)
+# Android: 70 pruebas unitarias + 1 instrumentada (QR con ML Kit)
 cd android
 .\gradlew.bat :app:testDebugUnitTest
 .\gradlew.bat :app:connectedDebugAndroidTest

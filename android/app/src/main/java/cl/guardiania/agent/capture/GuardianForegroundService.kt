@@ -42,15 +42,24 @@ class GuardianForegroundService : Service() {
         }
     }
 
+    private val scanTask = object : Runnable {
+        override fun run() {
+            GuardianNotificationListener.scanActiveNow()
+            handler.postDelayed(this, SCAN_INTERVAL_MS)
+        }
+    }
+
     override fun onCreate() {
         super.onCreate()
         TutorNotifications.ensureChannels(this)
         startForeground(NOTIF_ID, buildNotification())
         handler.postDelayed(rebindTask, REBIND_FIRST_MS)
+        handler.postDelayed(scanTask, SCAN_FIRST_MS)
     }
 
     override fun onDestroy() {
         handler.removeCallbacks(rebindTask)
+        handler.removeCallbacks(scanTask)
         super.onDestroy()
     }
 
@@ -96,6 +105,8 @@ class GuardianForegroundService : Service() {
         private const val NOTIF_ID = 7401
         private const val REBIND_FIRST_MS = 20_000L
         private const val REBIND_INTERVAL_MS = 5 * 60_000L
+        private const val SCAN_FIRST_MS = 30_000L
+        private const val SCAN_INTERVAL_MS = 3 * 60_000L
 
         fun start(context: Context) {
             val intent = Intent(context, GuardianForegroundService::class.java)

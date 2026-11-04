@@ -18,13 +18,20 @@ Todas las versiones relevantes de IA Guardian. El detalle técnico vive en
   Fortune Horse por 24 horas. Completa tu registro: https://bit.ly/4hyJu6V”.
 - No marca links legítimos de video, colegio o reuniones, ni un acortador
   aislado sin señuelo.
+- El escaneo periódico de notificaciones activas ahora se ejecuta desde el
+  servicio en primer plano, no desde la instancia del listener: Samsung puede
+  recrear el listener y reiniciar el temporizador; así el ciclo de 3 minutos
+  sobrevive a las reconexiones.
 - Etiqueta **Enlace sospechoso** (MEDIA, 64) en app, push, panel y web.
 - Android `1.7.3` (`versionCode` 12); backend `1.7.3`.
 
 ### Verificación
 
-- 69 pruebas unitarias Android (8 nuevas de enlaces) y 109 backend.
-- Prueba de extremo a extremo con una notificación real en el teléfono.
+- El mensaje exacto del ejemplo generó una alerta **MEDIA · Enlace sospechoso**.
+- Una variante con “saldos”, “premios” y un enlace `bit.ly` quedó en la bandeja;
+  el escaneo del servicio en primer plano la recuperó y actualizó la última
+  notificación del panel.
+- 70 pruebas unitarias Android (9 nuevas de enlaces) y 109 backend.
 
 ## 1.7.2 — 2026-11-03
 

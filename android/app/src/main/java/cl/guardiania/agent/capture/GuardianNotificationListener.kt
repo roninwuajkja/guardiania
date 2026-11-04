@@ -23,26 +23,20 @@ class GuardianNotificationListener : NotificationListenerService() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val seen = ConcurrentHashMap.newKeySet<String>()
 
-    init {
-        // Samsung puede dejar de entregar onNotificationPosted mientras la
-        // pantalla está bloqueada. Cada pocos minutos se revisan las
-        // notificaciones que siguen activas para no perderlas en silencio.
-        scope.launch {
-            while (true) {
-                delay(SCAN_INTERVAL_MS)
-                scanActiveNotifications()
-            }
-        }
-    }
-
     override fun onListenerConnected() {
         super.onListenerConnected()
         connected = true
+        activeInstance = this
         scope.launch {
             (application as GuardianApp).container.statusReporter.report()
             delay(1_500)
             scanActiveNotifications()
         }
+    }
+
+    override fun onDestroy() {
+        if (activeInstance === this) activeInstance = null
+        super.onDestroy()
     }
 
     override fun onListenerDisconnected() {
@@ -125,7 +119,16 @@ class GuardianNotificationListener : NotificationListenerService() {
         var connected: Boolean = false
             private set
 
-        private const val SCAN_INTERVAL_MS = 3 * 60_000L
+        @Volatile
+        private var activeInstance: GuardianNotificationListener? = null
+
+        /** Lo llama el servicio en primer plano, que no se recrea con cada reconexión. */
+        fun scanActiveNow() {
+            val service = activeInstance ?: return
+            if (!connected) return
+            service.scanActiveNotifications()
+        }
+
         private const val MAX_SEEN = 500
     }
 }
