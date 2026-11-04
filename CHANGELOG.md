@@ -14,7 +14,20 @@ Todas las versiones relevantes de IA Guardian. El detalle técnico vive en
   cuando se desenlaza, en lugar de esperar a que Samsung lo vuelva a enlazar.
 - El servicio en primer plano reintenta la reconexión cada 5 minutos y al
   arrancar, para reducir los huecos en los que se pierden notificaciones.
+- **Escaneo de notificaciones activas**: al conectar y cada 3 minutos se revisa
+  la bandeja para recuperar avisos que Samsung no entregó mientras el teléfono
+  estaba bloqueado. La deduplicación usa la hora real del aviso y una marca
+  persistida, así que no se repiten alertas tras reiniciar ni se saltan avisos
+  del mismo lote.
 - Android `1.7.1` (`versionCode` 10); backend `1.7.1`.
+
+### Verificación
+
+- Al instalar la APK, un aviso de “drogas” que seguía en la bandeja se recuperó
+  y el tutor recibió la alerta correspondiente.
+- Con el listener desactivado se publicó “Te odio”; al reactivarlo, el escaneo
+  recuperó el aviso y el tutor recibió **Insulto leve**.
+- 61 pruebas unitarias Android y 108 backend.
 
 ## 1.7.0 — 2026-11-03
 
