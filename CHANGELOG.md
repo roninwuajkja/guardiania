@@ -13,6 +13,22 @@ Todas las versiones relevantes de IA Guardian. El detalle técnico vive en
 - Regla permanente en `AGENTS.md` y script `scripts/publish-atlas.ps1` para
   actualizar y publicar el atlas de arquitectura después de cada cambio.
 
+## 1.7.10 — 2026-11-09
+
+### Carga inicial
+
+- El estado inicial del tutor marca la carga como activa desde el primer frame
+  cuando hay sesión. Así Inicio muestra el skeleton y no el mensaje
+  **“No pudimos cargar el panel”** antes de que termine la primera petición.
+- El error de carga solo aparece después de un intento fallido; el botón
+  **Reintentar** sigue disponible.
+- Sin cambios en el panel web.
+
+### Verificación
+
+- 117 pruebas backend y 75 pruebas Android.
+- Android `1.7.10` (`versionCode` 19); backend `1.7.10`.
+
 ## 1.7.9 — 2026-11-09
 
 ### Carga con skeleton

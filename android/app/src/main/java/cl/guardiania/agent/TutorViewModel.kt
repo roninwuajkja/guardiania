@@ -70,7 +70,14 @@ class TutorViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch(Dispatchers.IO) {
             val session = repo.session()
             val baseUrl = store.meta("base_url_hint") ?: DEFAULT_BASE_URL
-            _ui.value = TutorUiState(ready = true, session = session, baseUrl = baseUrl)
+            // Si hay sesión, el primer render ya está cargando: evita que el
+            // estado vacío pinte el error antes de que el panel pida los datos.
+            _ui.value = TutorUiState(
+                ready = true,
+                session = session,
+                baseUrl = baseUrl,
+                busy = session != null,
+            )
             if (session != null) {
                 registerPush()
                 loadDashboard()
