@@ -274,6 +274,37 @@ def test_capture_sync_is_idempotent_and_rejects_extra_fields(client, auth_header
     assert bad_device.json()["rejected"][0]["code"] == "DEVICE_MISMATCH"
 
 
+def test_same_signal_in_a_new_event_creates_a_new_alert(client, auth_headers):
+    generated = generate_pairing(client, auth_headers)
+    verified = verify_manual(client, generated["manual_code"]).json()
+    device_id = verified["device_id"]
+    headers = {"Authorization": f"Bearer {verified['access_token']}"}
+
+    first = client.post(
+        "/api/v1/captures/sync",
+        json=_sync_payload(device_id, flags=["drugs"]),
+        headers=headers,
+    )
+    second = client.post(
+        "/api/v1/captures/sync",
+        json=_sync_payload(device_id, flags=["drugs"]),
+        headers=headers,
+    )
+
+    assert first.status_code == 200, first.text
+    assert second.status_code == 200, second.text
+    assert first.json()["accepted"] == 1
+    assert second.json()["accepted"] == 1
+
+    alerts = client.get("/api/v1/alerts?limit=100", headers=auth_headers).json()
+    mine = [
+        alert
+        for alert in alerts
+        if alert["dispositivo_id"] == device_id and alert["categoria"] == "drugs"
+    ]
+    assert len(mine) == 2
+
+
 def test_revoke_device_blocks_sync(client, auth_headers):
     generated = generate_pairing(client, auth_headers)
     verified = verify_manual(client, generated["manual_code"]).json()
@@ -520,7 +551,7 @@ def evaluate_payload(device_id, *, flags=("self_harm",), event_id=None, age_minu
         "lexical_flag_count": len(flags),
         "flags": list(flags),
         "usage_duration_minutes": 15,
-        "integrity": {"attestation_ok": True, "app_version": "1.7.3"},
+        "integrity": {"attestation_ok": True, "app_version": "1.7.4"},
     }
 
 
@@ -573,6 +604,53 @@ def test_capture_evaluate_notifies_tutor_over_ws(client, auth_headers, monkeypat
         assert "raw" not in event["data"]
 
 
+def test_capture_evaluate_multi_signal_alert_keeps_all_rules(client, auth_headers, monkeypatch):
+    from app.services import evaluation as evaluation_module
+    from app.services.ai_evaluator import AIEvaluatorService, HeuristicProvider
+
+    monkeypatch.setattr(
+        evaluation_module,
+        "ai_evaluator",
+        AIEvaluatorService(heuristic=HeuristicProvider(), total_timeout_ms=500),
+    )
+
+    generated = generate_pairing(client, auth_headers, etiqueta="Multi")
+    verified = verify_manual(client, generated["manual_code"]).json()
+    device_headers = {"Authorization": f"Bearer {verified['access_token']}"}
+
+    response = client.post(
+        "/api/v1/captures/evaluate",
+        json=evaluate_payload(
+            verified["device_id"],
+            flags=("sexual_harassment", "threat", "drugs"),
+        ),
+        headers=device_headers,
+    )
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["evaluation"]["nivel_riesgo"] == "ALTO"
+    assert body["evaluation"]["categoria"] == "Contenido_Inapropiado"
+
+    alerts = client.get("/api/v1/alerts?limit=200", headers=auth_headers).json()
+    alert = next(
+        (
+            item
+            for item in alerts
+            if item["dispositivo_id"] == verified["device_id"]
+            and item["categoria"] == "sexual_harassment"
+        ),
+        None,
+    )
+    assert alert is not None, [
+        (item["categoria"], item["dispositivo_id"]) for item in alerts[:10]
+    ]
+    labels = [rule["label"] for rule in alert["reglas"]]
+    assert labels[0] == "IA · Contenido inapropiado"
+    assert "Acoso sexual" in labels
+    assert "Amenaza" in labels
+    assert "Drogas o alcohol" in labels
+
+
 def test_index_serves_versioned_assets_without_cache(client):
     """Un despliegue no puede dejar la pestaña con JS viejo."""
 
@@ -614,7 +692,7 @@ def test_sync_publishes_medium_rule_alert_to_stream(client, auth_headers):
                 "usage_duration_minutes": 12,
                 "notification_count": 3,
                 "event_count": 3,
-                "integrity": {"attestation_ok": True, "app_version": "1.7.3"},
+                "integrity": {"attestation_ok": True, "app_version": "1.7.4"},
             }
         ],
     }
@@ -803,7 +881,7 @@ def _sync_payload(device_id: str, *, flags: list[str] | None = None) -> dict:
                 "usage_duration_minutes": 5,
                 "notification_count": 1,
                 "event_count": 1,
-                "integrity": {"attestation_ok": True, "app_version": "1.7.3"},
+                "integrity": {"attestation_ok": True, "app_version": "1.7.4"},
             }
         ],
     }

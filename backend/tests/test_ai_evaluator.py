@@ -12,6 +12,7 @@ from app.services.ai_evaluator import (
     AssessmentCache,
     CircuitBreaker,
     HeuristicProvider,
+    _clean_text,
     apply_policy_floor,
     cache_key,
     vector_payload,
@@ -139,6 +140,51 @@ def test_heuristic_high_risk_categories():
     assert sexual.nivel_riesgo == bullying.nivel_riesgo == "ALTO"
 
 
+def test_heuristic_multi_signal_mentions_all_serious_signals():
+    result = asyncio.run(
+        HeuristicProvider().classify(
+            make_vector(flags=["threat", "gambling", "bullying", "grooming", "sextortion"])
+        )
+    )
+
+    assert result.nivel_riesgo == "ALTO"
+    assert result.categoria == "Contenido_Inapropiado"
+    for label in ("grooming", "Sextorsión", "Amenaza", "Acoso escolar", "Apuestas"):
+        assert label.lower() in result.descripcion_narrativa.lower()
+
+
+def test_heuristic_two_medium_signals_are_high_risk():
+    result = asyncio.run(
+        HeuristicProvider().classify(make_vector(flags=["gambling", "malestar"]))
+    )
+
+    assert result.nivel_riesgo == "ALTO"
+    assert "Apuestas" in result.descripcion_narrativa
+    assert "Malestar emocional" in result.descripcion_narrativa
+
+
+def test_policy_floor_corrects_category_and_names_all_signals():
+    vector = make_vector(flags=["sexual_harassment", "threat", "drugs"])
+    floored = apply_policy_floor(
+        assessment(level="ALTO", category="Ciberbullying", provider="fake"),
+        vector,
+    )
+
+    assert floored.categoria == "Contenido_Inapropiado"
+    assert "Acoso sexual" in floored.descripcion_narrativa
+    assert "Amenaza" in floored.descripcion_narrativa
+    assert "Drogas o alcohol" in floored.descripcion_narrativa
+
+
+def test_clean_text_humanizes_internal_codes():
+    text = _clean_text("Se detectó scam_link y self_harm en el vector.", "fallback")
+
+    assert "scam_link" not in text
+    assert "self_harm" not in text
+    assert "Enlace sospechoso" in text
+    assert "Posible autolesión" in text
+
+
 def test_policy_floor_never_minimizes_a_signal():
     vector = make_vector(flags=["gambling"])
     floored = apply_policy_floor(assessment(level="BAJO", category="Sin_Riesgo"), vector)
@@ -191,8 +237,11 @@ def test_vector_payload_has_no_text_fields():
         "categoria_uso",
         "flags",
         "flags_descripcion",
+        "flags_detalle",
         "flags_criticos",
         "flags_graves",
+        "senal_principal",
+        "categoria_sugerida",
         "cantidad_flags",
         "lexical_flag_count",
         "contacto_desconocido_presente",
@@ -210,11 +259,35 @@ def test_vector_payload_has_no_text_fields():
     assert payload["flags_descripcion"] == ["Acoso escolar"]
 
 
+def test_vector_payload_lists_all_signals_in_priority_order():
+    payload = vector_payload(
+        make_vector(flags=["threat", "gambling", "bullying", "grooming", "sextortion"])
+    )
+
+    assert payload["cantidad_flags"] == 5
+    assert [item["codigo"] for item in payload["flags_detalle"]] == [
+        "grooming",
+        "sextortion",
+        "threat",
+        "bullying",
+        "gambling",
+    ]
+    assert payload["senal_principal"] == "Posible grooming"
+    assert payload["categoria_sugerida"] == "Contenido_Inapropiado"
+    assert payload["flags_criticos"] == [
+        "Posible grooming",
+        "Sextorsión o chantaje con imágenes",
+    ]
+    assert all(item["etiqueta"] for item in payload["flags_detalle"])
+
+
 def test_vector_payload_separates_critical_and_serious_flags():
     payload = vector_payload(make_vector(flags=["sextortion", "gambling"]))
 
-    assert payload["flags_criticos"] == ["sextortion"]
-    assert payload["flags_graves"] == ["sextortion"]
+    assert payload["flags_criticos"] == ["Sextorsión o chantaje con imágenes"]
+    assert payload["flags_graves"] == ["Sextorsión o chantaje con imágenes"]
+    assert payload["senal_principal"] == "Sextorsión o chantaje con imágenes"
+    assert payload["categoria_sugerida"] == "Contenido_Inapropiado"
     assert payload["cantidad_flags"] == 2
 
 

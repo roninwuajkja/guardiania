@@ -14,13 +14,16 @@ import java.util.UUID
 /**
  * Pure aggregation from local sanitized signals to the wire contract.
  * No Android dependencies, so the privacy-critical rules are unit tested on
- * the JVM. One window never exceeds the server's 60 minute limit.
+ * the JVM. Signal captures use 5-minute buckets: a repeated signal of the same
+ * category in a later bucket becomes a new event instead of being absorbed by
+ * an hourly window. Usage captures keep their hourly bucket.
  */
 object FeatureComposer {
 
     data class UsageCapture(val eventId: String, val payload: String)
 
     private const val HOUR_MS = 60L * 60L * 1000L
+    private const val SIGNAL_BUCKET_MS = 5L * 60L * 1000L
     private const val MAX_AGE_MS = 7L * 24L * HOUR_MS
     private const val MAX_FLAGS = 16
 
@@ -39,7 +42,7 @@ object FeatureComposer {
         val cutoff = now - MAX_AGE_MS
         val fresh = signals.filter { it.createdAt in cutoff..now }
         return fresh
-            .groupBy { it.category to hourBucket(it.createdAt, tzOffsetMinutes) }
+            .groupBy { it.category to signalBucket(it.createdAt, tzOffsetMinutes) }
             .mapNotNull { (key, group) ->
                 val start = group.minOf { it.createdAt }
                 val end = minOf(now, maxOf(start + 1_000L, group.maxOf { it.createdAt } + 1_000L))
@@ -105,6 +108,10 @@ object FeatureComposer {
             integrity = IntegrityInfo(attestationOk = true, appVersion = appVersion),
         )
         return UsageCapture(eventId = eventId, payload = json.encodeToString(vector))
+    }
+
+    private fun signalBucket(at: Long, tzOffsetMinutes: Int): Long {
+        return Math.floorDiv(at + tzOffsetMinutes * 60_000L, SIGNAL_BUCKET_MS)
     }
 
     private fun hourBucket(at: Long, tzOffsetMinutes: Int): Long {

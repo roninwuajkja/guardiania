@@ -190,6 +190,10 @@ object TutorNotifications {
         "scam" -> "Posible estafa"
         "sin_senal" -> "Teléfono sin señal"
         "unknown_contact" -> "Contacto desconocido"
+        "ai_ciberbullying" -> "Ciberbullying"
+        "ai_conducta_riesgo" -> "Conducta de riesgo"
+        "ai_contenido_inapropiado" -> "Contenido inapropiado"
+        "ai_sin_riesgo" -> "Sin riesgo"
         else -> null
     }
 

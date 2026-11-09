@@ -6,6 +6,39 @@ Todas las versiones relevantes de IA Guardian. El detalle técnico vive en
 
 > Las notas de cada versión se publican en [GitHub Releases](https://github.com/roninwuajkja/guardiania/releases). Este archivo conserva el historial completo.
 
+## 1.7.4 — 2026-11-09
+
+### IA con múltiples señales
+
+- El prompt de IA recibe ahora `flags_detalle` con **código, etiqueta, severidad y
+  score de cada señal**, ordenadas por prioridad.
+- Si un mensaje combina varias señales, la IA debe nombrar todas las críticas y
+  graves (hasta 5), no solo la primera, y elegir la categoría según la señal
+  principal más grave.
+- La red de seguridad determinista corrige la categoría si la IA se desvía y
+  reescribe la narrativa con las etiquetas legibles.
+- La heurística local también lista todas las señales y sube a ALTO cuando hay
+  dos o más, aunque sean medias.
+- Los códigos internos (`scam_link`, `self_harm`, etc.) se traducen a etiquetas
+  antes de mostrarse al tutor.
+
+### Alertas repetidas
+
+- La ventana de composición de señales baja de **60 minutos a 5 minutos**.
+  Una repetición de la misma categoría en un bloque posterior genera un evento
+  y una alerta nuevos, en vez de quedar absorbida durante una hora.
+- La captura de uso sigue agrupándose por hora; solo cambia la ventana de las
+  señales.
+- La deduplicación de notificaciones sigue evitando reprocesar el mismo aviso,
+  pero no bloquea avisos distintos.
+
+### Verificación
+
+- 116 pruebas backend y 71 pruebas unitarias Android.
+- Cobertura nueva para vectores con 3–5 señales, categoría corregida, narrativa
+  con todas las señales y dos eventos del mismo tipo con alertas separadas.
+- Android `1.7.4` (`versionCode` 13); backend `1.7.4`.
+
 ## 1.7.3 — 2026-11-03
 
 ### Detección de enlaces sospechosos

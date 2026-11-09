@@ -22,12 +22,12 @@ class FeatureComposerTest {
         LocalSignal(id = id, category = category, flags = flags, createdAt = at(iso))
 
     @Test
-    fun `signals in one hour and category become one deterministic capture`() {
+    fun `signals in one five minute bucket and category become one deterministic capture`() {
         val now = at("2026-10-22T10:30:00Z")
         val signals = listOf(
             signal(1, "social", listOf("gambling"), "2026-10-22T10:05:00Z"),
             signal(2, "social", listOf("gambling", "drugs"), "2026-10-22T10:06:00Z"),
-            signal(3, "social", emptyList(), "2026-10-22T10:20:00Z"),
+            signal(3, "social", emptyList(), "2026-10-22T10:07:00Z"),
         )
 
         val first = FeatureComposer.composeSignals(deviceId, signals, now, 0, "1.0.0")
@@ -50,11 +50,11 @@ class FeatureComposerTest {
     }
 
     @Test
-    fun `signals in different hours are not merged`() {
+    fun `signals in different five minute buckets are not merged`() {
         val now = at("2026-10-22T11:15:00Z")
         val signals = listOf(
-            signal(1, "video", emptyList(), "2026-10-22T10:59:00Z"),
-            signal(2, "video", listOf("violence"), "2026-10-22T11:01:00Z"),
+            signal(1, "video", emptyList(), "2026-10-22T10:04:00Z"),
+            signal(2, "video", listOf("violence"), "2026-10-22T10:06:00Z"),
         )
 
         val captures = FeatureComposer.composeSignals(deviceId, signals, now, 0, "1.0.0")
@@ -66,8 +66,25 @@ class FeatureComposerTest {
             val start = Instant.parse(vector.timeWindow.start).toEpochMilli()
             val end = Instant.parse(vector.timeWindow.end).toEpochMilli()
             assertTrue(end > start)
-            assertTrue(end - start <= 60L * 60L * 1000L)
+            assertTrue(end - start <= 5L * 60L * 1000L)
         }
+    }
+
+    @Test
+    fun `same category after five minutes becomes a new capture`() {
+        val now = at("2026-10-22T10:30:00Z")
+        val signals = listOf(
+            signal(1, "mensajeria", listOf("threat"), "2026-10-22T10:05:00Z"),
+            signal(2, "mensajeria", listOf("threat"), "2026-10-22T10:11:00Z"),
+        )
+
+        val captures = FeatureComposer.composeSignals(deviceId, signals, now, 0, "1.0.0")
+
+        assertEquals(2, captures.size)
+        assertNotEquals(captures[0].eventId, captures[1].eventId)
+        val vectors = captures.map { json.decodeFromString<CaptureVector>(it.payload) }
+        assertTrue(vectors.all { it.flags == listOf("threat") })
+        assertTrue(vectors.all { it.notificationCount == 1 })
     }
 
     @Test
@@ -86,7 +103,7 @@ class FeatureComposerTest {
     }
 
     @Test
-    fun `different categories in the same hour stay separate`() {
+    fun `different categories in the same five minute bucket stay separate`() {
         val now = at("2026-10-22T10:30:00Z")
         val signals = listOf(
             signal(1, "social", listOf("gambling"), "2026-10-22T10:05:00Z"),
