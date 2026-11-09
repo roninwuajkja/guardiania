@@ -971,24 +971,26 @@ svg {
   align-items: flex-end;
   justify-content: space-between;
   gap: 24px;
-  padding: 30px 2px 26px;
+  padding: 26px 2px 22px;
 }
 
 .hero-copy {
-  max-width: 720px;
+  max-width: 760px;
 }
 
 .hero h2 {
   margin: 10px 0 8px;
-  font-size: clamp(28px, 3.2vw, 40px);
+  font-size: clamp(30px, 3.6vw, 46px);
   font-weight: 600;
-  letter-spacing: -0.035em;
-  line-height: 1.08;
+  letter-spacing: -0.045em;
+  line-height: 1.04;
   text-wrap: balance;
 }
 
 .hero-sub {
-  font-size: 13.5px;
+  max-width: 720px;
+  font-size: 14px;
+  line-height: 1.55;
   color: var(--muted);
 }
 
@@ -1004,7 +1006,7 @@ svg {
 /* ---------- Guard strip ---------- */
 
 .guard {
-  padding: 20px 22px 16px;
+  padding: 18px 20px 14px;
   background:
     radial-gradient(120% 150% at 100% 0%, rgba(94, 143, 123, 0.10), transparent 58%),
     var(--card);
@@ -1106,8 +1108,8 @@ svg {
 
 .guard-chart {
   position: relative;
-  margin-top: 16px;
-  padding: 14px 14px 8px;
+  margin-top: 12px;
+  padding: 10px 12px 6px;
   border: 1px solid var(--line);
   border-radius: 12px;
   background: var(--card-2);
@@ -1130,7 +1132,7 @@ svg {
   display: grid;
   grid-template-columns: repeat(24, minmax(0, 1fr));
   gap: 3px;
-  height: 92px;
+  height: 64px;
   align-items: end;
 }
 
@@ -1210,7 +1212,7 @@ svg {
   justify-content: center;
   gap: 8px;
   padding: 0 16px;
-  font-size: 12px;
+  font-size: 11.5px;
   color: var(--muted);
   pointer-events: none;
 }
@@ -1232,19 +1234,29 @@ svg {
 .stats {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 14px;
-  margin-top: 14px;
+  gap: 12px;
+  margin-top: 12px;
 }
 
 .stat {
-  padding: 17px 18px 15px;
+  padding: 15px 16px 13px;
   display: flex;
   flex-direction: column;
-  min-height: 132px;
+  min-height: 112px;
+  transition:
+    transform 160ms var(--ease),
+    box-shadow 160ms var(--ease);
+}
+
+@media (hover: hover) {
+  .stat.card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow);
+  }
 }
 
 .stat-label {
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 600;
   color: var(--muted);
 }
@@ -1257,7 +1269,7 @@ svg {
 }
 
 .stat-value {
-  font-size: clamp(28px, 3vw, 36px);
+  font-size: clamp(26px, 2.6vw, 32px);
   font-weight: 600;
   letter-spacing: -0.04em;
   line-height: 1;
@@ -1283,9 +1295,9 @@ svg {
   display: flex;
   align-items: flex-end;
   gap: 3px;
-  height: 26px;
+  height: 20px;
   margin-top: auto;
-  padding-top: 12px;
+  padding-top: 9px;
 }
 
 .spark i {
@@ -1328,9 +1340,9 @@ svg {
 
 .board {
   display: grid;
-  grid-template-columns: minmax(0, 1.5fr) minmax(290px, 0.85fr);
+  grid-template-columns: minmax(0, 1.55fr) minmax(280px, 0.85fr);
   gap: 16px;
-  margin-top: 22px;
+  margin-top: 18px;
   align-items: start;
 }
 
@@ -1690,6 +1702,16 @@ svg {
   border: 1px solid var(--line);
   border-radius: 11px;
   background: var(--card);
+  transition:
+    background 160ms var(--ease),
+    border-color 160ms var(--ease);
+}
+
+@media (hover: hover) {
+  .device-row:hover {
+    background: var(--card-2);
+    border-color: var(--line-strong);
+  }
 }
 
 .device-row--compact {
@@ -1762,6 +1784,14 @@ svg {
 
 .device-state.is-revoked .dot {
   background: var(--line-strong);
+}
+
+.device-state.is-stale {
+  color: var(--amber-ink);
+}
+
+.device-state.is-stale .dot {
+  background: var(--amber);
 }
 
 /* ---------- Pairing ---------- */

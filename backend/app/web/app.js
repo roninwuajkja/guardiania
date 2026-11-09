@@ -190,6 +190,14 @@ function relativeLabel(iso) {
   return `hace ${days} días`;
 }
 
+const LIVE_WINDOW_MS = 2 * 60 * 60 * 1000;
+
+function isDeviceLive(device) {
+  if (!device || device.estado !== 'ACTIVO') return false;
+  if (!device.ultima_conexion) return false;
+  return Date.now() - new Date(device.ultima_conexion).getTime() < LIVE_WINDOW_MS;
+}
+
 function severityLabel(severity) {
   return { CRITICA: 'Crítica', ALTA: 'Alta', MEDIA: 'Media', BAJA: 'Baja' }[severity] || severity;
 }
@@ -436,9 +444,11 @@ function updateSyncChip() {
     chip.lastElementChild.textContent = 'Sin sincronizar';
     return;
   }
-  const stale = Date.now() - new Date(latest).getTime() > 2 * 60 * 60 * 1000;
+  const stale = Date.now() - new Date(latest).getTime() > LIVE_WINDOW_MS;
   chip.classList.toggle('is-stale', stale);
-  chip.lastElementChild.textContent = `Sincronizado ${relativeLabel(latest)}`;
+  chip.lastElementChild.textContent = stale
+    ? `Sin datos ${relativeLabel(latest)}`
+    : `Datos ${relativeLabel(latest)}`;
 }
 
 async function navigate() {
@@ -721,7 +731,7 @@ function updateLiveChip(status) {
   chip.dataset.state = status;
   chip.classList.toggle('is-stale', status !== 'live');
   chip.lastElementChild.textContent = status === 'live'
-    ? 'En vivo'
+    ? 'Panel conectado'
     : status === 'retry'
       ? 'Reconectando'
       : 'Sin conexión';
@@ -824,17 +834,26 @@ function updateAlertBadges(count) {
 function renderOverview() {
   const overview = state.overview;
   if (!overview) return;
-  const devices = overview.devices.filter((device) => device.estado === 'ACTIVO');
-  const names = devices.map((device) => device.etiqueta_menor || device.alias);
-  const noDevices = devices.length === 0;
-  const latest = devices.map((device) => device.ultima_conexion).filter(Boolean).sort().pop();
+  const linkedDevices = overview.devices.filter((device) => device.estado === 'ACTIVO');
+  const liveDevices = linkedDevices.filter(isDeviceLive);
+  const names = linkedDevices.map((device) => device.etiqueta_menor || device.alias);
+  const nameSummary = names.length <= 2
+    ? names.join(' y ')
+    : `${names.slice(0, 2).join(', ')} y ${names.length - 2} más`;
+  const noDevices = linkedDevices.length === 0;
+  const latest = linkedDevices.map((device) => device.ultima_conexion).filter(Boolean).sort().pop();
 
   const summary = noDevices
     ? 'Aún no hay teléfonos vinculados. El primero toma menos de un minuto.'
-    : `<strong>${escapeHtml(names.join(' y '))}</strong> ${devices.length === 1 ? 'está vinculado' : 'están vinculados'} · última sincronización ${escapeHtml(relativeLabel(latest))}.`;
+    : `<strong>${escapeHtml(nameSummary)}</strong> ${linkedDevices.length === 1 ? 'está vinculado' : 'están vinculados'} · última sincronización ${escapeHtml(relativeLabel(latest))}.`;
 
   const heroTitle = noDevices ? 'Vincula el primer teléfono.' : overview.status_line;
   const heroTone = noDevices ? 'calma' : overview.status_tone;
+  const heroAction = noDevices
+    ? `<button class="btn btn-primary" type="button" data-action="go-pair">${icon('link', 17)} Vincular el primer teléfono</button>`
+    : overview.open_alerts > 0
+      ? `<a class="btn btn-primary" href="#/alertas">Revisar ${overview.open_alerts} ${overview.open_alerts === 1 ? 'señal' : 'señales'}</a>`
+      : `<a class="btn btn-secondary" href="#/dispositivos">Ver dispositivos</a>`;
 
   const statMinutes = statCard({
     label: 'Minutos hoy',
@@ -858,12 +877,12 @@ function renderOverview() {
 
   const statDevices = `
     <article class="stat card">
-      <p class="stat-label">Dispositivos activos</p>
-      <div class="stat-line"><span class="stat-value">${overview.devices_active}</span><span class="stat-unit">de ${overview.devices.length}</span></div>
+      <p class="stat-label">Con señal ahora</p>
+      <div class="stat-line"><span class="stat-value">${liveDevices.length}</span><span class="stat-unit">de ${linkedDevices.length} vinculado${linkedDevices.length === 1 ? '' : 's'}</span></div>
       <div class="device-mini">${
-        devices.length
-          ? devices.slice(0, 3).map((device) => `<span><i class="dot"></i>${escapeHtml(device.etiqueta_menor || device.alias)}</span>`).join('')
-          : '<span>Sin teléfonos vinculados</span>'
+        liveDevices.length
+          ? liveDevices.slice(0, 3).map((device) => `<span><i class="dot"></i>${escapeHtml(device.etiqueta_menor || device.alias)}</span>`).join('')
+          : `<span>${linkedDevices.length ? 'Ninguno está enviando datos ahora' : 'Sin teléfonos vinculados'}</span>`
       }</div>
     </article>`;
 
@@ -876,8 +895,8 @@ function renderOverview() {
     .slice(0, 4)
     .map((alert) => alertRow(alert, { compact: true }))
     .join('');
-  const deviceRows = devices.length
-    ? devices.map(compactDeviceRow).join('')
+  const deviceRows = linkedDevices.length
+    ? linkedDevices.slice(0, 5).map(compactDeviceRow).join('')
     : `<div class="alert-empty"><strong>Sin dispositivos</strong>Vincula el teléfono de tu hijo o hija para empezar.</div>`;
 
   const openDetails = openAlertIds();
@@ -890,7 +909,7 @@ function renderOverview() {
         <p class="hero-sub">${summary}</p>
       </div>
       <div class="hero-action">
-        ${noDevices ? `<button class="btn btn-primary" type="button" data-action="go-pair">${icon('link', 17)} Vincular el primer teléfono</button>` : ''}
+        ${heroAction}
       </div>
     </section>
 
@@ -1003,17 +1022,17 @@ function guardStrip(overview) {
           <div class="guard-stat guard-stat--activity" role="listitem">
             <i class="guard-stat-dot" aria-hidden="true"></i>
             <strong>${counts.activity}</strong>
-            <span>Actividad</span>
+            <span>Actividad hoy</span>
           </div>
           <div class="guard-stat guard-stat--attention" role="listitem">
             <i class="guard-stat-dot" aria-hidden="true"></i>
             <strong>${counts.attention}</strong>
-            <span>Atención</span>
+            <span>Atención hoy</span>
           </div>
           <div class="guard-stat guard-stat--alert" role="listitem">
             <i class="guard-stat-dot" aria-hidden="true"></i>
             <strong>${counts.alert}</strong>
-            <span>Alerta</span>
+            <span>Alertas hoy</span>
           </div>
         </div>
       </div>
@@ -1030,6 +1049,7 @@ function guardStrip(overview) {
 }
 
 function compactDeviceRow(device) {
+  const live = isDeviceLive(device);
   return `
     <div class="device-row device-row--compact">
       <span class="device-icon">${icon('device', 18)}</span>
@@ -1037,7 +1057,7 @@ function compactDeviceRow(device) {
         <strong>${escapeHtml(device.etiqueta_menor || device.alias)}</strong>
         <span>${escapeHtml(device.model_family || 'Android')} · ${relativeLabel(device.ultima_conexion)}</span>
       </div>
-      <span class="device-state ${device.estado === 'ACTIVO' ? '' : 'is-revoked'}"><i class="dot"></i>${device.estado === 'ACTIVO' ? 'Activo' : 'Revocado'}</span>
+      <span class="device-state ${live ? '' : 'is-stale'}"><i class="dot"></i>${live ? 'Con señal' : 'Sin señal'}</span>
     </div>`;
 }
 
@@ -1437,6 +1457,7 @@ async function renderDevicesPage() {
 function renderDevices() {
   const isActive = (device) => device.estado === 'ACTIVO' && device.vinculacion_estado === 'ACTIVO';
   const active = state.devices.filter(isActive);
+  const liveCount = active.filter(isDeviceLive).length;
   const revoked = state.devices.filter((device) => !isActive(device));
 
   const activeRows = active
@@ -1463,7 +1484,7 @@ function renderDevices() {
             <span>${escapeHtml(device.model_family || 'Android')} · Android API ${device.api_level} · sincronizó ${relativeLabel(device.ultima_conexion)}</span>
             ${statusText ? `<span class="${sinAcceso ? 'device-alert' : 'device-status-line'}">${escapeHtml(statusText)}</span>` : ''}
           </div>
-          <span class="device-state"><i class="dot"></i>Activo</span>
+          <span class="device-state ${isDeviceLive(device) ? '' : 'is-stale'}"><i class="dot"></i>${isDeviceLive(device) ? 'Con señal' : 'Sin señal'}</span>
           <button class="btn btn-sm btn-danger" type="button" data-action="revoke" data-id="${device.vinculacion_id}" data-name="${escapeAttr(name)}">Revocar</button>
         </article>
         <div class="device-code">
@@ -1507,7 +1528,7 @@ function renderDevices() {
     </section>
     <section class="card">
       <header class="card-head" style="padding:16px 18px;border-bottom:1px solid var(--line)">
-        <h2>${active.length} ${active.length === 1 ? 'dispositivo activo' : 'dispositivos activos'}</h2>
+        <h2>${liveCount} con señal · ${active.length} vinculado${active.length === 1 ? '' : 's'}</h2>
         <span class="eyebrow">Retención 90 días</span>
       </header>
       <div class="device-list">

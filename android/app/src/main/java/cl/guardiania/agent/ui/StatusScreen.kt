@@ -100,10 +100,10 @@ fun StatusScreen(
                 Spacer(Modifier.height(30.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Pill(
-                        text = "Vinculación activa",
-                        background = Sage500.copy(alpha = 0.22f),
-                        foreground = Sage300,
-                        dotColor = Sage300,
+                        text = if (permissions.allReady) "Guardia activa" else "Revisa permisos",
+                        background = if (permissions.allReady) Sage500.copy(alpha = 0.22f) else Amber.copy(alpha = 0.22f),
+                        foreground = if (permissions.allReady) Sage300 else Color(0xFFE9C38A),
+                        dotColor = if (permissions.allReady) Sage300 else Color(0xFFD9A15B),
                     )
                     if (state.pending > 0) {
                         Pill(
