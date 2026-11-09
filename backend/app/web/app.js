@@ -287,6 +287,8 @@ function showApp() {
   $('#tutor-name').textContent = tutor.alias;
   $('#tutor-email').textContent = tutor.email;
   $('#tutor-avatar').textContent = initials(tutor.alias);
+  const demoTag = $('#demo-tag');
+  if (demoTag) demoTag.hidden = tutor.email !== 'demo@guardiania.cl';
 }
 
 async function logout(notify = true, notifyServer = true) {
