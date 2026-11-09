@@ -5,6 +5,7 @@ param(
     [string]$ProjectRoot = '',
     [string]$Version = '',
     [string]$Revision = '',
+    [string[]]$Files = @(),
     [switch]$DryRun
 )
 
@@ -21,9 +22,7 @@ if (-not $Version) {
     if (-not $match.Success) { throw "No pude leer versionName de $gradle" }
     $Version = $match.Groups[1].Value
 }
-if (-not $Revision) {
-    $Revision = (git -C $ProjectRoot rev-parse HEAD).Trim()
-}
+if (-not $Revision) { $Revision = (git -C $ProjectRoot rev-parse HEAD).Trim() }
 if ($Revision -notmatch '^[0-9a-f]{40}$') { throw "Revision invalida: $Revision" }
 $short = $Revision.Substring(0, 7)
 
@@ -34,6 +33,18 @@ Write-Output "Atlas: $Version ($short)"
 Write-Output "Origen: $Source"
 Write-Output "Destino: $Repo"
 git -C $Repo pull --ff-only | Out-Host
+
+function Write-IfChanged {
+    param([string]$Path, [string]$Content)
+    $existing = ''
+    if (Test-Path $Path) { $existing = [IO.File]::ReadAllText($Path, $utf8) }
+    $newNorm = $Content.Replace("`r`n", "`n")
+    $oldNorm = $existing.Replace("`r`n", "`n")
+    if ($newNorm -eq $oldNorm) { return $false }
+    $eol = if ($existing -match "`r`n") { "`r`n" } else { "`n" }
+    [IO.File]::WriteAllText($Path, ($newNorm -replace "`n", $eol), $utf8)
+    return $true
+}
 
 # La carpeta de trabajo es la fuente del sitio: actualiza version y revision.
 $readme = Join-Path $Source 'README.md'
@@ -49,28 +60,41 @@ $html = [regex]::Replace($html, '(?<=base <b>)[0-9a-f]{7}(?=</b>)', $short)
 $html = [regex]::Replace($html, '(?<=Fuente: repositorio en )[0-9a-f]{7}', $short)
 [IO.File]::WriteAllText($index, $html, $utf8)
 
-# Solo se publica el sitio canonico: 70 diagramas + index/README/favicon.
+# Root site files.
 foreach ($name in @('index.html', 'README.md', 'favicon.svg')) {
-    Copy-Item (Join-Path $Source $name) (Join-Path $Repo $name) -Force
+    $sourcePath = Join-Path $Source $name
+    $targetPath = Join-Path $Repo $name
+    Write-IfChanged $targetPath ([IO.File]::ReadAllText($sourcePath, $utf8)) | Out-Null
 }
 
-$modules = Get-ChildItem $Source -Directory -Filter '0*'
-foreach ($module in $modules) {
-    $files = Get-ChildItem $module.FullName -File -Filter '*.html' |
-        Where-Object { $_.Name -match '^\d{2}-[a-z]+\.html$' }
-    foreach ($file in $files) {
-        $target = Join-Path (Join-Path $Repo $module.Name) $file.Name
-        Copy-Item $file.FullName $target -Force
-        $body = [IO.File]::ReadAllText($target, $utf8)
-        if ($body -notmatch 'rel="icon"') {
-            $head = $body.IndexOf('<head>')
-            if ($head -ge 0) {
-                $insert = "<head>`r`n  <link rel=""icon"" href=""../favicon.svg"" type=""image/svg+xml"">"
-                $body = $body.Substring(0, $head) + $insert + $body.Substring($head + 6)
-            }
-        }
-        [IO.File]::WriteAllText($target, $body, $utf8)
+# Canonical diagrams: all by default, or only the regenerated ones passed with -Files.
+$canonical = @()
+if ($Files.Count -gt 0) {
+    $canonical = $Files
+} else {
+    foreach ($module in Get-ChildItem $Source -Directory -Filter '0*') {
+        Get-ChildItem $module.FullName -File -Filter '*.html' |
+            Where-Object { $_.Name -match '^\d{2}-[a-z]+\.html$' } |
+            ForEach-Object { $canonical += ($module.Name + '/' + $_.Name) }
     }
+}
+
+foreach ($rel in $canonical) {
+    if ($rel -notmatch '^0[1-7]-[^/]+/\d{2}-[a-z]+\.html$') {
+        throw "Archivo de atlas invalido: $rel"
+    }
+    $sourcePath = Join-Path $Source $rel
+    $targetPath = Join-Path $Repo $rel
+    if (-not (Test-Path $sourcePath)) { throw "No existe el diagrama: $sourcePath" }
+    $body = [IO.File]::ReadAllText($sourcePath, $utf8)
+    if ($body -notmatch 'rel="icon"') {
+        $head = $body.IndexOf('<head>')
+        if ($head -ge 0) {
+            $insert = "<head>`r`n  <link rel=""icon"" href=""../favicon.svg"" type=""image/svg+xml"">"
+            $body = $body.Substring(0, $head) + $insert + $body.Substring($head + 6)
+        }
+    }
+    Write-IfChanged $targetPath $body | Out-Null
 }
 
 $indexTarget = Join-Path $Repo 'index.html'
@@ -78,18 +102,19 @@ $indexBody = [IO.File]::ReadAllText($indexTarget, $utf8)
 if ($indexBody -notmatch 'name="robots"') {
     $needle = '<meta name="viewport" content="width=device-width, initial-scale=1">'
     $indexBody = $indexBody.Replace($needle, $needle + "`r`n<meta name=""robots"" content=""noindex, nofollow"">")
+    Write-IfChanged $indexTarget $indexBody | Out-Null
 }
-[IO.File]::WriteAllText($indexTarget, $indexBody, $utf8)
 
-$diff = git -C $Repo diff --stat
-if (-not $diff) {
+git -C $Repo diff --quiet
+$changed = $LASTEXITCODE -ne 0
+if (-not $changed) {
     Write-Output 'Sin cambios que publicar.'
     exit 0
 }
-$diff | Out-Host
+git -C $Repo diff --stat | Out-Host
 
 if ($DryRun) {
-    Write-Output 'DryRun: no se creo commit ni se hizo push.'
+    Write-Output 'DryRun: no se creo commit ni se hizo push. Los cambios quedan en el working tree para revisarlos.'
     exit 0
 }
 
