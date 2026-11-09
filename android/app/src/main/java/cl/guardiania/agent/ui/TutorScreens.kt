@@ -1,6 +1,22 @@
 package cl.guardiania.agent.ui
 
 import android.graphics.Bitmap
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateIntAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -59,6 +75,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -67,6 +84,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalClipboardManager
@@ -86,6 +104,7 @@ import cl.guardiania.agent.data.TutorPairingDto
 import cl.guardiania.agent.data.TutorPairingStatusDto
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.qrcode.QRCodeWriter
+import kotlinx.coroutines.delay
 import java.time.OffsetDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -112,6 +131,7 @@ fun TutorShell(
     onExport: () -> Unit,
     onTestPush: () -> Unit,
 ) {
+    val reducedMotion = LocalReducedMotion.current
     Scaffold(
         containerColor = Paper,
         topBar = { TutorTopBar(state, onRefresh) },
@@ -120,36 +140,57 @@ fun TutorShell(
         },
     ) { inner ->
         Box(Modifier.fillMaxSize().padding(inner)) {
-            when (state.tab) {
-                TutorTab.INICIO -> TutorHome(
-                    state = state,
-                    onRefresh = onRefresh,
-                    onResendVerification = onResendVerification,
-                    onGoAlerts = { onTab(TutorTab.ALERTAS) },
-                    onGoDevices = { onTab(TutorTab.EQUIPOS) },
-                )
-                TutorTab.ALERTAS -> TutorAlerts(state, onAlertState)
-                TutorTab.EQUIPOS -> TutorDevices(
-                    state = state,
-                    onRevoke = onRevoke,
-                    onSetUnlinkCode = onSetUnlinkCode,
-                    onClearUnlinkCode = onClearUnlinkCode,
-                    onGeneratePairing = onGeneratePairing,
-                    onCancelPairing = onCancelPairing,
-                    onClearPairing = onClearPairing,
-                )
-                TutorTab.AJUSTES -> TutorSettings(
-                    state = state,
-                    onRefresh = onRefresh,
-                    onLogout = onLogout,
-                    onLogoutAll = onLogoutAll,
-                    onSwitchToChild = onSwitchToChild,
-                    onOpenLegal = onOpenLegal,
-                    onResendVerification = onResendVerification,
-                    onChangePassword = onChangePassword,
-                    onExport = onExport,
-                    onTestPush = onTestPush,
-                )
+            AnimatedContent(
+                targetState = state.tab,
+                transitionSpec = {
+                    if (reducedMotion) {
+                        EnterTransition.None togetherWith ExitTransition.None
+                    } else {
+                        val forward = targetState.ordinal >= initialState.ordinal
+                        val enter = fadeIn(tween(GuardianMotion.slow, easing = GuardianMotion.enter)) +
+                            slideInHorizontally(tween(GuardianMotion.slow, easing = GuardianMotion.enter)) {
+                                if (forward) it / 12 else -it / 12
+                            }
+                        val exit = fadeOut(tween(GuardianMotion.fast, easing = GuardianMotion.exit)) +
+                            slideOutHorizontally(tween(GuardianMotion.fast, easing = GuardianMotion.exit)) {
+                                if (forward) -it / 12 else it / 12
+                            }
+                        enter togetherWith exit
+                    }
+                },
+                label = "tutor-tab",
+            ) { tab ->
+                when (tab) {
+                    TutorTab.INICIO -> TutorHome(
+                        state = state,
+                        onRefresh = onRefresh,
+                        onResendVerification = onResendVerification,
+                        onGoAlerts = { onTab(TutorTab.ALERTAS) },
+                        onGoDevices = { onTab(TutorTab.EQUIPOS) },
+                    )
+                    TutorTab.ALERTAS -> TutorAlerts(state, onAlertState)
+                    TutorTab.EQUIPOS -> TutorDevices(
+                        state = state,
+                        onRevoke = onRevoke,
+                        onSetUnlinkCode = onSetUnlinkCode,
+                        onClearUnlinkCode = onClearUnlinkCode,
+                        onGeneratePairing = onGeneratePairing,
+                        onCancelPairing = onCancelPairing,
+                        onClearPairing = onClearPairing,
+                    )
+                    TutorTab.AJUSTES -> TutorSettings(
+                        state = state,
+                        onRefresh = onRefresh,
+                        onLogout = onLogout,
+                        onLogoutAll = onLogoutAll,
+                        onSwitchToChild = onSwitchToChild,
+                        onOpenLegal = onOpenLegal,
+                        onResendVerification = onResendVerification,
+                        onChangePassword = onChangePassword,
+                        onExport = onExport,
+                        onTestPush = onTestPush,
+                    )
+                }
             }
             if (state.busy) {
                 LinearProgressIndicator(
@@ -166,6 +207,14 @@ fun TutorShell(
 
 @Composable
 private fun TutorTopBar(state: TutorUiState, onRefresh: () -> Unit) {
+    val reducedMotion = LocalReducedMotion.current
+    val rotation = rememberInfiniteTransition(label = "refresh-spin")
+    val refreshAngle by rotation.animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec = infiniteRepeatable(tween(900, easing = LinearEasing)),
+        label = "refresh-angle",
+    )
     Column(
         Modifier
             .fillMaxWidth()
@@ -209,7 +258,9 @@ private fun TutorTopBar(state: TutorUiState, onRefresh: () -> Unit) {
                     Icons.Outlined.Refresh,
                     contentDescription = "Actualizar",
                     tint = Sage300,
-                    modifier = Modifier.size(20.dp),
+                    modifier = Modifier
+                        .size(20.dp)
+                        .rotate(if (state.busy && !reducedMotion) refreshAngle else 0f),
                 )
             }
         }
@@ -327,7 +378,7 @@ private fun TutorHome(
                 item { EmptyNote("No hay alertas abiertas. Una semana tranquila también es información.") }
             } else {
                 items(state.alerts.take(3), key = { it.id }) { alert ->
-                    CompactAlert(alert)
+                    CompactAlert(alert, Modifier.animateItem())
                 }
             }
             item {
@@ -338,7 +389,7 @@ private fun TutorHome(
             if (state.devices.isEmpty()) {
                 item { EmptyNote("Aún no hay dispositivos. Vincula el teléfono del menor desde Equipos.") }
             } else {
-                items(state.devices, key = { it.id }) { device -> DeviceRow(device) }
+                items(state.devices, key = { it.id }) { device -> DeviceRow(device, Modifier.animateItem()) }
             }
             item {
                 TextButton(onClick = onRefresh, modifier = Modifier.fillMaxWidth()) {
@@ -356,11 +407,22 @@ private fun StatusHero(
     linkedLabel: String,
     onGoAlerts: () -> Unit,
 ) {
-    val (background, accent) = when (overview.statusTone) {
+    val reducedMotion = LocalReducedMotion.current
+    val target = when (overview.statusTone) {
         "critico" -> OxbloodSoft to OxbloodInk
         "atencion" -> AmberSoft to Amber
         else -> SageSoft to Pine700
     }
+    val background by animateColorAsState(
+        targetValue = target.first,
+        animationSpec = motionTween(reducedMotion, GuardianMotion.slow),
+        label = "hero-background",
+    )
+    val accent by animateColorAsState(
+        targetValue = target.second,
+        animationSpec = motionTween(reducedMotion, GuardianMotion.slow),
+        label = "hero-accent",
+    )
     Surface(
         shape = RoundedCornerShape(18.dp),
         color = background,
@@ -383,13 +445,26 @@ private fun StatusHero(
                 )
             }
             Spacer(Modifier.height(10.dp))
-            Text(
-                text = overview.statusLine,
-                color = Ink,
-                fontSize = 20.sp,
-                lineHeight = 27.sp,
-                fontWeight = FontWeight.Medium,
-            )
+            AnimatedContent(
+                targetState = overview.statusLine,
+                transitionSpec = {
+                    if (reducedMotion) {
+                        EnterTransition.None togetherWith ExitTransition.None
+                    } else {
+                        fadeIn(tween(GuardianMotion.base, easing = GuardianMotion.enter)) togetherWith
+                            fadeOut(tween(GuardianMotion.fast, easing = GuardianMotion.exit))
+                    }
+                },
+                label = "hero-status",
+            ) { line ->
+                Text(
+                    text = line,
+                    color = Ink,
+                    fontSize = 20.sp,
+                    lineHeight = 27.sp,
+                    fontWeight = FontWeight.Medium,
+                )
+            }
             Spacer(Modifier.height(8.dp))
             Text(
                 text = "$liveDevices con señal · ${overview.devices.size} $linkedLabel · ${overview.minutesToday} min hoy",
@@ -420,19 +495,25 @@ private fun StatusHero(
 @Composable
 private fun MetricsRow(overview: TutorOverviewDto, liveDevices: Int, linkedLabel: String) {
     Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
-        Metric("Con señal", liveDevices.toString(), "de ${overview.devices.size} $linkedLabel", Modifier.weight(1f))
-        Metric("Alertas", overview.openAlerts.toString(), "abiertas", Modifier.weight(1f))
-        Metric("Críticas", overview.criticalAlerts.toString(), "sin revisar", Modifier.weight(1f))
+        Metric("Con señal", liveDevices, "de ${overview.devices.size} $linkedLabel", Modifier.weight(1f))
+        Metric("Alertas", overview.openAlerts, "abiertas", Modifier.weight(1f))
+        Metric("Críticas", overview.criticalAlerts, "sin revisar", Modifier.weight(1f))
     }
 }
 
 @Composable
-private fun Metric(label: String, value: String, caption: String, modifier: Modifier = Modifier) {
+private fun Metric(label: String, value: Int, caption: String, modifier: Modifier = Modifier) {
+    val reducedMotion = LocalReducedMotion.current
+    val animated by animateIntAsState(
+        targetValue = value,
+        animationSpec = motionTween(reducedMotion, GuardianMotion.count),
+        label = "metric-$label",
+    )
     Surface(modifier = modifier, shape = RoundedCornerShape(14.dp), color = Card, border = androidx.compose.foundation.BorderStroke(1.dp, Line)) {
         Column(Modifier.padding(13.dp)) {
             Text(label.uppercase(), color = Muted, fontFamily = Mono, fontSize = 8.5.sp, letterSpacing = 1.sp)
             Spacer(Modifier.height(6.dp))
-            Text(value, color = Ink, fontSize = 26.sp, fontWeight = FontWeight.SemiBold)
+            Text(animated.toString(), color = Ink, fontSize = 26.sp, fontWeight = FontWeight.SemiBold)
             Text(caption, color = Muted, fontSize = 10.5.sp)
         }
     }
@@ -440,6 +521,7 @@ private fun Metric(label: String, value: String, caption: String, modifier: Modi
 
 @Composable
 private fun WeekBars(overview: TutorOverviewDto) {
+    val reducedMotion = LocalReducedMotion.current
     val max = (overview.week.maxOfOrNull { it.minutes } ?: 0).coerceAtLeast(1)
     Row(
         Modifier
@@ -449,11 +531,20 @@ private fun WeekBars(overview: TutorOverviewDto) {
         verticalAlignment = Alignment.Bottom,
     ) {
         overview.week.forEach { point ->
+            val target = point.minutes.toFloat() / max
+            val progress = remember(point.date) { Animatable(0f) }
+            LaunchedEffect(point.date, point.minutes, reducedMotion) {
+                if (reducedMotion) {
+                    progress.snapTo(target)
+                } else {
+                    progress.animateTo(target, tween(GuardianMotion.chart, easing = GuardianMotion.enter))
+                }
+            }
             Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
                 Box(
                     Modifier
                         .width(20.dp)
-                        .height((12 + (point.minutes.toFloat() / max) * 58).dp)
+                        .height((12 + progress.value * 58).dp)
                         .background(
                             if (point.alerts > 0) Amber.copy(alpha = 0.55f) else Sage500.copy(alpha = 0.45f),
                             RoundedCornerShape(6.dp),
@@ -468,8 +559,9 @@ private fun WeekBars(overview: TutorOverviewDto) {
 }
 
 @Composable
-private fun CompactAlert(alert: TutorAlertDto) {
+private fun CompactAlert(alert: TutorAlertDto, modifier: Modifier = Modifier) {
     Surface(
+        modifier = modifier,
         shape = RoundedCornerShape(14.dp),
         color = Card,
         border = androidx.compose.foundation.BorderStroke(
@@ -519,6 +611,21 @@ private fun CompactAlert(alert: TutorAlertDto) {
 private fun TutorAlerts(state: TutorUiState, onAlertState: (String, String) -> Unit) {
     var filter by rememberSaveable { mutableStateOf("ABIERTAS") }
     val loading = state.overview == null && state.busy
+    var knownIds by remember { mutableStateOf<Set<String>?>(null) }
+    var freshIds by remember { mutableStateOf<Set<String>>(emptySet()) }
+    LaunchedEffect(state.alerts.map { it.id }) {
+        val ids = state.alerts.map { it.id }.toSet()
+        val previous = knownIds
+        knownIds = ids
+        if (previous != null) {
+            val incoming = ids - previous
+            if (incoming.isNotEmpty()) {
+                freshIds = incoming
+                delay(1400)
+                freshIds = emptySet()
+            }
+        }
+    }
     val filtered = remember(state.alerts, filter) {
         when (filter) {
             "CRITICAS" -> state.alerts.filter { it.isCritical() }
@@ -560,17 +667,34 @@ private fun TutorAlerts(state: TutorUiState, onAlertState: (String, String) -> U
             item { EmptyNote("No hay alertas en este filtro.") }
         } else {
             items(filtered, key = { it.id }) { alert ->
-                FullAlert(alert, onAlertState)
+                FullAlert(
+                    alert = alert,
+                    onAlertState = onAlertState,
+                    fresh = alert.id in freshIds,
+                    modifier = Modifier.animateItem(),
+                )
             }
         }
     }
 }
 
 @Composable
-private fun FullAlert(alert: TutorAlertDto, onAlertState: (String, String) -> Unit) {
+private fun FullAlert(
+    alert: TutorAlertDto,
+    onAlertState: (String, String) -> Unit,
+    fresh: Boolean = false,
+    modifier: Modifier = Modifier,
+) {
+    val reducedMotion = LocalReducedMotion.current
+    val background by animateColorAsState(
+        targetValue = if (fresh) SageSoft else Card,
+        animationSpec = motionTween(reducedMotion, GuardianMotion.slow),
+        label = "alert-background",
+    )
     Surface(
+        modifier = modifier,
         shape = RoundedCornerShape(16.dp),
-        color = Card,
+        color = background,
         border = androidx.compose.foundation.BorderStroke(
             1.dp,
             if (alert.isCritical()) Oxblood.copy(alpha = 0.3f) else Line,
@@ -648,6 +772,7 @@ private fun TutorDevices(
     var revokeTarget by remember { mutableStateOf<TutorDeviceDto?>(null) }
     var unlinkCodeTarget by remember { mutableStateOf<TutorDeviceDto?>(null) }
     val pairing = state.pairing
+    val reducedMotion = LocalReducedMotion.current
     val loading = state.overview == null && state.busy
     val filtered = state.devices.filter { device ->
         filter == DeviceFilter.TODOS || device.vinculacionEstadoActivo()
@@ -666,21 +791,32 @@ private fun TutorDevices(
                 lineHeight = 18.sp,
             )
         }
-        if (pairing == null) {
-            item {
-                PairingGenerator(
-                    busy = state.busy,
-                    onGenerate = onGeneratePairing,
-                )
-            }
-        } else {
-            item {
-                PairingLive(
-                    pairing = pairing,
-                    status = state.pairingStatus,
-                    onCancel = onCancelPairing,
-                    onClear = onClearPairing,
-                )
+        item {
+            AnimatedContent(
+                targetState = pairing,
+                transitionSpec = {
+                    if (reducedMotion) {
+                        EnterTransition.None togetherWith ExitTransition.None
+                    } else {
+                        fadeIn(tween(GuardianMotion.slow, easing = GuardianMotion.enter)) togetherWith
+                            fadeOut(tween(GuardianMotion.fast, easing = GuardianMotion.exit))
+                    }
+                },
+                label = "pairing-state",
+            ) { current ->
+                if (current == null) {
+                    PairingGenerator(
+                        busy = state.busy,
+                        onGenerate = onGeneratePairing,
+                    )
+                } else {
+                    PairingLive(
+                        pairing = current,
+                        status = state.pairingStatus,
+                        onCancel = onCancelPairing,
+                        onClear = onClearPairing,
+                    )
+                }
             }
         }
         item {
@@ -710,6 +846,7 @@ private fun TutorDevices(
                     device = device,
                     onRevoke = { revokeTarget = device },
                     onUnlinkCode = { unlinkCodeTarget = device },
+                    modifier = Modifier.animateItem(),
                 )
             }
         }
@@ -895,6 +1032,7 @@ private fun PairingLive(
     onClear: () -> Unit,
 ) {
     val clipboard = LocalClipboardManager.current
+    val reducedMotion = LocalReducedMotion.current
     val bitmap = remember(pairing.qrPayload) { qrBitmap(pairing.qrPayload) }
     val state = status?.estado ?: "PENDIENTE"
     val complete = state == "VERIFICADA" || status?.bindingState == "ACTIVO"
@@ -927,7 +1065,19 @@ private fun PairingLive(
             }
         }
         Spacer(Modifier.height(16.dp))
-        if (complete) {
+        AnimatedContent(
+            targetState = complete,
+            transitionSpec = {
+                if (reducedMotion) {
+                    EnterTransition.None togetherWith ExitTransition.None
+                } else {
+                    fadeIn(tween(GuardianMotion.base, easing = GuardianMotion.enter)) togetherWith
+                        fadeOut(tween(GuardianMotion.fast, easing = GuardianMotion.exit))
+                }
+            },
+            label = "pairing-complete",
+        ) { done ->
+            if (done) {
             Box(
                 Modifier
                     .fillMaxWidth()
@@ -989,6 +1139,7 @@ private fun PairingLive(
                 )
             }
         }
+        }
         Spacer(Modifier.height(8.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             if (!complete && state == "PENDIENTE") {
@@ -1007,10 +1158,11 @@ private fun PairingLive(
 }
 
 @Composable
-private fun DeviceRow(device: TutorDeviceDto) {
+private fun DeviceRow(device: TutorDeviceDto, modifier: Modifier = Modifier) {
     val active = device.vinculacionEstadoActivo()
     val live = device.deviceLive()
     Surface(
+        modifier = modifier,
         shape = RoundedCornerShape(13.dp),
         color = Card,
         border = androidx.compose.foundation.BorderStroke(1.dp, Line),
@@ -1051,10 +1203,16 @@ private fun DeviceRow(device: TutorDeviceDto) {
 }
 
 @Composable
-private fun DeviceCard(device: TutorDeviceDto, onRevoke: () -> Unit, onUnlinkCode: () -> Unit) {
+private fun DeviceCard(
+    device: TutorDeviceDto,
+    onRevoke: () -> Unit,
+    onUnlinkCode: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val active = device.vinculacionEstadoActivo()
     val stale = isOlderThan(device.lastSeen, 120)
     Surface(
+        modifier = modifier,
         shape = RoundedCornerShape(15.dp),
         color = Card,
         border = androidx.compose.foundation.BorderStroke(1.dp, Line),

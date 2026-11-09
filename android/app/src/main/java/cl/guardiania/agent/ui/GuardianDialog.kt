@@ -1,5 +1,11 @@
 package cl.guardiania.agent.ui
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -25,6 +31,11 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -51,10 +62,23 @@ fun GuardianDialog(
     content: @Composable ColumnScope.() -> Unit,
     actions: @Composable ColumnScope.() -> Unit,
 ) {
+    val reducedMotion = LocalReducedMotion.current
+    var visible by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { visible = true }
     Dialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false),
     ) {
+        AnimatedVisibility(
+            visible = visible,
+            enter = if (reducedMotion) {
+                EnterTransition.None
+            } else {
+                fadeIn(tween(GuardianMotion.base)) +
+                    scaleIn(initialScale = 0.96f, animationSpec = tween(GuardianMotion.base, easing = GuardianMotion.enter))
+            },
+            exit = ExitTransition.None,
+        ) {
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
@@ -89,6 +113,7 @@ fun GuardianDialog(
                 Spacer(Modifier.height(22.dp))
                 actions()
             }
+        }
         }
     }
 }

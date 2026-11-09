@@ -39,6 +39,13 @@
 
   --rail-w: 240px;
   --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --motion-fast: 120ms;
+  --motion-base: 180ms;
+  --motion-slow: 240ms;
+  --motion-chart: 320ms;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
 }
 
 [data-theme='dark'] {
@@ -259,7 +266,7 @@ svg {
 }
 
 .btn:active {
-  transform: translateY(1px);
+  transform: translateY(1px) scale(0.99);
 }
 
 .btn-primary {
@@ -1266,6 +1273,125 @@ svg {
   .sk {
     animation: none !important;
     background: var(--line);
+  }
+}
+
+/* ---------- Motion ---------- */
+
+.view-enter {
+  animation: view-in var(--motion-base) var(--ease-out) both;
+}
+
+@keyframes view-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.guard-chart.is-entering .guard-col-bars {
+  transform-origin: bottom;
+  animation: bar-rise var(--motion-chart) var(--ease-out) both;
+  animation-delay: calc(var(--i) * 12ms);
+}
+
+.spark.is-entering i {
+  transform-origin: bottom;
+  animation: spark-rise var(--motion-chart) var(--ease-out) both;
+  animation-delay: calc(var(--i) * 30ms);
+}
+
+@keyframes bar-rise {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+@keyframes spark-rise {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+.alert-row.is-fresh {
+  animation: alert-fresh 1.5s var(--ease-out) both;
+}
+
+@keyframes alert-fresh {
+  0% {
+    background: var(--sage-soft);
+  }
+  100% {
+    background: transparent;
+  }
+}
+
+.nav-badge.is-bumping,
+.tab-badge.is-bumping {
+  animation: badge-pop 240ms var(--ease-out);
+}
+
+@keyframes badge-pop {
+  0% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(1.18);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.dialog[open] {
+  animation: dialog-in var(--motion-base) var(--ease-out) both;
+}
+
+.dialog::backdrop {
+  animation: backdrop-in var(--motion-base) var(--ease-out) both;
+}
+
+@keyframes dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes backdrop-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .view-enter,
+  .guard-chart.is-entering .guard-col-bars,
+  .spark.is-entering i,
+  .alert-row.is-fresh,
+  .nav-badge.is-bumping,
+  .tab-badge.is-bumping,
+  .dialog[open],
+  .dialog::backdrop {
+    animation: none !important;
+    transform: none !important;
   }
 }
 

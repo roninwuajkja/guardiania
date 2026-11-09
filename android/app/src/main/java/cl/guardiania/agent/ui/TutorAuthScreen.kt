@@ -1,5 +1,13 @@
 package cl.guardiania.agent.ui
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -77,6 +85,7 @@ fun TutorAuthScreen(
     val uriHandler = LocalUriHandler.current
     val legalBase = server.trim().trimEnd('/')
     val registering = mode == TutorAuthMode.REGISTER
+    val reducedMotion = LocalReducedMotion.current
 
     fun submit() {
         localError = null
@@ -203,7 +212,20 @@ fun TutorAuthScreen(
                     colors = fieldColors(),
                 )
 
-                if (registering) {
+                AnimatedVisibility(
+                    visible = registering,
+                    enter = if (reducedMotion) {
+                        EnterTransition.None
+                    } else {
+                        fadeIn(tween(180)) + expandVertically(tween(220))
+                    },
+                    exit = if (reducedMotion) {
+                        ExitTransition.None
+                    } else {
+                        fadeOut(tween(120)) + shrinkVertically(tween(180))
+                    },
+                ) {
+                    Column {
                     Spacer(Modifier.height(12.dp))
                     OutlinedTextField(
                         value = alias,
@@ -231,6 +253,7 @@ fun TutorAuthScreen(
                             fontSize = 12.sp,
                             lineHeight = 18.sp,
                         )
+                    }
                     }
                 }
 

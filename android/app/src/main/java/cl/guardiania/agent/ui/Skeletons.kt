@@ -38,8 +38,9 @@ fun SkeletonBlock(
     modifier: Modifier = Modifier,
     shape: Shape = RoundedCornerShape(8.dp),
 ) {
+    val reduced = LocalReducedMotion.current
     val transition = rememberInfiniteTransition(label = "skeleton")
-    val alpha by transition.animateFloat(
+    val animatedAlpha by transition.animateFloat(
         initialValue = 0.45f,
         targetValue = 0.85f,
         animationSpec = infiniteRepeatable(
@@ -48,7 +49,7 @@ fun SkeletonBlock(
         ),
         label = "skeleton-alpha",
     )
-    Box(modifier.background(Line.copy(alpha = alpha), shape))
+    Box(modifier.background(Line.copy(alpha = if (reduced) 0.7f else animatedAlpha), shape))
 }
 
 @Composable

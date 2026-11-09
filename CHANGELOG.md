@@ -13,6 +13,29 @@ Todas las versiones relevantes de IA Guardian. El detalle técnico vive en
 - Regla permanente en `AGENTS.md` y script `scripts/publish-atlas.ps1` para
   actualizar y publicar el atlas de arquitectura después de cada cambio.
 
+## 1.7.11 — 2026-11-09
+
+### Motion
+
+- Web: entrada de ruta con fade y 8 px; count-up de métricas; barras de
+  “Guardia de hoy” y sparklines con entrada escalonada; alerta nueva con
+  resaltado y badge con pop; diálogo con fade/escala; press de botones más
+  contenido. El auto-refresh de 15 s no reinicia las animaciones.
+- Android: cambio de pestaña con fade y 10 px; métricas con `animateIntAsState`;
+  barras semanales con `Animatable`; `animateItem` en alertas y equipos; alerta
+  nueva resaltada; icono de refresh girando mientras carga; cambio login/registro,
+  campos de registro, pairing y diálogo con transiciones.
+- Reduced motion: la web respeta `prefers-reduced-motion`; Android lee
+  `ANIMATOR_DURATION_SCALE` y detiene pulsos, giros y transiciones.
+- Tokens compartidos: 120/180/240/320 ms y easings estándar, sin rebotes.
+
+### Verificación
+
+- 117 pruebas backend y 75 pruebas Android.
+- Revisión visual de la carga web, skeleton, count-up, barras, tabs, refresh,
+  auth, pairing y diálogo en el emulador.
+- Android `1.7.11` (`versionCode` 20); backend `1.7.11`.
+
 ## 1.7.10 — 2026-11-09
 
 ### Carga inicial
