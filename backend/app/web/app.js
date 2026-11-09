@@ -465,29 +465,170 @@ async function navigate() {
 
   if (route === 'resumen') {
     if (!state.overview) {
-      view.innerHTML = loadingBlock('Cargando el resumen…');
+      view.innerHTML = skeletonFor('resumen');
       await loadCore();
     }
     renderOverview();
   } else if (route === 'vincular') {
     renderPairing();
   } else if (route === 'dispositivos') {
-    view.innerHTML = loadingBlock('Cargando dispositivos…');
+    view.innerHTML = skeletonFor('dispositivos');
     await loadDevices();
     renderDevices();
   } else if (route === 'alertas') {
-    view.innerHTML = loadingBlock('Cargando alertas…');
+    view.innerHTML = skeletonFor('alertas');
     await loadAlerts();
     renderAlerts();
   }
   state.signature = viewSignature();
 }
 
-function loadingBlock(label) {
-  return `<div class="card loading-block"><span class="pulse"></span><p>${escapeHtml(label)}</p></div>`;
+/* ---------- Skeleton loading ---------- */
+
+function skeletonFor(route) {
+  if (route === 'alertas') return alertsSkeleton();
+  if (route === 'dispositivos') return devicesSkeleton();
+  if (route === 'resumen') return overviewSkeleton();
+  return '';
+}
+
+function skeletonWrap(label, body) {
+  return `<div class="skeleton-view" role="status" aria-busy="true">
+    <span class="sr-only">${escapeHtml(label)}</span>
+    <div class="skeleton-stage" aria-hidden="true">${body}</div>
+  </div>`;
+}
+
+function sk(cls = '', style = '') {
+  return `<span class="sk ${cls}" style="${style}"></span>`;
+}
+
+function overviewSkeleton() {
+  const stats = Array.from({ length: 3 }, () => `
+    <article class="stat card skeleton-stat">
+      ${sk('sk-line sk-line--sm', 'width:72px')}
+      ${sk('sk-title', 'width:86px;height:30px;margin-top:12px')}
+      ${sk('sk-line', 'width:120px;margin-top:10px')}
+      ${sk('sk-line', 'width:100%;margin-top:auto')}
+    </article>`).join('');
+  const alerts = Array.from({ length: 4 }, () => `
+    <div class="skeleton-alert-row">
+      ${sk('skeleton-rail')}
+      <div class="skeleton-alert-copy">
+        ${sk('sk-line sk-line--sm', 'width:45%')}
+        ${sk('sk-line sk-line--lg', 'width:70%;margin-top:9px')}
+        ${sk('sk-line', 'width:100%;margin-top:8px')}
+      </div>
+    </div>`).join('');
+  const devices = Array.from({ length: 3 }, () => `
+    <div class="skeleton-device-row">
+      ${sk('sk-icon')}
+      <div class="skeleton-device-copy">
+        ${sk('sk-line', 'width:55%')}
+        ${sk('sk-line sk-line--sm', 'width:40%;margin-top:8px')}
+      </div>
+      ${sk('sk-pill', 'width:60px')}
+    </div>`).join('');
+  return skeletonWrap('Cargando el resumen…', `
+    <section class="hero skeleton-hero">
+      <div class="hero-copy">
+        ${sk('sk-pill', 'width:120px')}
+        ${sk('sk-title', 'width:min(560px,86%);margin-top:14px')}
+        ${sk('sk-line', 'width:min(420px,65%);margin-top:14px')}
+      </div>
+      <div class="hero-action">${sk('sk-btn', 'width:150px')}</div>
+    </section>
+    <div class="card skeleton-guard">
+      <div class="skeleton-head">
+        ${sk('sk-line sk-line--lg', 'width:170px')}
+        ${sk('sk-pill', 'width:110px')}
+      </div>
+      ${sk('skeleton-chart')}
+    </div>
+    <div class="stats">${stats}</div>
+    <div class="board">
+      <section class="panel card skeleton-panel">
+        <header class="card-head skeleton-head">
+          ${sk('sk-line sk-line--lg', 'width:150px')}
+          ${sk('sk-line', 'width:60px')}
+        </header>
+        ${alerts}
+      </section>
+      <aside class="panel card skeleton-panel">
+        <header class="card-head skeleton-head">
+          ${sk('sk-line sk-line--lg', 'width:120px')}
+          ${sk('sk-line', 'width:70px')}
+        </header>
+        ${devices}
+      </aside>
+    </div>`);
+}
+
+function alertsSkeleton() {
+  const chips = Array.from({ length: 4 }, () => sk('sk-pill', 'width:104px;height:34px')).join('');
+  const rows = Array.from({ length: 5 }, () => `
+    <div class="skeleton-alert-row">
+      ${sk('skeleton-rail')}
+      <div class="skeleton-alert-copy">
+        ${sk('sk-line sk-line--sm', 'width:35%')}
+        ${sk('sk-line sk-line--lg', 'width:55%;margin-top:12px')}
+        ${sk('sk-line', 'width:100%;margin-top:10px')}
+        ${sk('sk-line', 'width:82%;margin-top:6px')}
+      </div>
+    </div>`).join('');
+  return skeletonWrap('Cargando las alertas…', `
+    <section class="page-head">
+      <div>
+        ${sk('sk-line sk-line--sm', 'width:80px')}
+        ${sk('sk-title', 'width:min(420px,70%);margin-top:12px')}
+        ${sk('sk-line', 'width:min(520px,90%);margin-top:12px')}
+      </div>
+    </section>
+    <div class="filters">${chips}</div>
+    <section class="card">${rows}</section>
+    ${sk('sk-line', 'width:min(560px,85%);margin-top:20px')}`);
+}
+
+function devicesSkeleton() {
+  const rows = Array.from({ length: 3 }, (_, index) => `
+    <div class="skeleton-device-row">
+      ${sk('sk-icon')}
+      <div class="skeleton-device-copy">
+        ${sk('sk-line', 'width:55%')}
+        ${sk('sk-line sk-line--sm', 'width:65%;margin-top:8px')}
+      </div>
+      ${sk('sk-pill', 'width:66px')}
+      ${sk('sk-line', 'width:72px;height:32px;border-radius:8px')}
+    </div>
+    ${index === 0 ? `<div class="skeleton-device-code">
+      ${sk('sk-line', 'width:42%')}
+      ${sk('sk-line sk-line--sm', 'width:78%;margin-top:8px')}
+    </div>` : ''}`).join('');
+  return skeletonWrap('Cargando los dispositivos…', `
+    <section class="page-head">
+      <div>
+        ${sk('sk-line sk-line--sm', 'width:80px')}
+        ${sk('sk-title', 'width:min(360px,70%);margin-top:12px')}
+        ${sk('sk-line', 'width:min(560px,92%);margin-top:12px')}
+      </div>
+    </section>
+    <section class="card">
+      <header class="card-head skeleton-head">
+        ${sk('sk-line sk-line--lg', 'width:190px')}
+        ${sk('sk-line', 'width:90px')}
+      </header>
+      <div class="device-list">${rows}</div>
+    </section>
+    ${sk('sk-line', 'width:min(620px,90%);margin-top:20px')}`);
 }
 
 async function enterApp() {
+  const view = $('#view');
+  const initialRoute = routeFromHash();
+  state.route = initialRoute;
+  markNavigation(initialRoute);
+  updateTopbar(initialRoute);
+  view.innerHTML = skeletonFor(initialRoute);
   await loadCore();
   if (!location.hash) location.hash = '#/resumen';
   await navigate();
@@ -1782,7 +1923,11 @@ async function exportMyData() {
 
 async function loadConsents() {
   const box = $('#consent-list');
-  box.innerHTML = '<p class="muted">Cargando…</p>';
+  box.innerHTML = `<div class="skeleton-consents" aria-hidden="true">${Array.from({ length: 3 }, () => `
+    <div class="skeleton-consent-row">
+      ${sk('sk-line', 'width:35%')}
+      ${sk('sk-line sk-line--sm', 'width:22%')}
+    </div>`).join('')}</div>`;
   try {
     const rows = await api('/account/consents');
     box.innerHTML = rows.length
