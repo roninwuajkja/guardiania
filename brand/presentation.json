@@ -1,0 +1,34 @@
+{
+  "brand": "IA Guardian",
+  "tagline": "Control parental con privacidad por diseño",
+  "brief": "Control parental con privacidad por diseño. El teléfono analiza en local y envía solo señales derivadas; el tutor recibe alertas explicables, nunca el contenido de las conversaciones.",
+  "adjectives": ["calma", "atenta", "discreta", "confiable", "cálida"],
+  "industry": "consumer-app",
+  "mockups": ["app-icon", "website", "social", "favicon-tab", "business-card", "sticker"],
+  "brand_color": "#081B17",
+  "tile_color": "#081B17",
+  "greyscale": false,
+  "final": true,
+  "concepts": [
+    {
+      "name": "Vínculo",
+      "symbol": "source/b-vinculo-symbol.svg",
+      "lockup": "source/b-vinculo-horizontal.svg",
+      "stacked": "source/b-vinculo-stacked.svg",
+      "avatar": "web-icons/b-vinculo-icon-app-icon.svg",
+      "symbol_on_dark": "source/b-vinculo-symbol-reverse.svg",
+      "lockup_on_dark": "source/b-vinculo-horizontal-reverse.svg",
+      "stacked_on_dark": "source/b-vinculo-stacked-reverse.svg",
+      "symbol_on_tile": "source/b-vinculo-symbol-reverse.svg",
+      "lockup_on_tile": "source/b-vinculo-horizontal-reverse.svg",
+      "stacked_on_tile": "source/b-vinculo-stacked-reverse.svg",
+      "idea": "Dos órbitas que se cuidan y dejan un espacio libre.",
+      "rationale": [
+        "La abertura es la privacidad: la guardia acompaña, no encierra.",
+        "El corte pequeño cambia la órbita interior por dos puntos para sobrevivir a 16 px.",
+        "La paleta pine/sage/paper mantiene la calma del panel y evita el azul de seguridad."
+      ]
+    }
+  ],
+  "recommendation": "Vínculo: dos órbitas que se cuidan. El símbolo completo funciona en el banner y el app icon; el corte pequeño, en favicon y UI."
+}

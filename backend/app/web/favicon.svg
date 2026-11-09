@@ -1,7 +1,9 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <rect width="32" height="32" rx="8" fill="#081B17"/>
-  <path d="M16 4.2c3.3 0 6.2 1 7.9 2.5v6.4c0 4.3-3.1 7.7-7.9 9.4-4.8-1.7-7.9-5.1-7.9-9.4V6.7c1.7-1.5 4.6-2.5 7.9-2.5Z" fill="#123029" stroke="#A9C6B8" stroke-width="2" stroke-linejoin="round"/>
-  <path d="M11 14.2c1.9-2.8 8.1-2.8 10 0" stroke="#EFF3EE" stroke-width="1.9" stroke-linecap="round"/>
-  <circle cx="16" cy="17.2" r="2.1" fill="#EFF3EE"/>
-  <circle cx="22.8" cy="8.9" r="1" fill="#A9C6B8"/>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256"><title>IA Guardian</title><rect width="256" height="256" rx="57.6" fill="#081B17"/><g transform="translate(16.68 16.68) scale(0.798)" fill="#EEF2ED">
+  <title id="title">IA Guardian — Vínculo, corte pequeño</title>
+  <g id="symbol">
+    <circle cx="128" cy="128" r="88" fill="none" stroke="#EEF2ED" stroke-width="28"
+            stroke-dasharray="414 139" transform="rotate(-45 128 128)"/>
+    <circle cx="102" cy="102" r="20" fill="#EEF2ED"/>
+    <circle cx="226" cy="226" r="13" fill="#EEF2ED"/>
+  </g>
+</g></svg>
