@@ -13,6 +13,26 @@ Todas las versiones relevantes de IA Guardian. El detalle técnico vive en
 - Regla permanente en `AGENTS.md` y script `scripts/publish-atlas.ps1` para
   actualizar y publicar el atlas de arquitectura después de cada cambio.
 
+## 1.7.12 - 2026-11-09
+
+### Navegación
+
+- Web: el rail lateral se reemplaza por un masthead con pestañas de índice
+  01-04. La pestaña activa se une a la hoja de contenido y el contenido queda
+  centrado con un ancho máximo de 1280 px. En móvil, dock flotante con cuatro
+  destinos.
+- Android: la barra inferior pasa a una isla flotante de 28 dp de radio, 54 dp
+  por destino, indicador activo en salvia y contador de alertas. La escala de
+  animación del sistema se respeta.
+- El aviso de demo solo aparece con la cuenta demo.
+
+### Verificación
+
+- 117 pruebas backend y 75 pruebas Android.
+- Revisión visual web en 320, 360, 390, 1040, 1041, 1440 y 1920 px, en claro y
+  oscuro.
+- Android `1.7.12` (`versionCode` 21); backend `1.7.12`.
+
 ## 1.7.11 — 2026-11-09
 
 ### Motion

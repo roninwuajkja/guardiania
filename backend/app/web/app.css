@@ -37,7 +37,7 @@
   --font-ui: 'Archivo', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-mono: 'Spline Sans Mono', 'Cascadia Mono', Consolas, monospace;
 
-  --rail-w: 240px;
+  --content-max: 1280px;
   --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
   --motion-fast: 120ms;
   --motion-base: 180ms;
@@ -657,68 +657,117 @@ svg {
 /* ---------- Shell ---------- */
 
 .shell {
-  display: grid;
-  grid-template-columns: var(--rail-w) minmax(0, 1fr);
   min-height: 100vh;
 }
 
-.rail {
+.masthead {
   position: sticky;
   top: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 26px;
-  height: 100vh;
-  padding: 22px 16px 18px;
+  z-index: 50;
   background: var(--pine-950);
   color: #dfeae4;
 }
 
-.rail .brand {
-  padding: 2px 6px 0;
-}
-
-.nav {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-
-.nav a {
+.masthead-inner {
   display: flex;
   align-items: center;
-  gap: 11px;
-  min-height: 42px;
-  padding: 0 11px;
-  border-radius: 9px;
-  color: rgba(223, 234, 228, 0.66);
-  font-size: 13.5px;
+  gap: 18px;
+  width: 100%;
+  max-width: var(--content-max);
+  height: 64px;
+  margin-inline: auto;
+  padding-inline: clamp(20px, 3.4vw, 44px);
+}
+
+.masthead .brand {
+  flex: none;
+}
+
+.masthead .brand-text strong {
+  color: #f1f6f2;
+}
+
+.masthead :focus-visible {
+  outline-color: var(--sage-300);
+}
+
+.index-tabs {
+  display: flex;
+  align-items: flex-end;
+  align-self: stretch;
+  gap: 2px;
+  margin-left: 6px;
+}
+
+.index-tabs a {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 48px;
+  padding: 0 14px;
+  border: 1px solid transparent;
+  border-bottom: 0;
+  border-radius: 10px 10px 0 0;
+  color: rgba(223, 234, 228, 0.64);
+  font-size: 13px;
   font-weight: 500;
   text-decoration: none;
-  transition: background 150ms var(--ease), color 150ms var(--ease);
+  white-space: nowrap;
+  transition: background var(--motion-fast) var(--ease), color var(--motion-fast) var(--ease);
 }
 
-.nav a:hover {
-  background: rgba(255, 255, 255, 0.05);
+.index-tabs a:hover {
+  background: rgba(255, 255, 255, 0.06);
   color: #fff;
 }
 
-.nav a[aria-current='page'] {
-  background: rgba(255, 255, 255, 0.075);
-  color: #fff;
-  box-shadow: inset 2px 0 0 var(--sage-300);
+.index-tabs a[aria-current='page'] {
+  margin-bottom: -1px;
+  padding-bottom: 1px;
+  border-color: var(--line);
+  background: var(--paper);
+  color: var(--ink);
 }
 
-.nav-ico,
-.nav a > span:first-child {
-  display: grid;
-  place-items: center;
-  width: 20px;
-  height: 20px;
-  opacity: 0.9;
+[data-theme='dark'] .index-tabs a[aria-current='page'] {
+  border-color: var(--line-strong);
+  background: var(--sage-soft);
+  color: var(--sage-300);
+  box-shadow: inset 0 2px 0 var(--sage-500);
 }
 
-.nav svg,
+.nav-num {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  opacity: 0.55;
+}
+
+.index-tabs a[aria-current='page'] .nav-num {
+  color: var(--pine-700);
+  opacity: 0.8;
+}
+
+[data-theme='dark'] .index-tabs a[aria-current='page'] .nav-num {
+  color: var(--sage-300);
+}
+
+.mast-utils {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto;
+}
+
+.mast-utils .tutor-chip {
+  max-width: 200px;
+}
+
+.mast-utils .rail-utils {
+  padding: 0;
+}
+
 .tabbar svg {
   width: 18px;
   height: 18px;
@@ -739,40 +788,21 @@ svg {
   text-align: center;
 }
 
-.rail-note {
-  display: flex;
-  gap: 10px;
-  padding: 13px;
-  border: 1px solid rgba(233, 241, 236, 0.1);
-  border-radius: 11px;
-  color: rgba(223, 234, 228, 0.62);
-}
-
-.rail-note svg {
-  width: 16px;
-  height: 16px;
-  flex: none;
-  margin-top: 2px;
-  color: var(--sage-300);
-}
-
-.rail-note p {
-  font-size: 11.5px;
-  line-height: 1.5;
-}
-
-.rail-footer {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-top: auto;
+.index-tabs .nav-badge {
+  margin-left: 2px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  font-size: 10px;
+  line-height: 18px;
 }
 
 .tutor-chip {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 0 4px;
+  padding: 0;
 }
 
 .avatar {
@@ -826,13 +856,19 @@ svg {
   display: flex;
   align-items: center;
   gap: 7px;
-  padding: 8px 4px 0;
-  border-top: 1px solid rgba(233, 241, 236, 0.08);
   font-family: var(--font-mono);
   font-size: 9.5px;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  color: rgba(223, 234, 228, 0.4);
+  color: var(--muted);
+}
+
+.demo-tag[hidden] {
+  display: none;
+}
+
+.panel-demo {
+  margin-top: 14px;
 }
 
 .demo-tag .dot {
@@ -841,7 +877,8 @@ svg {
 
 .main {
   width: 100%;
-  max-width: 1340px;
+  max-width: var(--content-max);
+  margin-inline: auto;
   padding: 28px clamp(20px, 3.4vw, 44px) 52px;
 }
 
@@ -2741,13 +2778,21 @@ svg {
 /* ---------- Responsive ---------- */
 
 @media (max-width: 1180px) {
-  :root {
-    --rail-w: 216px;
-  }
-
   .main {
     padding-left: 26px;
     padding-right: 26px;
+  }
+
+  .masthead-inner {
+    padding-inline: 26px;
+  }
+
+  .index-tabs a {
+    padding: 0 11px;
+  }
+
+  .mast-utils .tutor-meta small {
+    display: none;
   }
 
   .board {
@@ -2755,32 +2800,70 @@ svg {
   }
 }
 
-@media (max-width: 980px) {
-  .shell {
-    display: block;
+@media (max-width: 1040px) {
+  .masthead-inner {
+    height: 58px;
+    gap: 12px;
+    padding-inline: 16px;
   }
 
-  .rail {
+  .masthead .brand-mark {
+    width: 30px;
+    height: 30px;
+    border-radius: 9px;
+  }
+
+  .masthead .brand-mark svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  .masthead .brand-text small {
     display: none;
+  }
+
+  .index-tabs {
+    display: none;
+  }
+
+  .mast-utils {
+    gap: 8px;
+  }
+
+  .mast-utils .tutor-meta {
+    display: none;
+  }
+
+  .mast-utils .rail-utils {
+    gap: 0;
+  }
+
+  .mast-utils .icon-btn {
+    width: 44px;
+    height: 44px;
   }
 
   .main {
     max-width: none;
-    padding: 20px 20px 100px;
+    padding: 20px 20px 118px;
   }
 
   .tabbar {
     position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    left: 50%;
+    bottom: calc(12px + env(safe-area-inset-bottom));
     z-index: 60;
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
-    border-top: 1px solid var(--line);
+    width: min(520px, calc(100% - 24px));
+    padding: 6px;
+    border: 1px solid var(--line);
+    border-radius: 22px;
     background: var(--card);
-    box-shadow: 0 -10px 30px -20px rgba(11, 33, 26, 0.35);
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.55) inset,
+      0 18px 38px -20px rgba(11, 33, 26, 0.38);
+    transform: translateX(-50%);
   }
 
   .tabbar a {
@@ -2790,28 +2873,39 @@ svg {
     align-items: center;
     justify-content: center;
     gap: 3px;
-    min-height: 52px;
-    border-radius: 9px;
+    min-height: 54px;
+    border-radius: 16px;
     color: var(--muted);
     font-size: 10.5px;
     font-weight: 500;
     text-decoration: none;
+    transition:
+      background var(--motion-fast) var(--ease),
+      color var(--motion-fast) var(--ease),
+      transform var(--motion-fast) var(--ease);
+  }
+
+  .tabbar a:hover {
+    background: var(--card-2);
   }
 
   .tabbar a[aria-current='page'] {
     background: var(--sage-soft);
     color: var(--pine-700);
+    box-shadow: inset 0 0 0 1px rgba(94, 143, 123, 0.16);
+    transform: translateY(-1px);
   }
 
   [data-theme='dark'] .tabbar a[aria-current='page'] {
     color: var(--sage-300);
+    box-shadow: inset 0 0 0 1px rgba(169, 198, 184, 0.14);
   }
 
   .tab-badge {
     position: absolute;
-    top: 4px;
+    top: 6px;
     left: 50%;
-    margin-left: 2px;
+    margin-left: 6px;
     min-width: 16px;
     height: 16px;
     padding: 0 4px;
@@ -2874,7 +2968,7 @@ svg {
   }
 
   .toast {
-    bottom: calc(76px + env(safe-area-inset-bottom));
+    bottom: calc(94px + env(safe-area-inset-bottom));
   }
 }
 
@@ -2947,10 +3041,44 @@ svg {
   }
 }
 
+@media (max-width: 380px) {
+  .masthead-inner {
+    gap: 10px;
+    padding-inline: 12px;
+  }
+
+  .masthead .brand-text {
+    display: none;
+  }
+
+  .mast-utils {
+    gap: 6px;
+  }
+}
+
 @media (max-width: 520px) {
   .main {
     padding-left: 14px;
     padding-right: 14px;
+    padding-bottom: 112px;
+  }
+
+  .tabbar {
+    width: calc(100% - 16px);
+    bottom: calc(8px + env(safe-area-inset-bottom));
+    padding: 5px;
+    border-radius: 20px;
+  }
+
+  .tabbar a {
+    min-height: 50px;
+    border-radius: 15px;
+    font-size: 10px;
+  }
+
+  .tabbar svg {
+    width: 17px;
+    height: 17px;
   }
 
   .guard {

@@ -29,13 +29,18 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
@@ -64,9 +69,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -88,6 +90,7 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -269,39 +272,101 @@ private fun TutorTopBar(state: TutorUiState, onRefresh: () -> Unit) {
 
 @Composable
 private fun TutorBottomBar(current: TutorTab, onTab: (TutorTab) -> Unit, openAlerts: Int) {
-    NavigationBar(containerColor = Card, tonalElevation = 0.dp) {
-        val items = listOf(
-            Triple(TutorTab.INICIO, Icons.Outlined.Home, "Inicio"),
-            Triple(TutorTab.ALERTAS, Icons.Outlined.Notifications, "Alertas"),
-            Triple(TutorTab.EQUIPOS, Icons.Outlined.PhoneAndroid, "Equipos"),
-            Triple(TutorTab.AJUSTES, Icons.Outlined.Settings, "Ajustes"),
-        )
-        items.forEach { (tab, icon, label) ->
-            NavigationBarItem(
-                selected = current == tab,
-                onClick = { onTab(tab) },
-                icon = {
-                    Box {
-                        Icon(icon, contentDescription = label, modifier = Modifier.size(21.dp))
-                        if (tab == TutorTab.ALERTAS && openAlerts > 0) {
-                            Box(
-                                Modifier
-                                    .align(Alignment.TopEnd)
-                                    .size(7.dp)
-                                    .background(Oxblood, CircleShape),
+    val reducedMotion = LocalReducedMotion.current
+    val items = listOf(
+        Triple(TutorTab.INICIO, Icons.Outlined.Home, "Inicio"),
+        Triple(TutorTab.ALERTAS, Icons.Outlined.Notifications, "Alertas"),
+        Triple(TutorTab.EQUIPOS, Icons.Outlined.PhoneAndroid, "Equipos"),
+        Triple(TutorTab.AJUSTES, Icons.Outlined.Settings, "Ajustes"),
+    )
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .navigationBarsPadding()
+            .padding(horizontal = 18.dp, vertical = 10.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Surface(
+            modifier = Modifier
+                .widthIn(max = 540.dp)
+                .fillMaxWidth(),
+            shape = RoundedCornerShape(28.dp),
+            color = Card,
+            border = androidx.compose.foundation.BorderStroke(1.dp, Line.copy(alpha = 0.9f)),
+            shadowElevation = 18.dp,
+            tonalElevation = 0.dp,
+        ) {
+            Row(
+                modifier = Modifier.padding(6.dp),
+                horizontalArrangement = Arrangement.spacedBy(2.dp),
+            ) {
+                items.forEach { (tab, icon, label) ->
+                    val selected = current == tab
+                    val background by animateColorAsState(
+                        targetValue = if (selected) SageSoft else Color.Transparent,
+                        animationSpec = motionTween(reducedMotion, GuardianMotion.base),
+                        label = "nav-background-$label",
+                    )
+                    val contentColor by animateColorAsState(
+                        targetValue = if (selected) Pine700 else Muted,
+                        animationSpec = motionTween(reducedMotion, GuardianMotion.base),
+                        label = "nav-color-$label",
+                    )
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .heightIn(min = 54.dp)
+                            .clip(RoundedCornerShape(22.dp))
+                            .background(background)
+                            .selectable(
+                                selected = selected,
+                                onClick = { onTab(tab) },
+                                role = Role.Tab,
+                            )
+                            .padding(vertical = 7.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(3.dp),
+                        ) {
+                            Box {
+                                Icon(
+                                    icon,
+                                    contentDescription = null,
+                                    tint = contentColor,
+                                    modifier = Modifier.size(21.dp),
+                                )
+                                if (tab == TutorTab.ALERTAS && openAlerts > 0) {
+                                    Box(
+                                        modifier = Modifier
+                                            .align(Alignment.TopEnd)
+                                            .offset(x = 9.dp, y = (-5).dp)
+                                            .clip(CircleShape)
+                                            .background(Oxblood)
+                                            .padding(horizontal = 4.dp, vertical = 1.dp),
+                                        contentAlignment = Alignment.Center,
+                                    ) {
+                                        Text(
+                                            text = if (openAlerts > 9) "9+" else openAlerts.toString(),
+                                            color = Color.White,
+                                            fontSize = 8.5.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                            lineHeight = 9.sp,
+                                        )
+                                    }
+                                }
+                            }
+                            Text(
+                                text = label,
+                                color = contentColor,
+                                fontSize = 10.sp,
+                                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
                             )
                         }
                     }
-                },
-                label = { Text(label, fontSize = 10.sp) },
-                colors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = Pine700,
-                    selectedTextColor = Pine700,
-                    indicatorColor = SageSoft,
-                    unselectedIconColor = Muted,
-                    unselectedTextColor = Muted,
-                ),
-            )
+                }
+            }
         }
     }
 }

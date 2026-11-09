@@ -564,7 +564,7 @@ def evaluate_payload(device_id, *, flags=("self_harm",), event_id=None, age_minu
         "lexical_flag_count": len(flags),
         "flags": list(flags),
         "usage_duration_minutes": 15,
-        "integrity": {"attestation_ok": True, "app_version": "1.7.11"},
+        "integrity": {"attestation_ok": True, "app_version": "1.7.12"},
     }
 
 
@@ -705,7 +705,7 @@ def test_sync_publishes_medium_rule_alert_to_stream(client, auth_headers):
                 "usage_duration_minutes": 12,
                 "notification_count": 3,
                 "event_count": 3,
-                "integrity": {"attestation_ok": True, "app_version": "1.7.11"},
+                "integrity": {"attestation_ok": True, "app_version": "1.7.12"},
             }
         ],
     }
@@ -894,7 +894,7 @@ def _sync_payload(device_id: str, *, flags: list[str] | None = None) -> dict:
                 "usage_duration_minutes": 5,
                 "notification_count": 1,
                 "event_count": 1,
-                "integrity": {"attestation_ok": True, "app_version": "1.7.11"},
+                "integrity": {"attestation_ok": True, "app_version": "1.7.12"},
             }
         ],
     }

@@ -106,39 +106,35 @@
   </div>
 
   <div id="shell" class="shell" hidden>
-    <aside class="rail">
-      <a class="brand brand--light" href="#/resumen" aria-label="IA Guardian, ir al resumen">
-        <span class="brand-mark" aria-hidden="true">
-          <svg viewBox="0 0 256 256" fill="none"><circle cx="128" cy="128" r="88" fill="none" stroke="currentColor" stroke-width="28" stroke-dasharray="414 139" transform="rotate(-45 128 128)"/><circle cx="102" cy="102" r="20" fill="currentColor"/><circle cx="226" cy="226" r="13" fill="currentColor"/></svg>
-        </span>
-        <span class="brand-text"><strong>IA Guardian</strong><small>privacidad por diseño</small></span>
-      </a>
+    <header class="masthead">
+      <div class="masthead-inner">
+        <a class="brand brand--light" href="#/resumen" aria-label="IA Guardian, ir al resumen">
+          <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 256 256" fill="none"><circle cx="128" cy="128" r="88" fill="none" stroke="currentColor" stroke-width="28" stroke-dasharray="414 139" transform="rotate(-45 128 128)"/><circle cx="102" cy="102" r="20" fill="currentColor"/><circle cx="226" cy="226" r="13" fill="currentColor"/></svg>
+          </span>
+          <span class="brand-text"><strong>IA Guardian</strong><small>privacidad por diseño</small></span>
+        </a>
 
-      <nav class="nav" aria-label="Principal">
-        <a href="#/resumen" data-route="resumen"><span class="nav-ico" data-icon="overview"></span><span>Resumen</span></a>
-        <a href="#/vincular" data-route="vincular"><span class="nav-ico" data-icon="link"></span><span>Vincular</span></a>
-        <a href="#/dispositivos" data-route="dispositivos"><span class="nav-ico" data-icon="device"></span><span>Dispositivos</span></a>
-        <a href="#/alertas" data-route="alertas"><span class="nav-ico" data-icon="bell"></span><span>Alertas</span><span class="nav-badge" id="nav-alert-count" hidden>0</span></a>
-      </nav>
+        <nav class="nav index-tabs" aria-label="Principal">
+          <a href="#/resumen" data-route="resumen"><span class="nav-num" aria-hidden="true">01</span><span>Resumen</span></a>
+          <a href="#/vincular" data-route="vincular"><span class="nav-num" aria-hidden="true">02</span><span>Vincular</span></a>
+          <a href="#/dispositivos" data-route="dispositivos"><span class="nav-num" aria-hidden="true">03</span><span>Dispositivos</span></a>
+          <a href="#/alertas" data-route="alertas"><span class="nav-num" aria-hidden="true">04</span><span>Alertas</span><span class="nav-badge" id="nav-alert-count" hidden>0</span></a>
+        </nav>
 
-      <div class="rail-note">
-        <span class="rail-note-ico" data-icon="lock"></span>
-        <p>Nunca recibimos el texto de los mensajes. Solo señales derivadas.</p>
-      </div>
-
-      <div class="rail-footer">
-        <div class="tutor-chip">
-          <span class="avatar" id="tutor-avatar">CR</span>
-          <span class="tutor-meta"><strong id="tutor-name">—</strong><small id="tutor-email">—</small></span>
+        <div class="mast-utils">
+          <div class="tutor-chip">
+            <span class="avatar" id="tutor-avatar">CR</span>
+            <span class="tutor-meta"><strong id="tutor-name">—</strong><small id="tutor-email">—</small></span>
+          </div>
+          <div class="rail-utils">
+            <button class="icon-btn" id="privacy-open" type="button" aria-label="Privacidad y datos" title="Privacidad y datos"><span data-icon="shield"></span></button>
+            <button class="icon-btn" id="theme-toggle" type="button" aria-label="Cambiar tema" title="Cambiar tema"><span data-icon="moon"></span></button>
+            <button class="icon-btn" id="logout" type="button" aria-label="Cerrar sesión" title="Cerrar sesión"><span data-icon="logout"></span></button>
+          </div>
         </div>
-        <div class="rail-utils">
-          <button class="icon-btn" id="privacy-open" type="button" aria-label="Privacidad y datos" title="Privacidad y datos"><span data-icon="shield"></span></button>
-          <button class="icon-btn" id="theme-toggle" type="button" aria-label="Cambiar tema" title="Cambiar tema"><span data-icon="moon"></span></button>
-          <button class="icon-btn" id="logout" type="button" aria-label="Cerrar sesión" title="Cerrar sesión"><span data-icon="logout"></span></button>
-        </div>
-        <p class="demo-tag"><span class="dot"></span> Demo · datos sintéticos</p>
       </div>
-    </aside>
+    </header>
 
     <main class="main">
       <header class="topbar">
@@ -160,6 +156,7 @@
         <p>GuardianIA procesa en el teléfono y envía solo un vector de señales. Sin texto, sin fotos, sin contactos en claro.</p>
         <button class="link-button" type="button" data-action="open-privacy">Privacidad y datos</button>
       </footer>
+      <p class="demo-tag panel-demo" id="demo-tag" hidden><span class="dot"></span> Demo · datos sintéticos</p>
     </main>
 
     <nav class="tabbar" aria-label="Principal móvil">
