@@ -1,4 +1,4 @@
-# Arquitectura de IA y notificaciones — IA Guardian 1.7.3
+# Arquitectura de IA y notificaciones — IA Guardian 1.7.4
 
 Este documento describe el camino completo de una señal: desde la vinculación del
 teléfono del menor hasta la alerta que recibe el tutor. Complementa
@@ -15,9 +15,11 @@ almacenamiento, retención y panel).
    `DerivedFeatureVector`.
 3. **La nube de IA recibe solo el vector:** categoría de uso, flags léxicos
    anonimizados, duración, conteos y hora local. El vector incluye
-   `flags_criticos`, `flags_graves` y `cantidad_flags` para que el modelo
-   distinga una señal aislada de una combinación. No hay ninguna ruta que acepte
-   texto; `AI_SEND_SNIPPET` está cerrado y sin llamadores en 1.7.3.
+   `flags_detalle` (etiqueta, severidad y score por señal), `flags_criticos`,
+   `flags_graves`, `senal_principal`, `categoria_sugerida` y `cantidad_flags`
+   para que el modelo distinga una señal aislada de una combinación. No hay
+   ninguna ruta que acepte texto; `AI_SEND_SNIPPET` está cerrado y sin
+   llamadores en 1.7.4.
 4. **PostgreSQL es la fuente de verdad:** FCM y WebSocket solo transportan. Si
    el push falla, la alerta sigue disponible en el panel y en la auditoría.
 5. **Degradación segura:** si todos los proveedores de IA fallan, una heurística
@@ -29,7 +31,7 @@ almacenamiento, retención y panel).
 |---|---|---|
 | `GuardianNotificationListener` | Android | Lee avisos en memoria y los convierte en categoría + flags locales |
 | `Sanitizer` | Android | Reglas léxicas locales; descarta el texto al terminar |
-| `FeatureComposer` | Android | Agrupa señales en ventanas y produce `CaptureVector` |
+| `FeatureComposer` | Android | Agrupa señales en bloques de 5 min (uso por hora) y produce `CaptureVector` |
 | `HighRiskPolicy` | Android | Decide qué vectores se evalúan uno a uno |
 | `SyncEngine` | Android | Evalúa señales de riesgo y sincroniza el resto en lote |
 | `TutorAlertStream` | Android | WebSocket `/ws/tutor` con ticket efímero |
@@ -39,6 +41,15 @@ almacenamiento, retención y panel).
 | `services/alerts.py` | Backend | Persiste, deduplica y despacha al tutor |
 | `FirebasePushService` | Backend | FCM HTTP v1 con JWT RS256 (sin `firebase-admin`) |
 | `TutorHub` | Backend | Fan-out de alertas a las sesiones abiertas del tutor |
+
+### Ventana de señales
+
+`FeatureComposer` agrupa por `(categoría, bloque de 5 min)`. Una repetición de
+la misma categoría en un bloque posterior crea un `event_id` nuevo y una alerta
+nueva; la captura de uso conserva el bloque horario. Esto reduce la ventana de
+supresión de alertas repetidas de 60 minutos a 5 minutos. La deduplicación por
+`(dispositivo, event_id, categoría)` sigue evitando duplicados dentro del mismo
+bloque.
 
 ## 3. Vinculación tutor ↔ teléfono del menor
 
@@ -277,8 +288,8 @@ aplicar después de la respuesta del modelo. Así una IA prudente en exceso no
 | Estafa que pide dinero, códigos, contraseñas o datos | ALTO |
 | Insulto leve/moderado aislado, apuestas, malestar, enlace sospechoso, estafa genérica, contacto desconocido | MEDIO |
 | Dos o más señales distintas | ALTO |
-| 20+ notificaciones por hora en app social/mensajería | MEDIO |
-| Madrugada (00:00–05:59) con 8+ notificaciones | MEDIO |
+| 20+ notificaciones en la ventana (o 2+ por minuto) en app social/mensajería | MEDIO |
+| Madrugada (00:00–05:59) con 8+ notificaciones en la ventana | MEDIO |
 | Sin señales y uso razonable | BAJO (sin alerta) |
 
 Si el mínimo sube el nivel, el texto se reescribe con las señales detectadas y el
@@ -346,14 +357,14 @@ La clave efectiva es `(dispositivo_id, event_id, categoria)`:
 | Token FCM en logs | **No** | solo huella SHA-256 truncada |
 | Texto o narrativa en el payload FCM | **No** | — |
 
-`hashed_contact_id` sigue **reservado** y va `null` en 1.7.3. La regla
+`hashed_contact_id` sigue **reservado** y va `null` en 1.7.4. La regla
 `contacto_recurrente` no se activa.
 
 ## 9. Configuración relevante
 
 ```env
 AI_ENABLED=true
-AI_SEND_SNIPPET=false          # obligatorio; sin llamadores en 1.7.3
+AI_SEND_SNIPPET=false          # obligatorio; sin llamadores en 1.7.4
 AI_PROVIDER=auto               # auto | groq | gemini | openai | anthropic | heuristic
 AI_PRIMARY_TIMEOUT_MS=2500     # demo medida con Groq
 AI_FALLBACK_TIMEOUT_MS=450
@@ -384,7 +395,7 @@ ANDROID_PACKAGE_NAME=cl.guardiania.agent
 Producción exige además PostgreSQL, TLS, verificación de correo y
 `AI_SEND_SNIPPET=false`; el arranque falla si esas condiciones no se cumplen.
 
-## 10. Límites honestos de 1.7.3
+## 10. Límites honestos de 1.7.4
 
 - No es un diagnóstico clínico ni un sistema certificado. Es una señal para que
   un adulto converse, no una prueba.

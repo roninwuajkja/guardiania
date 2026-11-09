@@ -40,8 +40,8 @@ No hay Redis ni cola externa. El **outbox transaccional** vive en la misma base 
 - Categoría de la app (no el nombre del paquete en el panel, salvo el alias del dispositivo).
 - Conteos y minutos, nunca títulos, remitentes, números ni extractos.
 - Flags léxicos normalizados (`gambling`, `self_harm`, …), no el texto que los activó.
-- Un hash salado y truncado de contacto, solo cuando la app expone un identificador estable. **No implementado en 1.7.3**: el campo va `null` y `contacto_recurrente` está reservada.
-- Ventana temporal de máximo 60 minutos y `event_id` determinista para idempotencia.
+- Un hash salado y truncado de contacto, solo cuando la app expone un identificador estable. **No implementado en 1.7.4**: el campo va `null` y `contacto_recurrente` está reservada.
+- Ventana temporal de las señales: 5 minutos (el servidor acepta hasta 60 minutos) y `event_id` determinista para idempotencia.
 
 ### Qué se queda en el teléfono
 
@@ -87,7 +87,7 @@ El flujo está diseñado para funcionar en una cocina, con el tutor y el menor j
 
 - **Fuente de uso:** `UsageStatsManager` entrega minutos por app. Se agregan por categoría y hora.
 - **Fuente de notificación:** `NotificationListenerService` entrega paquete, título y texto. Se usa `packageName` para categoría y `title + text` solo para reglas léxicas; luego se descarta.
-- **Agrupación:** las señales se agrupan por `(categoría, hora)`, con una ventana máxima de 60 min.
+- **Agrupación:** las señales se agrupan por `(categoría, bloque de 5 min)`. La captura de uso se agrupa por hora. Una repetición en un bloque posterior genera un evento nuevo y una alerta nueva.
 - **Cola:** SQLCipher guarda hasta 4.000 señales; al superar el límite se descartan las más antiguas.
 - **Envío:** WorkManager reintenta con backoff; el botón **Sincronizar ahora** usa el mismo motor.
 - **Token expirado:** el agente recibe 401, llama a `/devices/refresh`, reintenta el lote una vez y, si el refresh falla o recibe 410, borra la vinculación local.
@@ -185,10 +185,10 @@ La app Android comparte la paleta y el lenguaje, pero cambia el registro: es una
 
 ## 10. Pruebas
 
-- **Backend:** **74 pruebas** con SQLite temporal (`test_api.py`, `test_ai_evaluator.py`, `test_gemini_provider.py`, `test_groq_provider.py`, `test_push.py`, `test_production.py`). Cubren vinculación con declaración/asentimiento, QR/código reutilizado, WebSocket por subprotocolo y rechazo del ticket en query, idempotencia, PII extra, revocación, auth por cookies/CSRF, rotación de refresh, verificación de correo, recuperación de contraseña, exportación, borrado, evaluación con IA (failover, caché, circuit breaker, presupuesto), contrato de Groq y Gemini (vector sin texto, JSON schema estricto, reintento de esquema y de `thinkingConfig`, errores 429/503), alertas y push (payload data-only, baja solo con `UNREGISTERED`/`NOT_FOUND`, rechazo de JWTs de sesión como token FCM), y configuración de producción fail-closed.
+- **Backend:** **116 pruebas** con SQLite temporal (`test_api.py`, `test_ai_evaluator.py`, `test_gemini_provider.py`, `test_groq_provider.py`, `test_push.py`, `test_production.py`). Cubren vinculación con declaración/asentimiento, QR/código reutilizado, WebSocket por subprotocolo y rechazo del ticket en query, idempotencia, PII extra, revocación, auth por cookies/CSRF, rotación de refresh, verificación de correo, recuperación de contraseña, exportación, borrado, evaluación con IA (failover, caché, circuit breaker, presupuesto, multi-señal), contrato de Groq y Gemini (vector sin texto, JSON schema estricto, reintento de esquema y de `thinkingConfig`, errores 429/503), alertas y push (payload data-only, baja solo con `UNREGISTERED`/`NOT_FOUND`, rechazo de JWTs de sesión como token FCM), y configuración de producción fail-closed.
 - **IA real:** `GroqProvider` probado contra la API de Groq: 8/8 evaluaciones con `provider=groq`, JSON válido, P50 765–780 ms y P95 1000 ms con `openai/gpt-oss-20b`, más alertas persistidas en emulador (`latency_ms=812`) y teléfono físico (`latency_ms=733`). `GeminiProvider` también se probó (JSON válido, 14,2 s). La degradación a heurística por 429/503 está cubierta por tests.
 - **Push real:** verificado de punta a punta en emulador `Pixel_8_Pro_API_35` con un proyecto Firebase real: registro del token, `messages:send` 200, alerta por WebSocket sin aviso local duplicado, notificación en segundo plano y con la app cerrada, y apertura de **Alertas** al tocar el aviso.
-- **Android:** 15 pruebas unitarias sobre lógica pura: `SanitizerTest` (7), `FeatureComposerTest` (5) y `HighRiskPolicyTest` (3), incluida la determinación de `event_id`, el agrupamiento por hora/categoría, el límite de 60 min, la exclusión de señales viejas y la priorización de señales MEDIA/ALTA.
+- **Android:** 71 pruebas unitarias sobre lógica pura: `SanitizerTest` (56), `FeatureComposerTest` (6), `HighRiskPolicyTest` (6) y `ApiErrorsTest` (3), incluida la determinación de `event_id`, el agrupamiento por bloque de 5 min/categoría, la separación de repeticiones en bloques posteriores, la exclusión de señales viejas y la priorización de señales MEDIA/ALTA.
 - **Humano/en navegador:** recorrido Playwright en Chrome headless 1440×1000: login demo, cookies `httpOnly`, consentimientos, exportación, logout, pairing bloqueado sin declaración, refresh concurrente con una sola rotación, `/recuperar` y token inválido de verificación sin fuga en la URL. Recorrido en emulador Pixel 8 Pro API 35: rol tutor, cambio a modo menor, pairing bloqueado sin asentimiento, vinculación exitosa y cambio de rol de vuelta; panel tutor completo: tarjetas de Seguridad/Mis datos/Historial de consentimientos, diálogo de cambio de contraseña con validaciones locales y error 400 del servidor («La contraseña actual no es correcta»), exportación que abre la hoja de compartir con el JSON (`FileProvider`), «cerrar sesión en todos los dispositivos» con confirmación y retorno al login, y reentrada con la clave demo intacta.
 
 ## 11. Procedencia de las capturas

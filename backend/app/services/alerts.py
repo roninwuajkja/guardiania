@@ -86,6 +86,14 @@ def alert_code(vector: DerivedFeatureVector, assessment: Assessment) -> str:
     return f"ai_{slug}"[:40]
 
 
+_AI_CATEGORY_LABELS = {
+    "Ciberbullying": "Ciberbullying",
+    "Conducta_Riesgo": "Conducta de riesgo",
+    "Contenido_Inapropiado": "Contenido inapropiado",
+    "Sin_Riesgo": "Sin riesgo",
+}
+
+
 async def _exists(db: AsyncSession, device_id: uuid.UUID, event_id: uuid.UUID, code: str) -> bool:
     found = await db.scalar(
         select(RiskAlert.id).where(
@@ -112,6 +120,15 @@ async def create_ai_alert(
         return None
 
     severity = severity_for(assessment, vector)
+    local_rules = [
+        {
+            "code": flag,
+            "label": FLAG_RULES[flag][0],
+            "source": "local",
+        }
+        for flag in vector.flags
+        if flag in FLAG_RULES
+    ]
     alert = RiskAlert(
         vinculacion_id=ctx.binding.id,
         dispositivo_id=ctx.device.id,
@@ -122,13 +139,14 @@ async def create_ai_alert(
         reglas=[
             {
                 "code": code,
-                "label": f"IA · {assessment.categoria}",
+                "label": f"IA · {_AI_CATEGORY_LABELS.get(assessment.categoria, assessment.categoria.replace('_', ' '))}",
                 "source": "ai",
                 "provider": assessment.provider,
                 "nivel_riesgo": assessment.nivel_riesgo,
                 "categoria_ia": assessment.categoria,
                 "consejo_educativo": assessment.consejo_educativo,
-            }
+            },
+            *local_rules,
         ],
         resumen=assessment.descripcion_narrativa[:280],
     )

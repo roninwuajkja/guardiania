@@ -3,7 +3,7 @@
 Regla Cero: este módulo solo recibe ``DerivedFeatureVector``. No existe ningún
 camino de código que envíe texto, nombres, teléfonos o contenido de
 notificaciones a un proveedor externo. ``AI_SEND_SNIPPET`` es una compuerta
-cerrada y sin llamadores en 1.7.3.
+cerrada y sin llamadores en 1.7.4.
 
 Orden de ejecución:
     1. caché en memoria por hash del vector (5 min)
@@ -80,19 +80,6 @@ _FLAG_PRIORITY = (
     "unknown_contact",
 )
 
-_CATEGORY_BY_FLAG = {
-    "grooming": "Contenido_Inapropiado",
-    "sextortion": "Contenido_Inapropiado",
-    "sexual_content": "Contenido_Inapropiado",
-    "sexual_harassment": "Contenido_Inapropiado",
-    "bullying": "Ciberbullying",
-    "hate_speech": "Ciberbullying",
-    "insult_severe": "Ciberbullying",
-    "insult_moderate": "Ciberbullying",
-    "insult_mild": "Ciberbullying",
-    "scam_link": "Conducta_Riesgo",
-}
-
 _FLAG_LABELS = {
     "self_harm": "Posible autolesión",
     "grooming": "Posible grooming",
@@ -131,6 +118,55 @@ _FLAG_LABELS = {
     "scam": "Posible estafa o phishing",
     "unknown_contact": "Contacto desconocido",
 }
+
+_SEXUAL_CATEGORY_FLAGS = {
+    "grooming",
+    "sextortion",
+    "sexual_content",
+    "sexual_harassment",
+    "trafficking",
+}
+
+_BULLYING_CATEGORY_FLAGS = {
+    "bullying",
+    "hate_speech",
+    "insult_severe",
+    "insult_moderate",
+    "insult_mild",
+}
+
+
+def _ordered_flags(flags: list[str]) -> list[str]:
+    """Deduplica y ordena por la misma prioridad que usa la heurística."""
+
+    seen: set[str] = set()
+    ordered: list[str] = []
+    for flag in _FLAG_PRIORITY:
+        if flag in flags and flag not in seen:
+            ordered.append(flag)
+            seen.add(flag)
+    for flag in flags:
+        if flag not in seen:
+            ordered.append(flag)
+            seen.add(flag)
+    return ordered
+
+
+def _primary_flag(flags: list[str]) -> str | None:
+    ordered = _ordered_flags(flags)
+    return ordered[0] if ordered else None
+
+
+def _category_for_flag(flag: str | None) -> str:
+    if flag in _SEXUAL_CATEGORY_FLAGS:
+        return "Contenido_Inapropiado"
+    if flag in _BULLYING_CATEGORY_FLAGS:
+        return "Ciberbullying"
+    return "Conducta_Riesgo"
+
+
+def _signal_labels(flags: list[str]) -> list[str]:
+    return [_FLAG_LABELS.get(flag, "Señal local") for flag in _ordered_flags(flags)]
 
 # Señales que por sí solas justifican nivel ALTO.
 _SERIOUS_FLAGS = {
@@ -222,8 +258,8 @@ Cómo decidir (en este orden):
 1. Si hay CUALQUIER señal, el nivel NUNCA es BAJO: como mínimo es MEDIO.
 2. Si hay una señal crítica o grave, o dos o más señales distintas, el nivel es ALTO.
 3. Si hay una sola señal media, el nivel es MEDIO.
-4. Muchas notificaciones (20 o más por hora) en categoría social o mensajería:
-   como mínimo MEDIO; si además hay una señal, ALTO.
+4. Mucha actividad en la ventana (20+ notificaciones o 2+ por minuto) en
+   categoría social o mensajería: como mínimo MEDIO; si además hay una señal, ALTO.
 5. Horario nocturno (00:00–05:59) con señales o notificaciones abundantes:
    como mínimo MEDIO; si hay una señal grave, ALTO.
 6. Contacto desconocido con otras señales o muchas notificaciones: como mínimo
@@ -232,6 +268,16 @@ Cómo decidir (en este orden):
    Si `uso_sin_notificaciones` es true, considera que las notificaciones pueden
    estar silenciadas: no es grave por sí sola, pero súbela a MEDIO si hay otra
    señal o es de madrugada.
+
+Si `flags_detalle` trae VARIAS señales, la narrativa debe nombrar todas las
+señales críticas y graves (hasta 5), no solo la primera. Resume las medias.
+No omitas una señal crítica por centrarte en otra. La categoría debe
+corresponder a la señal principal más grave: Contenido_Inapropiado si hay
+grooming, sextorsión, contenido sexual, acoso sexual o trata; Ciberbullying si
+la principal es acoso, insulto o discurso de odio; Conducta_Riesgo para el resto.
+Usa las etiquetas en español de `flags_detalle`; no menciones códigos internos
+como `scam_link`, `self_harm` o `sexual_harassment`. No inventes señales que no
+estén en el vector.
 
 Categoría: Ciberbullying para acoso, insultos y discurso de odio;
 Contenido_Inapropiado para grooming, sextorsión, contenido sexual, acoso sexual
@@ -350,7 +396,30 @@ def _clean_text(value: Any, fallback: str) -> str:
     text = re.sub(r"\s+", " ", text)
     if not text:
         return fallback
+    text = _humanize_codes(text)
     return text[:280]
+
+
+_HUMANIZE_SKIP = {"malestar", "grooming"}
+_HUMANIZE_PAIRS = sorted(
+    [
+        (variant, label)
+        for code, label in _FLAG_LABELS.items()
+        if code not in _HUMANIZE_SKIP
+        for variant in {code, code.replace("_", " ")}
+    ],
+    key=lambda item: len(item[0]),
+    reverse=True,
+)
+
+
+def _humanize_codes(text: str) -> str:
+    """Evita que el tutor lea códigos internos en la narrativa de la IA."""
+
+    for code, label in _HUMANIZE_PAIRS:
+        pattern = rf"(?<![a-z0-9_]){re.escape(code)}(?![a-z0-9_])"
+        text = re.sub(pattern, label, text, flags=re.IGNORECASE)
+    return text
 
 
 def _parse_payload(payload: Any, provider: str) -> Assessment:
@@ -396,7 +465,7 @@ def _high_volume(vector: DerivedFeatureVector) -> bool:
 def _advice_for(flags: list[str], level: str) -> str:
     from .risk import FLAG_RULES
 
-    for flag in flags:
+    for flag in _ordered_flags(flags):
         rule = FLAG_RULES.get(flag)
         if rule is not None:
             return rule[3]
@@ -408,13 +477,15 @@ def apply_policy_floor(assessment: Assessment, vector: DerivedFeatureVector) -> 
 
     El modelo puede devolver BAJO ante una señal real (por prudencia excesiva o
     porque el proveedor degradó). Esta regla determinista garantiza el nivel
-    mínimo que corresponde al vector, y reescribe el texto si contradecía la
-    decisión.
+    mínimo que corresponde al vector, corrige la categoría para que coincida con
+    la señal principal y reescribe el texto si contradecía la decisión.
     """
 
     order = {"BAJO": 0, "MEDIO": 1, "ALTO": 2}
     flags = list(dict.fromkeys(vector.flags))
-    serious = [flag for flag in flags if flag in _SERIOUS_FLAGS]
+    ordered = _ordered_flags(flags)
+    primary = ordered[0] if ordered else None
+    serious = [flag for flag in ordered if flag in _SERIOUS_FLAGS]
 
     if serious or len(flags) >= 2:
         minimum = "ALTO"
@@ -429,24 +500,37 @@ def apply_policy_floor(assessment: Assessment, vector: DerivedFeatureVector) -> 
     final = level if order[level] >= order[minimum] else minimum
 
     category = assessment.categoria
-    if final != "BAJO" and category == "Sin_Riesgo":
-        category = _CATEGORY_BY_FLAG.get(serious[0] if serious else (flags[0] if flags else ""), "Conducta_Riesgo")
+    if final != "BAJO":
+        if primary:
+            category = _category_for_flag(primary)
+        elif category == "Sin_Riesgo":
+            category = "Conducta_Riesgo"
 
-    if final == level and category == assessment.categoria:
-        return assessment
+    category_changed = category != assessment.categoria
 
-    if final != level:
-        labels = [_FLAG_LABELS.get(flag, "Señal local") for flag in flags[:3]]
-        narrative = (
-            f"{', '.join(labels)}. Nivel ajustado según las señales derivadas de la ventana."
-            if labels
-            else _DEFAULT_NARRATIVE[final]
-        )
-        advice = _advice_for(flags, final)
-    else:
+    if final == level and not category_changed:
         narrative = assessment.descripcion_narrativa
         advice = assessment.consejo_educativo
+        if primary:
+            primary_label = _FLAG_LABELS.get(primary, "")
+            if primary_label and primary_label.lower() not in narrative.lower():
+                narrative = f"{primary_label}. {narrative}"
+        return Assessment(
+            nivel_riesgo=final,
+            categoria=category,
+            descripcion_narrativa=narrative[:280],
+            consejo_educativo=advice[:280],
+            provider=assessment.provider,
+        )
 
+    labels = _signal_labels(flags)[:5]
+    narrative = (
+        f"Se detectaron señales de {', '.join(labels)}. "
+        "Nivel ajustado según las señales derivadas de la ventana."
+        if labels
+        else _DEFAULT_NARRATIVE[final]
+    )
+    advice = _advice_for(ordered, final)
     return Assessment(
         nivel_riesgo=final,
         categoria=category,
@@ -479,6 +563,16 @@ def _extract_json(content: Any) -> Any:
         raise AIProviderError("JSON malformado") from exc
 
 
+def _flag_detail(flag: str) -> dict[str, Any]:
+    rule = FLAG_RULES.get(flag)
+    return {
+        "codigo": flag,
+        "etiqueta": _FLAG_LABELS.get(flag, rule[0] if rule else "Señal local"),
+        "severidad": rule[1].value if rule else "MEDIA",
+        "score": rule[2] if rule else 50,
+    }
+
+
 def vector_payload(vector: DerivedFeatureVector) -> dict[str, Any]:
     """Vista mínima y sin texto del vector, apta para un proveedor externo."""
 
@@ -487,13 +581,21 @@ def vector_payload(vector: DerivedFeatureVector) -> dict[str, Any]:
         1,
         int((vector.time_window.end - vector.time_window.start).total_seconds() // 60),
     )
-    flags = list(vector.flags)
+    flags = _ordered_flags(list(vector.flags))
+    primary = flags[0] if flags else None
     return {
         "categoria_uso": vector.category,
         "flags": flags,
         "flags_descripcion": [_FLAG_LABELS.get(flag, "Señal local") for flag in flags],
-        "flags_criticos": [flag for flag in flags if flag in _CRITICAL_FLAGS],
-        "flags_graves": [flag for flag in flags if flag in _SERIOUS_FLAGS],
+        "flags_detalle": [_flag_detail(flag) for flag in flags],
+        "flags_criticos": [
+            _FLAG_LABELS.get(flag, flag) for flag in flags if flag in _CRITICAL_FLAGS
+        ],
+        "flags_graves": [
+            _FLAG_LABELS.get(flag, flag) for flag in flags if flag in _SERIOUS_FLAGS
+        ],
+        "senal_principal": _FLAG_LABELS.get(primary, "Señal local") if primary else None,
+        "categoria_sugerida": _category_for_flag(primary) if primary else None,
         "cantidad_flags": len(flags),
         "lexical_flag_count": vector.lexical_flag_count,
         "contacto_desconocido_presente": bool(vector.hashed_contact_id),
@@ -816,12 +918,14 @@ class HeuristicProvider:
     name = "heuristic"
 
     async def classify(self, vector: DerivedFeatureVector, *, timeout_seconds: float = 0) -> Assessment:
-        flags = set(vector.flags)
-        selected = next((flag for flag in _FLAG_PRIORITY if flag in flags), None)
+        flags = list(dict.fromkeys(vector.flags))
+        ordered = _ordered_flags(flags)
+        selected = ordered[0] if ordered else None
+        flag_set = set(flags)
         level = "BAJO"
-        if flags & _HIGH_FLAGS:
+        if flag_set & _HIGH_FLAGS or len(flags) >= 2:
             level = "ALTO"
-        elif flags & _MEDIUM_FLAGS or vector.usage_duration_minutes >= 180:
+        elif flag_set & _MEDIUM_FLAGS or vector.usage_duration_minutes >= 180:
             level = "MEDIO"
 
         local_start = vector.time_window.start + timedelta(minutes=vector.time_window.tz_offset_minutes)
@@ -836,10 +940,18 @@ class HeuristicProvider:
             narrative = _DEFAULT_NARRATIVE["BAJO"]
             advice = _DEFAULT_ADVICE["BAJO"]
         else:
-            category = _CATEGORY_BY_FLAG.get(selected or "", "Conducta_Riesgo")
-            label = FLAG_RULES[selected][0] if selected in FLAG_RULES else "Señal de riesgo"
-            narrative = f"{label}. Evaluación local por reglas, sin acceso al contenido."
-            advice = FLAG_RULES[selected][3] if selected in FLAG_RULES else _DEFAULT_ADVICE[level]
+            category = _category_for_flag(selected)
+            labels = _signal_labels(flags)[:5]
+            if len(labels) == 1:
+                narrative = f"{labels[0]}. Evaluación local por reglas, sin acceso al contenido."
+            elif labels:
+                narrative = (
+                    f"Se detectaron señales de {', '.join(labels)}. "
+                    "Evaluación local por reglas, sin acceso al contenido."
+                )
+            else:
+                narrative = _DEFAULT_NARRATIVE[level]
+            advice = _advice_for(ordered, level)
 
         return Assessment(
             nivel_riesgo=level,

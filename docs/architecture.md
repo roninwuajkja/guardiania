@@ -2,7 +2,7 @@
 
 Este documento describe el flujo completo de IA Guardian y fija los contratos entre el agente Android, la app tutor, la API y la consola web. La fuente de verdad ejecutable es `backend/app/schemas.py`; OpenAPI queda disponible en `/docs` solo cuando `DOCS_ENABLED=true`.
 
-> **Versión 1.7.3.** La base (identidad, vinculación, captura, retención y panel) se mantiene igual que en 1.1.0. El camino de evaluación con IA, el stream del tutor y el push FCM se detallan en [`arquitectura-ia.md`](arquitectura-ia.md).
+> **Versión 1.7.4.** La base (identidad, vinculación, captura, retención y panel) se mantiene igual que en 1.1.0. El camino de evaluación con IA, el stream del tutor y el push FCM se detallan en [`arquitectura-ia.md`](arquitectura-ia.md).
 
 ## 1. Vista de componentes
 
@@ -204,7 +204,7 @@ sequenceDiagram
   S->>S: normaliza, aplica reglas, descarta texto
   S->>Q: señal {category, flags, timestamp}
   W->>Q: lee señales pendientes (máx. 7 días)
-  W->>W: agrupa por categoría + hora
+  W->>W: agrupa por categoría + bloque de 5 min
   W->>API: POST /captures/sync (Bearer, Idempotency-Key)
   alt access token expirado
     API-->>W: 401
@@ -224,12 +224,12 @@ sequenceDiagram
 
 ### Idempotencia
 
-- `event_id` es un UUIDv5 determinista sobre `device_id + categoría + inicio de ventana + fin de ventana`.
+- `event_id` es un UUID determinista sobre `device_id + categoría + bloque de 5 min`.
 - `capturas_features` tiene PK compuesta `(dispositivo_id, event_id)`; un reintento devuelve `duplicates` y no duplica alertas.
 - `alertas_riesgo` tiene unicidad `(dispositivo_id, event_id, categoría)`.
 - El agente elimina de la cola solo eventos aceptados o duplicados; los rechazados se descartan y se reportan.
 
-### 4.1 Señales prioritarias (1.7.3)
+### 4.1 Señales prioritarias (1.7.4)
 
 `HighRiskPolicy` marca los vectores con flags MEDIA/ALTA. `SyncEngine` los envía uno a uno a `POST /captures/evaluate` (máximo 5 por sincronización) antes del lote; el resto sigue por `/captures/sync`. Si la evaluación individual falla por red o el backend responde error, el vector vuelve al lote y se aplican solo las reglas deterministas. La secuencia completa, el presupuesto de latencia y la degradación están en [`arquitectura-ia.md`](arquitectura-ia.md).
 
@@ -332,7 +332,7 @@ Cabeceras: `Authorization: Bearer <access_token>` e `Idempotency-Key: <batch_id>
       "event_count": 3,
       "integrity": {
         "attestation_ok": true,
-        "app_version": "1.7.3",
+        "app_version": "1.7.4",
         "clock_skew_seconds": 0
       }
     }
@@ -351,7 +351,7 @@ Cabeceras: `Authorization: Bearer <access_token>` e `Idempotency-Key: <batch_id>
 }
 ```
 
-Límites: 200 capturas por lote, ventana ≤ 60 min, `usage_duration_minutes` ≤ 1440, 16 flags como máximo y `lexical_flag_count >= len(flags)`. Una ventana inválida o un `device_id` distinto al del token se rechazan.
+Límites: 200 capturas por lote, ventana de señales de 5 min (el servidor acepta hasta 60 min), `usage_duration_minutes` ≤ 1440, 16 flags como máximo y `lexical_flag_count >= len(flags)`. Una ventana inválida o un `device_id` distinto al del token se rechazan.
 
 ### `POST /api/v1/captures/evaluate`
 
@@ -374,7 +374,7 @@ Cabecera: `Authorization: Bearer <access_token>` de dispositivo. El cuerpo es **
   "usage_duration_minutes": 0,
   "notification_count": 1,
   "event_count": 1,
-  "integrity": { "attestation_ok": true, "app_version": "1.7.3", "clock_skew_seconds": 0 }
+  "integrity": { "attestation_ok": true, "app_version": "1.7.4", "clock_skew_seconds": 0 }
 }
 ```
 
@@ -485,7 +485,7 @@ La exportación no incluye tokens, hashes de refresh ni contenido. La eliminaci�
 | `outbox_eventos` | Eventos post-commit | despacho al hub/WS |
 | `auditoria` | Acciones de seguridad | hashes de IP/User-Agent, sin contenido |
 
-No existe una tabla de mensajes, títulos, contactos ni contenido. El campo `hashed_contact_id` está previsto en el contrato, pero el agente 1.7.3 no lo calcula todavía: se envía `null` y la regla `contacto_recurrente` queda reservada, sin activarse.
+No existe una tabla de mensajes, títulos, contactos ni contenido. El campo `hashed_contact_id` está previsto en el contrato, pero el agente 1.7.4 no lo calcula todavía: se envía `null` y la regla `contacto_recurrente` queda reservada, sin activarse.
 
 ## 7. Reglas de riesgo
 
@@ -531,9 +531,9 @@ El motor es determinista y explicable. Cada alerta guarda regla, severidad, evid
 | `unknown_contact` | contacto desconocido |
 | `uso_nocturno` | uso en franja nocturna |
 | `uso_prolongado` | duración anómala |
-| `contacto_recurrente` | **reservada**; el agente 1.7.3 aún no envía hash de contacto |
+| `contacto_recurrente` | **reservada**; el agente 1.7.4 aún no envía hash de contacto |
 
-En 1.7.3 convive con la evaluación de IA. Las reglas deterministas siguen siendo la base y el respaldo; la IA solo prioriza y redacta una explicación. Su salida se valida contra tres categorías (`Ciberbullying`, `Conducta_Riesgo`, `Contenido_Inapropiado`) más `Sin_Riesgo`, y cualquier respuesta fuera de ese contrato cae a la heurística. Ver [`arquitectura-ia.md`](arquitectura-ia.md).
+En 1.7.4 convive con la evaluación de IA. Las reglas deterministas siguen siendo la base y el respaldo; la IA solo prioriza y redacta una explicación. Su salida se valida contra tres categorías (`Ciberbullying`, `Conducta_Riesgo`, `Contenido_Inapropiado`) más `Sin_Riesgo`, y cualquier respuesta fuera de ese contrato cae a la heurística. Ver [`arquitectura-ia.md`](arquitectura-ia.md).
 
 Son señales para conversar, no pruebas ni diagnósticos. Los falsos positivos son posibles.
 

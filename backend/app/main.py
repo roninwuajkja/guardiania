@@ -185,7 +185,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 app = FastAPI(
     title="IA Guardian API",
     description="Control parental con privacidad por diseño: vinculación multidispositivo y evaluación de riesgo con IA.",
-    version="1.7.3",
+    version="1.7.4",
     lifespan=lifespan,
     docs_url=None if settings.is_production or not settings.docs_enabled else "/docs",
     redoc_url=None if settings.is_production or not settings.docs_enabled else "/redoc",

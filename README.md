@@ -2,15 +2,15 @@
 
 ![IA Guardian](docs/screenshots/banner.png)
 
-> **APK Android 1.7.3:** [descargar desde GitHub Releases](https://github.com/roninwuajkja/guardiania/releases/tag/v1.7.3) · [changelog](CHANGELOG.md)
+> **APK Android 1.7.4:** [descargar desde GitHub Releases](https://github.com/roninwuajkja/guardiania/releases/tag/v1.7.4) · [changelog](CHANGELOG.md)
 
 Control parental para Android con **privacidad por diseño**: la conversación nunca sale del teléfono. El agente analiza localmente, descarta el texto y envía solo un vector de señales derivadas. El tutor recibe alertas explicables, no contenido.
 
-> **Proyecto de Título — versión 1.7.3 (defensa).** Los datos de la demo son sintéticos. El motor de riesgo combina reglas explicables y una evaluación de IA que **solo recibe el vector derivado** (nunca texto); si no hay proveedor configurado, opera en modo heurístico. No es un diagnóstico ni reemplaza una conversación familiar. Antes de operar con datos reales de menores se requiere revisión legal chilena y auditoría de seguridad independiente; ver [`docs/compliance/compuerta-lanzamiento.md`](docs/compliance/compuerta-lanzamiento.md).
+> **Proyecto de Título — versión 1.7.4 (defensa).** Los datos de la demo son sintéticos. El motor de riesgo combina reglas explicables y una evaluación de IA que **solo recibe el vector derivado** (nunca texto); si no hay proveedor configurado, opera en modo heurístico. No es un diagnóstico ni reemplaza una conversación familiar. Antes de operar con datos reales de menores se requiere revisión legal chilena y auditoría de seguridad independiente; ver [`docs/compliance/compuerta-lanzamiento.md`](docs/compliance/compuerta-lanzamiento.md).
 
 ## Versiones
 
-La versión actual es **1.7.3**. Las notas de cada versión y las APK anteriores están en [GitHub Releases](https://github.com/roninwuajkja/guardiania/releases); el historial completo está en [`CHANGELOG.md`](CHANGELOG.md).
+La versión actual es **1.7.4**. Las notas de cada versión y las APK anteriores están en [GitHub Releases](https://github.com/roninwuajkja/guardiania/releases); el historial completo está en [`CHANGELOG.md`](CHANGELOG.md).
 
 ## Qué incluye
 
@@ -207,7 +207,7 @@ Estados de vinculación: `PENDIENTE`, `ACTIVO`, `REVOCADO`, `EXPIRADO`. Un códi
 
 - **Nunca** se persiste ni transmite el texto de una notificación. El `Sanitizer` lo usa en memoria y devuelve solo categoría y flags.
 - El servidor rechaza campos extra en los vectores (`extra="forbid"`), como defensa contra PII accidental.
-- El vector contiene categoría, minutos, conteos, flags, ventana temporal, `event_id` determinista, hora local y contexto de notificaciones. `hashed_contact_id` existe en el contrato pero va `null`.
+- El vector contiene categoría, minutos, conteos, flags, ventana temporal, `event_id` determinista, hora local y contexto de notificaciones. La IA recibe además `flags_detalle` con etiqueta, severidad y score de cada señal. `hashed_contact_id` existe en el contrato pero va `null`.
 - **IA:** el proveedor externo recibe solo ese vector. No hay ruta que acepte texto y `AI_SEND_SNIPPET` está cerrado sin llamadores. La respuesta se valida como JSON estricto; si falla, se usa la heurística local y una red de seguridad determinista aplica el nivel mínimo por contexto.
 - **Push:** FCM recibe `alert_id`, severidad, categoría legible, alias y el **resumen derivado**. No recibe texto, contactos ni contenido. El token FCM es del tutor, nunca del menor.
 - **Desvinculación:** PIN de 6 dígitos con HMAC, 5 intentos y bloqueo de 15 min. No impide desinstalar la app, borrar datos desde Ajustes ni restablecer el teléfono: eso requiere *device owner* (MDM); el panel lo detecta y avisa.
@@ -222,17 +222,17 @@ Estados de vinculación: `PENDIENTE`, `ACTIVO`, `REVOCADO`, `EXPIRADO`. Un códi
 ## Pruebas
 
 ```powershell
-# Backend: 109 pruebas
+# Backend: 116 pruebas
 cd backend
 .\.venv\Scripts\python.exe -m pytest -q
 
-# Android: 70 pruebas unitarias + 1 instrumentada (QR con ML Kit)
+# Android: 71 pruebas unitarias + 1 instrumentada (QR con ML Kit)
 cd android
 .\gradlew.bat :app:testDebugUnitTest
 .\gradlew.bat :app:connectedDebugAndroidTest
 ```
 
-Las pruebas backend cubren auth, pairing (incluida la revinculación), código de desvinculación y bloqueo, ocultar equipos, sin señal y reconexión, estado de permisos, IA con failover/caché/breaker, contratos Groq/Gemini, deduplicación, push (payload con notificación, contexto y token inválido), cuentas y configuración fail-closed. Android cubre sanitización, composición de vectores, política de evaluación prioritaria, parsing de errores de desvinculación y decodificación de QR con ML Kit en dispositivo.
+Las pruebas backend cubren auth, pairing (incluida la revinculación), código de desvinculación y bloqueo, ocultar equipos, sin señal y reconexión, estado de permisos, IA con failover/caché/breaker, contratos Groq/Gemini, deduplicación, push (payload con notificación, contexto y token inválido), cuentas y configuración fail-closed. Android cubre sanitización, composición de vectores en bloques de 5 minutos, política de evaluación prioritaria, parsing de errores de desvinculación y decodificación de QR con ML Kit en dispositivo.
 
 ## Demo en la nube (gratuita)
 
