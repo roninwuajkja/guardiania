@@ -61,7 +61,7 @@ class SyncEngine(
 
         val pending = store.pendingCaptures(MAX_CAPTURES_PER_BATCH)
         if (pending.isEmpty()) {
-            store.setLastSyncAt(now)
+            markSynced(now)
             return SyncOutcome(0, 0, 0, store.pendingCount())
         }
 
@@ -75,7 +75,7 @@ class SyncEngine(
         store.markCapturesSynced(undecodable)
 
         if (vectors.isEmpty()) {
-            store.setLastSyncAt(now)
+            markSynced(now)
             return SyncOutcome(0, 0, undecodable.size, store.pendingCount())
         }
 
@@ -119,7 +119,7 @@ class SyncEngine(
             } catch (error: HttpException) {
                 if (isPermanentClientError(error.code())) {
                     store.markCapturesSynced(pending.map { it.eventId })
-                    store.setLastSyncAt(System.currentTimeMillis())
+                    markSynced(System.currentTimeMillis())
                     return SyncOutcome(
                         accepted = evaluatedIds.size,
                         duplicates = 0,
@@ -135,7 +135,7 @@ class SyncEngine(
         }
 
         store.markCapturesSynced(pending.map { it.eventId })
-        store.setLastSyncAt(System.currentTimeMillis())
+        markSynced(System.currentTimeMillis())
         return SyncOutcome(
             accepted = (response?.accepted ?: 0) + evaluatedIds.size,
             duplicates = response?.duplicates ?: 0,
@@ -172,6 +172,11 @@ class SyncEngine(
             store.enqueueCapture(capture.eventId, capture.payload, now)
         }
         store.setUsageHour(bucket.toString())
+    }
+
+    private fun markSynced(at: Long) {
+        store.setLastSyncAt(at)
+        SyncEvents.notify(at)
     }
 
     private fun offsetMinutes(at: Long): Int = TimeZone.getDefault().getOffset(at) / 60_000

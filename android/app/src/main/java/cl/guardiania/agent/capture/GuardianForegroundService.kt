@@ -106,7 +106,7 @@ class GuardianForegroundService : Service() {
         private const val REBIND_FIRST_MS = 20_000L
         private const val REBIND_INTERVAL_MS = 5 * 60_000L
         private const val SCAN_FIRST_MS = 30_000L
-        private const val SCAN_INTERVAL_MS = 3 * 60_000L
+        private const val SCAN_INTERVAL_MS = 60_000L
 
         fun start(context: Context) {
             val intent = Intent(context, GuardianForegroundService::class.java)

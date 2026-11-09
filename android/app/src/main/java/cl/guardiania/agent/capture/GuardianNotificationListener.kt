@@ -22,6 +22,7 @@ class GuardianNotificationListener : NotificationListenerService() {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val seen = ConcurrentHashMap.newKeySet<String>()
+    private val inFlight = ConcurrentHashMap.newKeySet<String>()
 
     override fun onListenerConnected() {
         super.onListenerConnected()
@@ -79,39 +80,66 @@ class GuardianNotificationListener : NotificationListenerService() {
         if (posted.notification.flags and Notification.FLAG_GROUP_SUMMARY != 0) return
 
         val seenKey = "${posted.key}:${posted.postTime}"
-        if (!seen.add(seenKey)) return
-        if (seen.size > MAX_SEEN) seen.clear()
+        if (seen.contains(seenKey) || !inFlight.add(seenKey)) return
 
-        val store = (application as GuardianApp).container.store
-        // Un escaneo o una reconexión pueden reenviar avisos ya procesados:
-        // se descartan los anteriores al piso capturado. En el escaneo el piso
-        // se toma una vez por lote; en tiempo real, el valor vigente.
-        val floor = if (fromScan) {
-            scanFloor
-        } else {
-            store.meta("last_notification_at")?.toLongOrNull() ?: 0L
-        }
-        if (posted.postTime > 0 && posted.postTime <= floor) return
-
-        val extras = posted.notification.extras
-        val title = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString()
-        val text = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString()
-            ?: extras.getCharSequence(Notification.EXTRA_BIG_TEXT)?.toString()
-        if (title.isNullOrBlank() && text.isNullOrBlank()) return
-
-        val sanitized = Sanitizer.sanitize(posted.packageName, title, text)
-        if (sanitized.category == "otras" && sanitized.flags.isEmpty()) return
-
-        // Se conserva la hora real del aviso: sirve de marca para no repetirlo
-        // tras un reinicio y evita que un escaneo adelante a los demás.
-        val postedAt = if (posted.postTime > 0) posted.postTime else System.currentTimeMillis()
-        scope.launch {
-            store.addSignal(sanitized.category, sanitized.flags, postedAt)
-            store.advanceLastNotification(postedAt)
-            if (sanitized.flags.isNotEmpty() && store.pairing() != null) {
-                SyncScheduler.requestPrioritySync(applicationContext)
+        var handedOff = false
+        try {
+            val store = (application as GuardianApp).container.store
+            // Un escaneo o una reconexión pueden reenviar avisos ya procesados:
+            // se descartan los anteriores al piso capturado. En el escaneo el piso
+            // se toma una vez por lote; en tiempo real, el valor vigente.
+            val floor = if (fromScan) {
+                scanFloor
+            } else {
+                store.meta("last_notification_at")?.toLongOrNull() ?: 0L
             }
+            if (posted.postTime > 0 && posted.postTime <= floor) {
+                markSeen(seenKey)
+                return
+            }
+
+            val extras = posted.notification.extras
+            val title = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString()
+            val text = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString()
+                ?: extras.getCharSequence(Notification.EXTRA_BIG_TEXT)?.toString()
+            if (title.isNullOrBlank() && text.isNullOrBlank()) {
+                markSeen(seenKey)
+                return
+            }
+
+            val sanitized = Sanitizer.sanitize(posted.packageName, title, text)
+            if (sanitized.category == "otras" && sanitized.flags.isEmpty()) {
+                markSeen(seenKey)
+                return
+            }
+
+            // Se conserva la hora real del aviso: sirve de marca para no repetirlo
+            // tras un reinicio y evita que un escaneo adelante a los demás.
+            val postedAt = if (posted.postTime > 0) posted.postTime else System.currentTimeMillis()
+            handedOff = true
+            scope.launch {
+                try {
+                    // Señal y marca se guardan juntas: si falla la escritura, el
+                    // aviso queda fuera de "seen" y un escaneo posterior lo reintenta.
+                    store.recordSignal(sanitized.category, sanitized.flags, postedAt)
+                    markSeen(seenKey)
+                    if (sanitized.flags.isNotEmpty() && store.pairing() != null) {
+                        SyncScheduler.requestPrioritySync(applicationContext)
+                    }
+                } catch (_: Throwable) {
+                    // La señal queda fuera de "seen" para que el próximo escaneo la reintente.
+                } finally {
+                    inFlight.remove(seenKey)
+                }
+            }
+        } finally {
+            if (!handedOff) inFlight.remove(seenKey)
         }
+    }
+
+    private fun markSeen(key: String) {
+        if (seen.size >= MAX_SEEN) seen.clear()
+        seen.add(key)
     }
 
     companion object {

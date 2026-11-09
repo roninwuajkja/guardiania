@@ -137,7 +137,7 @@ fun StatusScreen(
                 Spacer(Modifier.height(4.dp))
                 Text(
                     text = state.lastSyncAt
-                        ?.let { "ÚLTIMA SEÑAL ${relativeTime(it).uppercase()}" }
+                        ?.let { "ÚLTIMA SINCRONIZACIÓN ${relativeTime(it).uppercase()}" }
                         ?: "AÚN SIN ENVÍOS AL PANEL",
                     color = Sage300.copy(alpha = 0.55f),
                     fontFamily = Mono,
