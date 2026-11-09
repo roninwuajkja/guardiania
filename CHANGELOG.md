@@ -13,6 +13,34 @@ Todas las versiones relevantes de IA Guardian. El detalle técnico vive en
 - Regla permanente en `AGENTS.md` y script `scripts/publish-atlas.ps1` para
   actualizar y publicar el atlas de arquitectura después de cada cambio.
 
+## 1.7.6 — 2026-11-09
+
+### Panel web
+
+- Nueva jerarquía de la guardia: el estado principal incluye una acción directa
+  para **revisar las señales abiertas**, y el gráfico de 24 h es más compacto.
+- Los chips separan **“Panel conectado”** (WebSocket) de **“Datos hace…”**
+  (frescura real del teléfono), en vez de mostrar “En vivo” con datos viejos.
+- La métrica **“Con señal ahora”** usa la última conexión real de cada equipo;
+  los dispositivos muestran **“Con señal”** o **“Sin señal”**, no “Activo” por
+  estar simplemente vinculados.
+- Se mantiene la estética paper/pine, con hover y press en tarjetas y botones,
+  foco visible, objetivos de 44 px y layout responsive.
+
+### Android
+
+- Inicio del tutor con la misma jerarquía: acción **“Revisar N señales”**,
+  métrica **“Con señal”** y resumen de equipos vinculados.
+- Las filas y fichas de dispositivos usan el mismo umbral de 2 horas para
+  distinguir **“Con señal”** de **“Sin señal”**.
+- Pantalla del menor: el estado superior pasa a **“Guardia activa”** o
+  **“Revisa permisos”** según los accesos, y conserva la última sincronización.
+
+### Verificación
+
+- 117 pruebas backend y 71 pruebas unitarias Android.
+- Android `1.7.6` (`versionCode` 15); backend `1.7.6`.
+
 ## 1.7.5 — 2026-11-09
 
 ### Estado del teléfono

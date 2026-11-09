@@ -265,6 +265,8 @@ private fun TutorHome(
     onGoDevices: () -> Unit,
 ) {
     val overview = state.overview
+    val liveDevices = overview?.devices?.count { it.deviceLive() } ?: 0
+    val linkedLabel = if ((overview?.devices?.size ?: 0) == 1) "vinculado" else "vinculados"
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(18.dp, 18.dp, 18.dp, 28.dp),
@@ -300,8 +302,8 @@ private fun TutorHome(
                 }
             }
         } else {
-            item { StatusHero(overview) }
-            item { MetricsRow(overview) }
+            item { StatusHero(overview, liveDevices, linkedLabel, onGoAlerts) }
+            item { MetricsRow(overview, liveDevices, linkedLabel) }
             item {
                 SurfaceCard {
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -326,7 +328,7 @@ private fun TutorHome(
                 }
             }
             item {
-                SectionHeader("Dispositivos", "${state.devices.count { it.vinculacionEstadoActivo() }} vinculados") {
+                SectionHeader("Dispositivos", "${state.devices.count { it.deviceLive() }} con señal · ${state.devices.size} $linkedLabel") {
                     TextButton(onClick = onGoDevices) { Text("Gestionar") }
                 }
             }
@@ -345,7 +347,12 @@ private fun TutorHome(
 }
 
 @Composable
-private fun StatusHero(overview: TutorOverviewDto) {
+private fun StatusHero(
+    overview: TutorOverviewDto,
+    liveDevices: Int,
+    linkedLabel: String,
+    onGoAlerts: () -> Unit,
+) {
     val (background, accent) = when (overview.statusTone) {
         "critico" -> OxbloodSoft to OxbloodInk
         "atencion" -> AmberSoft to Amber
@@ -382,18 +389,35 @@ private fun StatusHero(overview: TutorOverviewDto) {
             )
             Spacer(Modifier.height(8.dp))
             Text(
-                text = "${overview.devicesActive} dispositivos activos · ${overview.minutesToday} min registrados hoy",
+                text = "$liveDevices con señal · ${overview.devices.size} $linkedLabel · ${overview.minutesToday} min hoy",
                 color = Ink2,
                 fontSize = 12.sp,
             )
+            if (overview.openAlerts > 0) {
+                Spacer(Modifier.height(12.dp))
+                Button(
+                    onClick = onGoAlerts,
+                    shape = RoundedCornerShape(10.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Pine700),
+                    contentPadding = PaddingValues(horizontal = 14.dp),
+                    modifier = Modifier.height(40.dp),
+                ) {
+                    Text(
+                        "Revisar ${overview.openAlerts} ${if (overview.openAlerts == 1) "señal" else "señales"}",
+                        color = Color.White,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                }
+            }
         }
     }
 }
 
 @Composable
-private fun MetricsRow(overview: TutorOverviewDto) {
+private fun MetricsRow(overview: TutorOverviewDto, liveDevices: Int, linkedLabel: String) {
     Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
-        Metric("Dispositivos", overview.devicesActive.toString(), "activos", Modifier.weight(1f))
+        Metric("Con señal", liveDevices.toString(), "de ${overview.devices.size} $linkedLabel", Modifier.weight(1f))
         Metric("Alertas", overview.openAlerts.toString(), "abiertas", Modifier.weight(1f))
         Metric("Críticas", overview.criticalAlerts.toString(), "sin revisar", Modifier.weight(1f))
     }
@@ -975,6 +999,8 @@ private fun PairingLive(
 
 @Composable
 private fun DeviceRow(device: TutorDeviceDto) {
+    val active = device.vinculacionEstadoActivo()
+    val live = device.deviceLive()
     Surface(
         shape = RoundedCornerShape(13.dp),
         color = Card,
@@ -985,7 +1011,7 @@ private fun DeviceRow(device: TutorDeviceDto) {
                 Modifier
                     .size(8.dp)
                     .background(
-                        if (device.vinculacionEstadoActivo()) Pine600 else Muted.copy(alpha = 0.4f),
+                        if (live) Pine600 else if (active) Amber else Muted.copy(alpha = 0.4f),
                         CircleShape,
                     ),
             )
@@ -999,8 +1025,16 @@ private fun DeviceRow(device: TutorDeviceDto) {
                 )
             }
             Text(
-                if (device.vinculacionEstadoActivo()) "Activo" else "Inactivo",
-                color = if (device.vinculacionEstadoActivo()) Pine700 else Muted,
+                when {
+                    live -> "Con señal"
+                    active -> "Sin señal"
+                    else -> "Inactivo"
+                },
+                color = when {
+                    live -> Pine700
+                    active -> Amber
+                    else -> Muted
+                },
                 fontSize = 10.sp,
             )
         }
@@ -1010,6 +1044,7 @@ private fun DeviceRow(device: TutorDeviceDto) {
 @Composable
 private fun DeviceCard(device: TutorDeviceDto, onRevoke: () -> Unit, onUnlinkCode: () -> Unit) {
     val active = device.vinculacionEstadoActivo()
+    val stale = isOlderThan(device.lastSeen, 120)
     Surface(
         shape = RoundedCornerShape(15.dp),
         color = Card,
@@ -1020,13 +1055,16 @@ private fun DeviceCard(device: TutorDeviceDto, onRevoke: () -> Unit, onUnlinkCod
                 Box(
                     Modifier
                         .size(36.dp)
-                        .background(if (active) SageSoft else Card2, RoundedCornerShape(10.dp)),
+                        .background(
+                            if (active && !stale) SageSoft else if (active) AmberSoft else Card2,
+                            RoundedCornerShape(10.dp),
+                        ),
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(
                         Icons.Outlined.PhoneAndroid,
                         contentDescription = null,
-                        tint = if (active) Pine700 else Muted,
+                        tint = if (active && !stale) Pine700 else if (active) Amber else Muted,
                         modifier = Modifier.size(19.dp),
                     )
                 }
@@ -1042,14 +1080,26 @@ private fun DeviceCard(device: TutorDeviceDto, onRevoke: () -> Unit, onUnlinkCod
                 Box(
                     Modifier
                         .background(
-                            if (active) SageSoft else OxbloodSoft,
+                            when {
+                                !active -> OxbloodSoft
+                                stale -> AmberSoft
+                                else -> SageSoft
+                            },
                             RoundedCornerShape(6.dp),
                         )
                         .padding(horizontal = 7.dp, vertical = 3.dp),
                 ) {
                     Text(
-                        if (active) "ACTIVO" else "REVOCADO",
-                        color = if (active) Pine700 else OxbloodInk,
+                        when {
+                            !active -> "REVOCADO"
+                            stale -> "SIN SEÑAL"
+                            else -> "ACTIVO"
+                        },
+                        color = when {
+                            !active -> OxbloodInk
+                            stale -> Amber
+                            else -> Pine700
+                        },
                         fontFamily = Mono,
                         fontSize = 8.sp,
                         letterSpacing = 0.7.sp,
@@ -1062,7 +1112,6 @@ private fun DeviceCard(device: TutorDeviceDto, onRevoke: () -> Unit, onUnlinkCod
                 color = Muted,
                 fontSize = 10.5.sp,
             )
-            val stale = isOlderThan(device.lastSeen, 60)
             val statusBits = buildList {
                 if (device.notificationsActive == false) add("Notificaciones desactivadas")
                 else if (device.notificationsActive == true) add("Notificaciones activas")
@@ -1668,6 +1717,12 @@ private fun severityColor(sev: String): Color = when (sev.uppercase()) {
 
 private fun TutorDeviceDto.vinculacionEstadoActivo(): Boolean =
     bindingState?.equals("ACTIVO", true) == true || estado.equals("ACTIVO", true)
+
+private fun TutorDeviceDto.deviceLive(): Boolean {
+    if (!vinculacionEstadoActivo()) return false
+    val seen = lastSeen ?: return false
+    return !isOlderThan(seen, 120)
+}
 
 private fun dayLabel(date: String): String = runCatching {
     java.time.LocalDate.parse(date).format(DateTimeFormatter.ofPattern("EEE", Locale("es", "CL"))).take(3)
