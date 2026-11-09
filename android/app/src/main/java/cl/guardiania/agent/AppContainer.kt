@@ -41,7 +41,12 @@ class AppContainer(context: Context) {
     )
 
     val alertStream: TutorAlertStream by lazy {
-        TutorAlertStream(tutorRepository) { event -> alertEvents.tryEmit(event) }
+        TutorAlertStream(tutorRepository) { event -> publishAlert(event) }
+    }
+
+    /** Publica una alerta recibida por WebSocket o FCM al ViewModel del tutor. */
+    fun publishAlert(event: TutorRealtimeAlert) {
+        alertEvents.tryEmit(event)
     }
 
     val pushRegistrar: PushRegistrar by lazy { PushRegistrar(tutorRepository) }

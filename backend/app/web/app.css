@@ -1295,9 +1295,9 @@ svg {
   display: flex;
   align-items: flex-end;
   gap: 3px;
-  height: 20px;
+  height: 30px;
   margin-top: auto;
-  padding-top: 9px;
+  padding-top: 10px;
 }
 
 .spark i {

@@ -34,9 +34,13 @@ class GuardianMessagingService : FirebaseMessagingService() {
     override fun onMessageReceived(message: RemoteMessage) {
         super.onMessageReceived(message)
         val container = (application as GuardianApp).container
-        if (container.alertStream.isConnected) return
         val data = message.data
-        if (data["tipo"] != null && data["tipo"] != "risk_alert") return
+        val event = PushAlert.from(data) ?: return
+        // El ViewModel refresca aunque el WebSocket esté conectado: el push
+        // actúa como respaldo si el evento en vivo se perdió. La notificación
+        // del sistema solo se muestra cuando el stream no está abierto.
+        container.publishAlert(event)
+        if (container.alertStream.isConnected) return
         TutorNotifications.showRiskAlert(
             context = this,
             alertId = data["alert_id"],

@@ -40,7 +40,7 @@ No hay Redis ni cola externa. El **outbox transaccional** vive en la misma base 
 - Categoría de la app (no el nombre del paquete en el panel, salvo el alias del dispositivo).
 - Conteos y minutos, nunca títulos, remitentes, números ni extractos.
 - Flags léxicos normalizados (`gambling`, `self_harm`, …), no el texto que los activó.
-- Un hash salado y truncado de contacto, solo cuando la app expone un identificador estable. **No implementado en 1.7.6**: el campo va `null` y `contacto_recurrente` está reservada.
+- Un hash salado y truncado de contacto, solo cuando la app expone un identificador estable. **No implementado en 1.7.7**: el campo va `null` y `contacto_recurrente` está reservada.
 - Ventana temporal de las señales: 5 minutos (el servidor acepta hasta 60 minutos) y `event_id` determinista para idempotencia.
 
 ### Qué se queda en el teléfono
