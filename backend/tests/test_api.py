@@ -305,6 +305,19 @@ def test_same_signal_in_a_new_event_creates_a_new_alert(client, auth_headers):
     assert len(mine) == 2
 
 
+def test_device_info_accepts_android_17_api_level():
+    from app.schemas import DeviceInfo
+
+    info = DeviceInfo(
+        platform="ANDROID",
+        api_level=37,
+        model_family="SM-S948B",
+        install_id=uuid.uuid4(),
+    )
+
+    assert info.api_level == 37
+
+
 def test_revoke_device_blocks_sync(client, auth_headers):
     generated = generate_pairing(client, auth_headers)
     verified = verify_manual(client, generated["manual_code"]).json()

@@ -8,6 +8,12 @@ Todas las versiones relevantes de IA Guardian. El detalle técnico vive en
 
 ## Unreleased
 
+### Compatibilidad
+
+- El backend acepta niveles de API Android hasta 99, incluido **Android 17
+  (API 37)**, para no rechazar la vinculación de teléfonos nuevos.
+- 117 pruebas backend.
+
 ### Documentación
 
 - Regla permanente en `AGENTS.md` y script `scripts/publish-atlas.ps1` para

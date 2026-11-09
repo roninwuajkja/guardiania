@@ -106,7 +106,7 @@ class DeviceInfo(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     platform: Literal["ANDROID"]
-    api_level: int = Field(ge=26, le=36)
+    api_level: int = Field(ge=26, le=99)
     model_family: str = Field(min_length=1, max_length=60)
     install_id: uuid.UUID
     attestation_token: str | None = Field(default=None, max_length=4096)
