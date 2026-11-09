@@ -44,6 +44,11 @@ const state = {
   filter: 'TODAS',
   toastTimer: null,
   booting: true,
+  freshAlertIds: new Set(),
+  freshAlertTimer: null,
+  badgeCount: 0,
+  badgesInitialized: false,
+  hasAnimatedOverview: false,
 };
 
 const $ = (selector, root = document) => root.querySelector(selector);
@@ -451,6 +456,14 @@ function updateSyncChip() {
     : `Datos ${relativeLabel(latest)}`;
 }
 
+function enterView(view) {
+  if (!view) return;
+  view.classList.remove('view-enter');
+  void view.offsetWidth;
+  view.classList.add('view-enter');
+  view.addEventListener('animationend', () => view.classList.remove('view-enter'), { once: true });
+}
+
 async function navigate() {
   if (!state.tutor) return;
   const route = routeFromHash();
@@ -481,6 +494,7 @@ async function navigate() {
     renderAlerts();
   }
   state.signature = viewSignature();
+  enterView(view);
 }
 
 /* ---------- Skeleton loading ---------- */
@@ -752,7 +766,13 @@ async function refreshFromServer({ force = false } = {}) {
   state.lastRefreshAt = now;
   refreshing = true;
   try {
+    const beforeAlerts = new Set(
+      [...state.alerts, ...(state.overview?.alerts || [])].map((alert) => alert.id),
+    );
     await refreshCore();
+    const afterAlerts = [...state.alerts, ...(state.overview?.alerts || [])];
+    const fresh = afterAlerts.filter((alert) => !beforeAlerts.has(alert.id)).map((alert) => alert.id);
+    if (fresh.length && !state.freshAlertIds.size) markFreshAlerts(fresh);
     const signature = viewSignature();
     if (force || signature !== state.signature) {
       state.signature = signature;
@@ -878,10 +898,22 @@ function updateLiveChip(status) {
       : 'Sin conexión';
 }
 
+function markFreshAlerts(ids) {
+  const clean = ids.filter(Boolean);
+  if (!clean.length) return;
+  state.freshAlertIds = new Set(clean);
+  clearTimeout(state.freshAlertTimer);
+  state.freshAlertTimer = setTimeout(() => {
+    state.freshAlertIds = new Set();
+    document.querySelectorAll('.alert-row.is-fresh').forEach((row) => row.classList.remove('is-fresh'));
+  }, 1600);
+}
+
 function handleLiveAlert(data) {
   if (!data) return;
   const who = data.etiqueta_menor || data.device_alias || 'el teléfono';
   const tone = ['ALTA', 'CRITICA'].includes(data.severidad) ? 'danger' : 'default';
+  markFreshAlerts([data.alert_id || data.alerta_id]);
   toast(`Nueva señal de ${who}: ${prettyAlertLabel(data.categoria)}`, tone);
   // El evento no trae las reglas completas: se recarga para pintar la alerta
   // igual que por REST, sin inventar campos.
@@ -964,10 +996,21 @@ function updateAlertBadges(count) {
   const nav = $('#nav-alert-count');
   const tab = $('#tab-alert-count');
   const label = count > 99 ? '99+' : String(count);
+  const changed = state.badgesInitialized && count !== state.badgeCount;
+  state.badgeCount = count;
+  state.badgesInitialized = true;
   nav.textContent = label;
   tab.textContent = label;
   nav.hidden = !count;
   tab.hidden = !count;
+  if (changed) {
+    [nav, tab].forEach((badge) => {
+      badge.classList.remove('is-bumping');
+      void badge.offsetWidth;
+      badge.classList.add('is-bumping');
+    });
+    setTimeout(() => [nav, tab].forEach((badge) => badge.classList.remove('is-bumping')), 280);
+  }
 }
 
 /* ---------- Overview ---------- */
@@ -975,6 +1018,9 @@ function updateAlertBadges(count) {
 function renderOverview() {
   const overview = state.overview;
   if (!overview) return;
+  const previousCounts = readStatCounts();
+  const animateBars = !state.hasAnimatedOverview;
+  state.hasAnimatedOverview = true;
   const linkedDevices = overview.devices.filter((device) => device.estado === 'ACTIVO');
   const liveDevices = linkedDevices.filter(isDeviceLive);
   const names = linkedDevices.map((device) => device.etiqueta_menor || device.alias);
@@ -999,6 +1045,9 @@ function renderOverview() {
   const statMinutes = statCard({
     label: 'Minutos hoy',
     value: NUMBER_FORMAT.format(overview.minutes_today),
+    metric: 'minutes',
+    rawValue: overview.minutes_today,
+    animate: animateBars,
     unit: 'min',
     note: `Últimos 7 días: ${Math.round(overview.week.reduce((total, day) => total + day.minutes, 0) / 60)} h`,
     series: overview.week.map((day) => day.minutes),
@@ -1007,6 +1056,9 @@ function renderOverview() {
   const statAlerts = statCard({
     label: 'Señales abiertas',
     value: NUMBER_FORMAT.format(overview.open_alerts),
+    metric: 'alerts',
+    rawValue: overview.open_alerts,
+    animate: animateBars,
     unit: overview.open_alerts === 1 ? 'señal' : 'señales',
     note: overview.critical_alerts
       ? `${overview.critical_alerts} crítica${overview.critical_alerts === 1 ? '' : 's'} sin revisar`
@@ -1019,7 +1071,7 @@ function renderOverview() {
   const statDevices = `
     <article class="stat card">
       <p class="stat-label">Con señal ahora</p>
-      <div class="stat-line"><span class="stat-value">${liveDevices.length}</span><span class="stat-unit">de ${linkedDevices.length} vinculado${linkedDevices.length === 1 ? '' : 's'}</span></div>
+      <div class="stat-line"><span class="stat-value" data-metric="devices" data-value="${liveDevices.length}">${liveDevices.length}</span><span class="stat-unit">de ${linkedDevices.length} vinculado${linkedDevices.length === 1 ? '' : 's'}</span></div>
       <div class="device-mini">${
         liveDevices.length
           ? liveDevices.slice(0, 3).map((device) => `<span><i class="dot"></i>${escapeHtml(device.etiqueta_menor || device.alias)}</span>`).join('')
@@ -1054,7 +1106,7 @@ function renderOverview() {
       </div>
     </section>
 
-    ${guardStrip(overview)}
+    ${guardStrip(overview, animateBars)}
 
     <div class="stats">${statMinutes}${statAlerts}${statDevices}</div>
 
@@ -1080,11 +1132,56 @@ function renderOverview() {
   `;
   restoreOpenAlertIds(openDetails);
   restoreExpandedSummaries(expandedSummaries);
+  animateStatCounts(previousCounts);
   enhanceCompactSummaries();
   requestAnimationFrame(enhanceCompactSummaries);
 }
 
-function statCard({ label, value, unit, note, series, alert = false, seriesAlert = false }) {
+function readStatCounts() {
+  const counts = {};
+  document.querySelectorAll('#view .stat-value[data-metric]').forEach((element) => {
+    const value = Number(element.dataset.value);
+    if (Number.isFinite(value)) counts[element.dataset.metric] = value;
+  });
+  return counts;
+}
+
+function animateStatCounts(previous) {
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  document.querySelectorAll('#view .stat-value[data-metric]').forEach((element) => {
+    const target = Number(element.dataset.value);
+    if (!Number.isFinite(target)) return;
+    const from = Number.isFinite(previous[element.dataset.metric])
+      ? previous[element.dataset.metric]
+      : 0;
+    if (reduced || from === target) {
+      element.textContent = NUMBER_FORMAT.format(target);
+      return;
+    }
+    const start = performance.now();
+    element.textContent = NUMBER_FORMAT.format(from);
+    const tick = (now) => {
+      const progress = Math.min(1, (now - start) / 320);
+      const eased = 1 - (1 - progress) ** 3;
+      element.textContent = NUMBER_FORMAT.format(Math.round(from + (target - from) * eased));
+      if (progress < 1) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  });
+}
+
+function statCard({
+  label,
+  value,
+  metric = '',
+  rawValue = '',
+  animate = false,
+  unit,
+  note,
+  series,
+  alert = false,
+  seriesAlert = false,
+}) {
   const max = Math.max(...series, 1);
   const bars = series
     .map((item, index) => {
@@ -1092,22 +1189,22 @@ function statCard({ label, value, unit, note, series, alert = false, seriesAlert
       const classes = [index === series.length - 1 ? 'is-today' : '', seriesAlert && item > 0 ? 'is-alert' : '']
         .filter(Boolean)
         .join(' ');
-      return `<i class="${classes}" style="height:${height}px"></i>`;
+      return `<i class="${classes}" style="--i:${index};height:${height}px"></i>`;
     })
     .join('');
   return `
     <article class="stat card">
       <p class="stat-label">${escapeHtml(label)}</p>
       <div class="stat-line">
-        <span class="stat-value ${alert ? 'is-alert' : ''}">${escapeHtml(value)}</span>
+        <span class="stat-value ${alert ? 'is-alert' : ''}" data-metric="${escapeAttr(metric)}" data-value="${escapeAttr(rawValue)}">${escapeHtml(value)}</span>
         <span class="stat-unit">${escapeHtml(unit)}</span>
       </div>
       <p class="stat-note">${escapeHtml(note)}</p>
-      <div class="spark" aria-hidden="true">${bars}</div>
+      <div class="spark${animate ? ' is-entering' : ''}" aria-hidden="true">${bars}</div>
     </article>`;
 }
 
-function guardStrip(overview) {
+function guardStrip(overview, animate = false) {
   const marks = overview.guard_marks || [];
   const buckets = Array.from({ length: 24 }, (_, hour) => ({
     hour,
@@ -1139,7 +1236,7 @@ function guardStrip(overview) {
       const total = bucket.activity + bucket.attention + bucket.alert;
       const height = total ? Math.max(7, (total / maxHour) * 100) : 0;
       const label = `${String(bucket.hour).padStart(2, '0')}:00 · ${bucket.activity} actividad · ${bucket.attention} atención · ${bucket.alert} alerta`;
-      return `<div class="guard-col${bucket.hour < 6 ? ' is-night' : ''}" title="${escapeAttr(label)}" aria-label="${escapeAttr(label)}">
+      return `<div class="guard-col${bucket.hour < 6 ? ' is-night' : ''}" style="--i:${bucket.hour}" title="${escapeAttr(label)}" aria-label="${escapeAttr(label)}">
         ${total ? `<div class="guard-col-bars" style="height:${height.toFixed(1)}%">
           ${bucket.activity ? `<span class="guard-bar guard-bar--activity" style="flex:${bucket.activity}"></span>` : ''}
           ${bucket.attention ? `<span class="guard-bar guard-bar--attention" style="flex:${bucket.attention}"></span>` : ''}
@@ -1177,7 +1274,7 @@ function guardStrip(overview) {
           </div>
         </div>
       </div>
-      <div class="guard-chart">
+      <div class="guard-chart${animate ? ' is-entering' : ''}">
         <div class="guard-bars" role="img" aria-label="${escapeAttr(summary)}">
           ${columns}
         </div>
@@ -1217,8 +1314,9 @@ function alertRow(alert, { compact = false } = {}) {
   const title = alertRuleLabel(alert);
   const showWhy = !compact && (Boolean(advice) || (evidence && evidence !== title));
   const canAct = ['NUEVA', 'VISTA'].includes(alert.estado);
+  const fresh = state.freshAlertIds.has(alert.id) ? ' is-fresh' : '';
   return `
-    <article class="alert-row">
+    <article class="alert-row${fresh}" data-alert-id="${escapeAttr(alert.id)}">
       <div class="alert-rail alert-rail--${alert.severidad}" aria-hidden="true"></div>
       <div class="alert-content">
         <div class="alert-meta">

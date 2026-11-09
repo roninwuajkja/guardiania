@@ -81,4 +81,4 @@ def test_health_reports_production_hardened_version(client):
     assert response.status_code == 200
     body = response.json()
     assert body["status"] == "ok"
-    assert body["version"] == "1.7.10"
+    assert body["version"] == "1.7.11"
