@@ -13,6 +13,12 @@ $ErrorActionPreference = 'Stop'
 $utf8 = [Text.UTF8Encoding]::new($false)
 
 if (-not $ProjectRoot) { $ProjectRoot = Split-Path -Parent $PSScriptRoot }
+$Files = @(
+    $Files |
+        ForEach-Object { $_ -split ',' } |
+        ForEach-Object { $_.Trim() } |
+        Where-Object { $_ }
+)
 if (-not (Test-Path $Source)) { throw "No existe la carpeta del atlas: $Source" }
 if (-not (Test-Path (Join-Path $Repo '.git'))) { throw "No existe el clon del atlas: $Repo" }
 
