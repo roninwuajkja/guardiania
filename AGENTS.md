@@ -22,6 +22,12 @@ Al cerrar cualquier cambio:
    .\scripts\publish-atlas.ps1
    ```
 
+   Si regeneraste solo algunos diagramas, limita la publicación:
+
+   ```powershell
+   .\scripts\publish-atlas.ps1 -Files 03-captura-privacidad/01-architecture.html,05-riesgo-ia/01-architecture.html
+   ```
+
    Para revisar sin commitear:
 
    ```powershell
