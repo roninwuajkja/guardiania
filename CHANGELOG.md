@@ -13,6 +13,23 @@ Todas las versiones relevantes de IA Guardian. El detalle técnico vive en
 - Regla permanente en `AGENTS.md` y script `scripts/publish-atlas.ps1` para
   actualizar y publicar el atlas de arquitectura después de cada cambio.
 
+## 1.7.13 - 2026-11-09
+
+### Android
+
+- El contenido del tutor se dibuja hasta el borde inferior y pasa por detrás
+  de la isla flotante.
+- El padding inferior de las listas y de Ajustes deja visible el último
+  elemento al llegar al final.
+- La isla conserva su altura y el contador de alertas.
+
+### Verificación
+
+- 117 pruebas backend y 75 pruebas Android.
+- Revisión en el emulador: Inicio, Alertas y Ajustes; scroll hasta el final;
+  sin crashes.
+- Android `1.7.13` (`versionCode` 22); backend `1.7.13`.
+
 ## 1.7.12 - 2026-11-09
 
 ### Navegación
