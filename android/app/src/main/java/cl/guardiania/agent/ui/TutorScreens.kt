@@ -42,7 +42,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -292,12 +291,16 @@ private fun TutorHome(
         }
 
         if (overview == null) {
-            item {
-                SurfaceCard {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp, color = Pine600)
-                        Spacer(Modifier.width(12.dp))
-                        Text("Cargando el panel…", color = Muted, fontSize = 13.sp)
+            if (state.busy) {
+                item { TutorHomeSkeleton() }
+            } else {
+                item {
+                    SurfaceCard {
+                        Text("No pudimos cargar el panel.", color = Ink, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                        Spacer(Modifier.height(5.dp))
+                        Text("Revisa tu conexión e inténtalo de nuevo.", color = Muted, fontSize = 12.sp)
+                        Spacer(Modifier.height(10.dp))
+                        TextButton(onClick = onRefresh) { Text("Reintentar") }
                     }
                 }
             }
@@ -515,6 +518,7 @@ private fun CompactAlert(alert: TutorAlertDto) {
 @Composable
 private fun TutorAlerts(state: TutorUiState, onAlertState: (String, String) -> Unit) {
     var filter by rememberSaveable { mutableStateOf("ABIERTAS") }
+    val loading = state.overview == null && state.busy
     val filtered = remember(state.alerts, filter) {
         when (filter) {
             "CRITICAS" -> state.alerts.filter { it.isCritical() }
@@ -550,7 +554,9 @@ private fun TutorAlerts(state: TutorUiState, onAlertState: (String, String) -> U
                 }
             }
         }
-        if (filtered.isEmpty()) {
+        if (loading) {
+            item { TutorAlertsSkeleton() }
+        } else if (filtered.isEmpty()) {
             item { EmptyNote("No hay alertas en este filtro.") }
         } else {
             items(filtered, key = { it.id }) { alert ->
@@ -642,6 +648,7 @@ private fun TutorDevices(
     var revokeTarget by remember { mutableStateOf<TutorDeviceDto?>(null) }
     var unlinkCodeTarget by remember { mutableStateOf<TutorDeviceDto?>(null) }
     val pairing = state.pairing
+    val loading = state.overview == null && state.busy
     val filtered = state.devices.filter { device ->
         filter == DeviceFilter.TODOS || device.vinculacionEstadoActivo()
     }
@@ -693,7 +700,9 @@ private fun TutorDevices(
                 )
             }
         }
-        if (filtered.isEmpty()) {
+        if (loading) {
+            item { TutorDevicesSkeleton() }
+        } else if (filtered.isEmpty()) {
             item { EmptyNote("No hay dispositivos en esta vista.") }
         } else {
             items(filtered, key = { it.id }) { device ->

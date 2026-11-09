@@ -13,6 +13,31 @@ Todas las versiones relevantes de IA Guardian. El detalle técnico vive en
 - Regla permanente en `AGENTS.md` y script `scripts/publish-atlas.ps1` para
   actualizar y publicar el atlas de arquitectura después de cada cambio.
 
+## 1.7.9 — 2026-11-09
+
+### Carga con skeleton
+
+- El panel web muestra **skeletons** con la misma grilla del contenido en
+  Resumen, Alertas y Dispositivos: hero, franja, métricas, tablero, filtros,
+  filas de alertas y fichas de equipos. El historial de consentimientos también
+  usa filas skeleton.
+- La carga inicial pinta el skeleton antes de pedir los datos y actualiza la
+  fecha, el saludo y la navegación de la ruta de inmediato.
+- El brillo del skeleton es suave y se detiene con
+  `prefers-reduced-motion: reduce`; el mensaje de carga queda en `sr-only`.
+- Android muestra skeletons en **Inicio, Alertas y Equipos** mientras carga el
+  primer panel: tarjeta de estado, métricas, gráfico, filas de alertas y fichas
+  de dispositivos, con un pulso lento.
+- Si la carga falla, Inicio deja el skeleton y muestra una tarjeta para
+  reintentar en vez de quedar cargando para siempre.
+
+### Verificación
+
+- 117 pruebas backend y 75 pruebas Android.
+- Revisión visual del skeleton web en Resumen, Alertas y Dispositivos, y del
+  skeleton Android en Inicio con red lenta.
+- Android `1.7.9` (`versionCode` 18); backend `1.7.9`.
+
 ## 1.7.8 — 2026-11-09
 
 ### Marca
