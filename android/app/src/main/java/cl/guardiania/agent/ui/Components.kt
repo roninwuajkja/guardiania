@@ -27,9 +27,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -45,34 +43,24 @@ fun GuardianMark(
     modifier: Modifier = Modifier,
 ) {
     Canvas(modifier.size(size)) {
-        val w = this.size.width
-        val h = this.size.height
+        val s = minOf(this.size.width, this.size.height)
+        val cx = this.size.width / 2f
+        val cy = this.size.height / 2f
+        val ringRadius = s * 0.344f
+        val ringStroke = s * 0.109f
 
-        // Escudo: protección + mirada atenta.
-        val shield = Path().apply {
-            moveTo(w * 0.50f, h * 0.10f)
-            cubicTo(w * 0.64f, h * 0.10f, w * 0.76f, h * 0.14f, w * 0.82f, h * 0.19f)
-            lineTo(w * 0.82f, h * 0.50f)
-            cubicTo(w * 0.82f, h * 0.68f, w * 0.68f, h * 0.82f, w * 0.50f, h * 0.90f)
-            cubicTo(w * 0.32f, h * 0.82f, w * 0.18f, h * 0.68f, w * 0.18f, h * 0.50f)
-            lineTo(w * 0.18f, h * 0.19f)
-            cubicTo(w * 0.24f, h * 0.14f, w * 0.36f, h * 0.10f, w * 0.50f, h * 0.10f)
-            close()
-        }
-        drawPath(shield, color = tint.copy(alpha = 0.14f))
-        drawPath(
-            shield,
+        // Vínculo: dos órbitas que se cuidan, con el punto libre y su satélite.
+        drawArc(
             color = tint,
-            style = Stroke(width = w * 0.055f, cap = StrokeCap.Round, join = StrokeJoin.Round),
+            startAngle = 315f,
+            sweepAngle = 270f,
+            useCenter = false,
+            topLeft = Offset(cx - ringRadius, cy - ringRadius),
+            size = Size(ringRadius * 2f, ringRadius * 2f),
+            style = Stroke(width = ringStroke, cap = StrokeCap.Round),
         )
-
-        val eye = Path().apply {
-            moveTo(w * 0.33f, h * 0.45f)
-            cubicTo(w * 0.40f, h * 0.36f, w * 0.60f, h * 0.36f, w * 0.67f, h * 0.45f)
-        }
-        drawPath(eye, color = accent, style = Stroke(width = w * 0.05f, cap = StrokeCap.Round))
-        drawCircle(accent, radius = w * 0.045f, center = Offset(w * 0.50f, h * 0.52f))
-        drawCircle(accent.copy(alpha = 0.9f), radius = w * 0.022f, center = Offset(w * 0.70f, h * 0.25f))
+        drawCircle(tint, radius = s * 0.078f, center = Offset(cx - s * 0.102f, cy - s * 0.102f))
+        drawCircle(accent, radius = s * 0.051f, center = Offset(cx + s * 0.383f, cy + s * 0.383f))
     }
 }
 

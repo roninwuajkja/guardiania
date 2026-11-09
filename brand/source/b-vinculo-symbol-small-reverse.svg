@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-labelledby="title">
+  <title id="title">IA Guardian — Vínculo, corte pequeño reverso</title>
+  <g id="symbol">
+    <circle cx="128" cy="128" r="88" fill="none" stroke="#EEF2ED" stroke-width="28"
+            stroke-dasharray="414 139" transform="rotate(-45 128 128)"/>
+    <circle cx="102" cy="102" r="20" fill="#EEF2ED"/>
+    <circle cx="226" cy="226" r="13" fill="#A9C6B8"/>
+  </g>
+</svg>

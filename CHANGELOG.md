@@ -13,6 +13,36 @@ Todas las versiones relevantes de IA Guardian. El detalle técnico vive en
 - Regla permanente en `AGENTS.md` y script `scripts/publish-atlas.ps1` para
   actualizar y publicar el atlas de arquitectura después de cada cambio.
 
+## 1.7.8 — 2026-11-09
+
+### Marca
+
+- Nuevo símbolo **Vínculo**: dos órbitas que se cuidan y dejan un espacio
+  libre. Reemplaza el escudo y el ojo de la marca anterior.
+- **Corte pequeño** para 16–32 px: anillo abierto, punto central y satélite;
+  conserva la idea de los dos cuerpos sin embotarse.
+- Wordmark **Archivo 600** convertido a curvas; lockups horizontal, stacked y
+  wordmark-only; versiones una tinta, color y reverso.
+- Paleta pine/sage/paper; app icon, favicon, iconos web, banner de GitHub
+  (1600 × 500) y vista previa social (1200 × 630).
+- El símbolo completo se lee como dos órbitas; el corte pequeño como dos puntos
+  y una órbita. La abertura es la privacidad.
+
+### Integración
+
+- Panel web: marca inline, favicon y enlace de icono con cache-bust; README con
+  el banner nuevo.
+- Android: `GuardianMark`, icono adaptativo y notificación con el símbolo
+  Vínculo. El icono de app usa el símbolo completo; la UI usa el corte pequeño.
+- Guía de marca en `brand/GUIDELINES.md`; fuentes maestras y exports en
+  `brand/`.
+
+### Verificación
+
+- 117 pruebas backend y 75 pruebas Android.
+- Revisión visual a 16/32/64 px, lockups sobre claro/oscuro y banner 1600 × 500.
+- Android `1.7.8` (`versionCode` 17); backend `1.7.8`.
+
 ## 1.7.7 — 2026-11-09
 
 ### Panel web

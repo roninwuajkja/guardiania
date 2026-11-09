@@ -3,7 +3,7 @@
 Regla Cero: este módulo solo recibe ``DerivedFeatureVector``. No existe ningún
 camino de código que envíe texto, nombres, teléfonos o contenido de
 notificaciones a un proveedor externo. ``AI_SEND_SNIPPET`` es una compuerta
-cerrada y sin llamadores en 1.7.7.
+cerrada y sin llamadores en 1.7.8.
 
 Orden de ejecución:
     1. caché en memoria por hash del vector (5 min)
