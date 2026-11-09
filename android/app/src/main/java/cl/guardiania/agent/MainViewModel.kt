@@ -9,11 +9,13 @@ import cl.guardiania.agent.data.SessionRevokedException
 import cl.guardiania.agent.data.UnlinkRequest
 import cl.guardiania.agent.data.unlinkError
 import cl.guardiania.agent.data.userMessage
+import cl.guardiania.agent.sync.SyncEvents
 import cl.guardiania.agent.sync.SyncOutcome
 import cl.guardiania.agent.sync.SyncScheduler
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -75,6 +77,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 GuardianForegroundService.start(app)
             } else {
                 GuardianForegroundService.stop(app)
+            }
+        }
+        viewModelScope.launch(Dispatchers.IO) {
+            SyncEvents.completed.collect { at ->
+                val pending = store.pendingCount()
+                _ui.update { it.copy(lastSyncAt = at, pending = pending) }
             }
         }
     }

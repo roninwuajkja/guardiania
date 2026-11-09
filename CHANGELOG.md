@@ -8,16 +8,38 @@ Todas las versiones relevantes de IA Guardian. El detalle técnico vive en
 
 ## Unreleased
 
-### Compatibilidad
-
-- El backend acepta niveles de API Android hasta 99, incluido **Android 17
-  (API 37)**, para no rechazar la vinculación de teléfonos nuevos.
-- 117 pruebas backend.
-
 ### Documentación
 
 - Regla permanente en `AGENTS.md` y script `scripts/publish-atlas.ps1` para
   actualizar y publicar el atlas de arquitectura después de cada cambio.
+
+## 1.7.5 — 2026-11-09
+
+### Estado del teléfono
+
+- La pantalla del menor escucha `SyncEvents` y actualiza “última
+  sincronización” cuando termina un worker o una evaluación prioritaria, sin
+  esperar a reabrir la app.
+- El texto superior pasa de “última señal” a “última sincronización”.
+
+### Notificaciones
+
+- El escaneo de notificaciones activas baja de cada **3 minutos** a cada
+  **minuto**.
+- Una notificación solo entra en `seen` después de persistirse. Si falla la
+  escritura, el siguiente escaneo la reintenta en vez de darla por vista.
+- La señal y la marca de última notificación se guardan en una sola transacción
+  de SQLCipher.
+
+### Compatibilidad
+
+- El backend acepta niveles de API Android hasta 99, incluido **Android 17
+  (API 37)**, para no rechazar la vinculación de teléfonos nuevos.
+
+### Verificación
+
+- 117 pruebas backend y 71 pruebas unitarias Android.
+- Android `1.7.5` (`versionCode` 14); backend `1.7.5`.
 
 ## 1.7.4 — 2026-11-09
 

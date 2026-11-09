@@ -360,6 +360,19 @@ class SecureStore private constructor(
         if (at > previous) setMeta("last_notification_at", at.toString())
     }
 
+    /** Guarda la señal y su marca de deduplicación en una sola transacción. */
+    @Synchronized
+    fun recordSignal(category: String, flags: List<String>, createdAt: Long) {
+        db.beginTransaction()
+        try {
+            addSignal(category, flags, createdAt)
+            advanceLastNotification(createdAt)
+            db.setTransactionSuccessful()
+        } finally {
+            db.endTransaction()
+        }
+    }
+
     @Synchronized
     fun usageHour(): String? = meta("usage_hour")
 
