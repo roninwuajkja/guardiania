@@ -947,7 +947,7 @@ function statCard({ label, value, unit, note, series, alert = false, seriesAlert
   const max = Math.max(...series, 1);
   const bars = series
     .map((item, index) => {
-      const height = Math.max(3, Math.round((item / max) * 26));
+      const height = Math.max(3, Math.round((item / max) * 20));
       const classes = [index === series.length - 1 ? 'is-today' : '', seriesAlert && item > 0 ? 'is-alert' : '']
         .filter(Boolean)
         .join(' ');

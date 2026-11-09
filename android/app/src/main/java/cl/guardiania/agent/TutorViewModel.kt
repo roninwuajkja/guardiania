@@ -60,6 +60,8 @@ class TutorViewModel(application: Application) : AndroidViewModel(application) {
     val ui = _ui.asStateFlow()
     private var pollJob: Job? = null
     private var alertRefreshJob: Job? = null
+    private var dashboardLoading = false
+    private var lastDashboardLoadAt = 0L
 
     init {
         viewModelScope.launch {
@@ -107,6 +109,7 @@ class TutorViewModel(application: Application) : AndroidViewModel(application) {
             runCatching {
                 withContext(Dispatchers.IO) { Pair(repo.alerts(), repo.overview()) }
             }.onSuccess { (alerts, overview) ->
+                lastDashboardLoadAt = System.currentTimeMillis()
                 _ui.update { it.copy(alerts = alerts, overview = overview) }
             }
         }
@@ -202,13 +205,29 @@ class TutorViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    private fun loadDashboard() {
+    /**
+     * Refresca el panel sin mostrar el indicador de carga.
+     *
+     * Se usa al volver a primer plano y al tocar la pestaña Alertas. El push
+     * de FCM entra por el mismo evento en vivo que el WebSocket. El umbral
+     * evita ráfagas si la app entra y sale varias veces seguidas.
+     */
+    fun refreshIfStale(maxAgeMs: Long = 20_000) {
+        if (_ui.value.session == null || dashboardLoading) return
+        if (System.currentTimeMillis() - lastDashboardLoadAt < maxAgeMs) return
+        loadDashboard(silent = true)
+    }
+
+    private fun loadDashboard(silent: Boolean = false) {
+        if (dashboardLoading) return
+        dashboardLoading = true
         viewModelScope.launch {
-            _ui.update { it.copy(busy = true, error = null) }
+            if (!silent) _ui.update { it.copy(busy = true, error = null) }
             try {
                 val (overview, alerts, devices) = withContext(Dispatchers.IO) {
                     Triple(repo.overview(), repo.alerts(), repo.devices())
                 }
+                lastDashboardLoadAt = System.currentTimeMillis()
                 _ui.update {
                     it.copy(
                         busy = false,
@@ -234,13 +253,20 @@ class TutorViewModel(application: Application) : AndroidViewModel(application) {
                     )
                 }
             } catch (error: Exception) {
-                _ui.update { it.copy(busy = false, error = error.tutorMessage()) }
+                if (silent) {
+                    _ui.update { it.copy(busy = false) }
+                } else {
+                    _ui.update { it.copy(busy = false, error = error.tutorMessage()) }
+                }
+            } finally {
+                dashboardLoading = false
             }
         }
     }
 
     fun selectTab(tab: TutorTab) {
         _ui.update { it.copy(tab = tab) }
+        if (tab == TutorTab.ALERTAS) refreshIfStale(10_000)
         if (tab == TutorTab.AJUSTES && _ui.value.consents.isEmpty()) loadConsents()
     }
 

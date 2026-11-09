@@ -13,6 +13,30 @@ Todas las versiones relevantes de IA Guardian. El detalle técnico vive en
 - Regla permanente en `AGENTS.md` y script `scripts/publish-atlas.ps1` para
   actualizar y publicar el atlas de arquitectura después de cada cambio.
 
+## 1.7.7 — 2026-11-09
+
+### Panel web
+
+- Las barras de **“Minutos hoy”** y **“Señales abiertas”** ya no se mezclan
+  con la nota: el gráfico tiene 10 px de aire y las barras bajan a 20 px de
+  alto máximo.
+- Se mantiene el resto de la jerarquía y los tokens de 1.7.6.
+
+### Android
+
+- La pestaña **Alertas** se refresca sola cuando llega una notificación FCM,
+  aunque el WebSocket esté conectado. El push actúa como respaldo del evento en
+  vivo y ya no hace falta pulsar “Actualizar panel”.
+- Al volver a primer plano, y al abrir la pestaña Alertas, el panel hace un
+  refresco silencioso si los datos tienen más de 10–20 segundos.
+- El refresco silencioso no muestra la barra de carga ni interrumpe con errores
+  transitorios; la sesión expirada sigue cerrando el panel.
+
+### Verificación
+
+- 117 pruebas backend y 75 pruebas unitarias Android.
+- Android `1.7.7` (`versionCode` 16); backend `1.7.7`.
+
 ## 1.7.6 — 2026-11-09
 
 ### Panel web

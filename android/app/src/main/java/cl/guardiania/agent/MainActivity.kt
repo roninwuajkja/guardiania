@@ -154,7 +154,10 @@ private fun GuardianAgentApp(
         val observer = LifecycleEventObserver { _, event ->
             when (event) {
                 Lifecycle.Event.ON_START ->
-                    if (tutorState.session != null) tutorVm.startRealtime()
+                    if (tutorState.session != null) {
+                        tutorVm.startRealtime()
+                        tutorVm.refreshIfStale()
+                    }
                 Lifecycle.Event.ON_STOP -> tutorVm.stopRealtime()
                 else -> Unit
             }
@@ -164,6 +167,7 @@ private fun GuardianAgentApp(
             tutorState.session != null
         ) {
             tutorVm.startRealtime()
+            tutorVm.refreshIfStale()
         }
         onDispose {
             lifecycleOwner.lifecycle.removeObserver(observer)
