@@ -240,6 +240,16 @@ La demo de la defensa corre sin PC: backend y panel en Render Free + PostgreSQL 
 
 Límites reales para decir en voz alta: Render duerme a los 15 minutos y tarda ~50 s en despertar; el plan free da 750 horas de instancia al mes y Neon 100 CU-horas. No se mantiene despierto 24/7: se abre el panel unos minutos antes de la demo y, si se usa un pinger, se programa solo para ese día. El detalle operativo, variables, FCM y checklist están en [`docs/despliegue-gratuito.md`](docs/despliegue-gratuito.md).
 
+## Atlas de arquitectura
+
+El atlas de 70 diagramas está publicado en <https://roninwuajkja.github.io/guardiania-atlas/>. Cada cambio actualiza los módulos afectados y se publica en `roninwuajkja/guardiania-atlas` con:
+
+```powershell
+.\scripts\publish-atlas.ps1
+```
+
+La regla completa y el alcance de lo que se versiona están en [`AGENTS.md`](AGENTS.md).
+
 ## Producción
 
 El arranque en `ENVIRONMENT=production` **falla** si falta cualquiera de estas condiciones:

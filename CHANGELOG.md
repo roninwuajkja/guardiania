@@ -6,6 +6,13 @@ Todas las versiones relevantes de IA Guardian. El detalle técnico vive en
 
 > Las notas de cada versión se publican en [GitHub Releases](https://github.com/roninwuajkja/guardiania/releases). Este archivo conserva el historial completo.
 
+## Unreleased
+
+### Documentación
+
+- Regla permanente en `AGENTS.md` y script `scripts/publish-atlas.ps1` para
+  actualizar y publicar el atlas de arquitectura después de cada cambio.
+
 ## 1.7.4 — 2026-11-09
 
 ### IA con múltiples señales
