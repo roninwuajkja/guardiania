@@ -19,8 +19,8 @@ android {
         applicationId = "cl.guardiania.agent"
         minSdk = 26
         targetSdk = 35
-        versionCode = 21
-        versionName = "1.7.12"
+        versionCode = 22
+        versionName = "1.7.13"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         // Se activa solo en el build de diagnóstico: guarda el último fotograma

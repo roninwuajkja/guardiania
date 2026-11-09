@@ -25,6 +25,9 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -96,6 +99,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cl.guardiania.agent.TutorTab
@@ -135,6 +139,7 @@ fun TutorShell(
     onTestPush: () -> Unit,
 ) {
     val reducedMotion = LocalReducedMotion.current
+    val contentBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 102.dp
     Scaffold(
         containerColor = Paper,
         topBar = { TutorTopBar(state, onRefresh) },
@@ -142,7 +147,7 @@ fun TutorShell(
             TutorBottomBar(current = state.tab, onTab = onTab, openAlerts = state.overview?.openAlerts ?: 0)
         },
     ) { inner ->
-        Box(Modifier.fillMaxSize().padding(inner)) {
+        Box(Modifier.fillMaxSize().padding(top = inner.calculateTopPadding())) {
             AnimatedContent(
                 targetState = state.tab,
                 transitionSpec = {
@@ -170,8 +175,9 @@ fun TutorShell(
                         onResendVerification = onResendVerification,
                         onGoAlerts = { onTab(TutorTab.ALERTAS) },
                         onGoDevices = { onTab(TutorTab.EQUIPOS) },
+                        bottomPadding = contentBottom,
                     )
-                    TutorTab.ALERTAS -> TutorAlerts(state, onAlertState)
+                    TutorTab.ALERTAS -> TutorAlerts(state, onAlertState, contentBottom)
                     TutorTab.EQUIPOS -> TutorDevices(
                         state = state,
                         onRevoke = onRevoke,
@@ -180,6 +186,7 @@ fun TutorShell(
                         onGeneratePairing = onGeneratePairing,
                         onCancelPairing = onCancelPairing,
                         onClearPairing = onClearPairing,
+                        bottomPadding = contentBottom,
                     )
                     TutorTab.AJUSTES -> TutorSettings(
                         state = state,
@@ -192,6 +199,7 @@ fun TutorShell(
                         onChangePassword = onChangePassword,
                         onExport = onExport,
                         onTestPush = onTestPush,
+                        bottomPadding = contentBottom,
                     )
                 }
             }
@@ -378,13 +386,14 @@ private fun TutorHome(
     onResendVerification: () -> Unit,
     onGoAlerts: () -> Unit,
     onGoDevices: () -> Unit,
+    bottomPadding: Dp,
 ) {
     val overview = state.overview
     val liveDevices = overview?.devices?.count { it.deviceLive() } ?: 0
     val linkedLabel = if ((overview?.devices?.size ?: 0) == 1) "vinculado" else "vinculados"
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(18.dp, 18.dp, 18.dp, 28.dp),
+        contentPadding = PaddingValues(18.dp, 18.dp, 18.dp, bottomPadding),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         item {
@@ -673,7 +682,7 @@ private fun CompactAlert(alert: TutorAlertDto, modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun TutorAlerts(state: TutorUiState, onAlertState: (String, String) -> Unit) {
+private fun TutorAlerts(state: TutorUiState, onAlertState: (String, String) -> Unit, bottomPadding: Dp) {
     var filter by rememberSaveable { mutableStateOf("ABIERTAS") }
     val loading = state.overview == null && state.busy
     var knownIds by remember { mutableStateOf<Set<String>?>(null) }
@@ -700,7 +709,7 @@ private fun TutorAlerts(state: TutorUiState, onAlertState: (String, String) -> U
     }
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(18.dp, 18.dp, 18.dp, 28.dp),
+        contentPadding = PaddingValues(18.dp, 18.dp, 18.dp, bottomPadding),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item {
@@ -832,6 +841,7 @@ private fun TutorDevices(
     onGeneratePairing: (String, Boolean) -> Unit,
     onCancelPairing: () -> Unit,
     onClearPairing: () -> Unit,
+    bottomPadding: Dp,
 ) {
     var filter by rememberSaveable { mutableStateOf(DeviceFilter.ACTIVOS) }
     var revokeTarget by remember { mutableStateOf<TutorDeviceDto?>(null) }
@@ -844,7 +854,7 @@ private fun TutorDevices(
     }
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(18.dp, 18.dp, 18.dp, 28.dp),
+        contentPadding = PaddingValues(18.dp, 18.dp, 18.dp, bottomPadding),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item {
@@ -1416,6 +1426,7 @@ private fun TutorSettings(
     onChangePassword: (String, String) -> Unit,
     onExport: () -> Unit,
     onTestPush: () -> Unit,
+    bottomPadding: Dp,
 ) {
     var confirmLogout by remember { mutableStateOf(false) }
     var confirmChild by remember { mutableStateOf(false) }
@@ -1425,7 +1436,7 @@ private fun TutorSettings(
         Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(18.dp),
+            .padding(start = 18.dp, top = 18.dp, end = 18.dp, bottom = bottomPadding),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         Text("Ajustes", style = MaterialTheme.typography.headlineMedium, color = Ink)

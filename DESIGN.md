@@ -40,7 +40,7 @@ No hay Redis ni cola externa. El **outbox transaccional** vive en la misma base 
 - Categoría de la app (no el nombre del paquete en el panel, salvo el alias del dispositivo).
 - Conteos y minutos, nunca títulos, remitentes, números ni extractos.
 - Flags léxicos normalizados (`gambling`, `self_harm`, …), no el texto que los activó.
-- Un hash salado y truncado de contacto, solo cuando la app expone un identificador estable. **No implementado en 1.7.12**: el campo va `null` y `contacto_recurrente` está reservada.
+- Un hash salado y truncado de contacto, solo cuando la app expone un identificador estable. **No implementado en 1.7.13**: el campo va `null` y `contacto_recurrente` está reservada.
 - Ventana temporal de las señales: 5 minutos (el servidor acepta hasta 60 minutos) y `event_id` determinista para idempotencia.
 
 ### Qué se queda en el teléfono
@@ -153,7 +153,7 @@ La alerta se crea una vez por `(dispositivo, event_id, categoría)`. El panel or
 - **Tipografía:** **Archivo** para UI y cifras; **Spline Sans Mono** para códigos, timestamps, eyebrows y la franja. Ambas se sirven localmente en woff2 (sin CDN).
 - **Marca:** **Vínculo**, dos órbitas que se cuidan y dejan un espacio libre; el corte pequeño usa dos puntos para favicon y UI. El escudo anterior se retira. Wordmark Archivo 600 en curvas; fuentes y exports en `brand/`.
 - **Firma:** la franja **Guardia** de 24 horas. Las señales aparecen como marcas, las horas nocturnas se sombrean y el presente se indica con una línea vertical. Es el único elemento “instrumental” y evita el gráfico de amenazas genérico.
-- **Navegación:** índice de bitácora en el masthead (pestañas 01-04) con la pestaña activa unida a la hoja; dock flotante en móvil. En Android, isla flotante con indicador activo en salvia.
+- **Navegación:** índice de bitácora en el masthead (pestañas 01-04) con la pestaña activa unida a la hoja; dock flotante en móvil. En Android, isla flotante con indicador activo en salvia y contenido que pasa por detrás.
 - **Componentes:** tarjetas de 14 px de radio, reglas de 1 px; píldoras de estado; tablas de dispositivos en dos filas en pantallas angostas.
 - **Movimiento:** transiciones cortas (150–240 ms), `prefers-reduced-motion` respetado; la franja aparece sin animación de carga agresiva.
 - **Accesibilidad:** foco visible, navegación por teclado, targets de 44 px, contraste AA, `aria-label` en iconos, texto de estado que no depende solo del color.

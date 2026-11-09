@@ -1,4 +1,4 @@
-# Arquitectura de IA y notificaciones — IA Guardian 1.7.12
+# Arquitectura de IA y notificaciones — IA Guardian 1.7.13
 
 Este documento describe el camino completo de una señal: desde la vinculación del
 teléfono del menor hasta la alerta que recibe el tutor. Complementa
@@ -19,7 +19,7 @@ almacenamiento, retención y panel).
    `flags_graves`, `senal_principal`, `categoria_sugerida` y `cantidad_flags`
    para que el modelo distinga una señal aislada de una combinación. No hay
    ninguna ruta que acepte texto; `AI_SEND_SNIPPET` está cerrado y sin
-   llamadores en 1.7.12.
+   llamadores en 1.7.13.
 4. **PostgreSQL es la fuente de verdad:** FCM y WebSocket solo transportan. Si
    el push falla, la alerta sigue disponible en el panel y en la auditoría.
 5. **Degradación segura:** si todos los proveedores de IA fallan, una heurística
@@ -357,14 +357,14 @@ La clave efectiva es `(dispositivo_id, event_id, categoria)`:
 | Token FCM en logs | **No** | solo huella SHA-256 truncada |
 | Texto o narrativa en el payload FCM | **No** | — |
 
-`hashed_contact_id` sigue **reservado** y va `null` en 1.7.12. La regla
+`hashed_contact_id` sigue **reservado** y va `null` en 1.7.13. La regla
 `contacto_recurrente` no se activa.
 
 ## 9. Configuración relevante
 
 ```env
 AI_ENABLED=true
-AI_SEND_SNIPPET=false          # obligatorio; sin llamadores en 1.7.12
+AI_SEND_SNIPPET=false          # obligatorio; sin llamadores en 1.7.13
 AI_PROVIDER=auto               # auto | groq | gemini | openai | anthropic | heuristic
 AI_PRIMARY_TIMEOUT_MS=2500     # demo medida con Groq
 AI_FALLBACK_TIMEOUT_MS=450
@@ -395,7 +395,7 @@ ANDROID_PACKAGE_NAME=cl.guardiania.agent
 Producción exige además PostgreSQL, TLS, verificación de correo y
 `AI_SEND_SNIPPET=false`; el arranque falla si esas condiciones no se cumplen.
 
-## 10. Límites honestos de 1.7.12
+## 10. Límites honestos de 1.7.13
 
 - No es un diagnóstico clínico ni un sistema certificado. Es una señal para que
   un adulto converse, no una prueba.
