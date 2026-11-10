@@ -24,6 +24,12 @@ Todas las versiones relevantes de IA Guardian. El detalle técnico vive en
   densidad.
 - La web conserva el enlace y la ruta `/apple-touch-icon.png`.
 
+### Branding
+
+- Banner de GitHub y vista previa social: el símbolo pasa al corte pequeño
+  blanco.
+- README actualizado a `docs/screenshots/banner-1.7.15.png`.
+
 ### Verificación
 
 - 117 pruebas backend y 75 pruebas Android.
