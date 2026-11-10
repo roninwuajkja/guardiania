@@ -185,7 +185,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 app = FastAPI(
     title="IA Guardian API",
     description="Control parental con privacidad por diseño: vinculación multidispositivo y evaluación de riesgo con IA.",
-    version="1.7.13",
+    version="1.7.14",
     lifespan=lifespan,
     docs_url=None if settings.is_production or not settings.docs_enabled else "/docs",
     redoc_url=None if settings.is_production or not settings.docs_enabled else "/redoc",
@@ -308,3 +308,8 @@ async def reset_password_page():
 @app.get("/favicon.svg", include_in_schema=False)
 async def favicon():
     return FileResponse(WEB_DIR / "favicon.svg", media_type="image/svg+xml")
+
+
+@app.get("/apple-touch-icon.png", include_in_schema=False)
+async def apple_touch_icon():
+    return FileResponse(WEB_DIR / "apple-touch-icon.png", media_type="image/png")

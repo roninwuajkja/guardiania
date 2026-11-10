@@ -61,6 +61,7 @@ def test_legal_pages_are_served_with_security_headers(client):
         "/restablecer",
         "/static/legal.js",
         "/static/app.css",
+        "/apple-touch-icon.png",
     ):
         response = client.get(path)
         assert response.status_code == 200, (path, response.text)
@@ -81,4 +82,4 @@ def test_health_reports_production_hardened_version(client):
     assert response.status_code == 200
     body = response.json()
     assert body["status"] == "ok"
-    assert body["version"] == "1.7.13"
+    assert body["version"] == "1.7.14"
