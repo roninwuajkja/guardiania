@@ -13,6 +13,24 @@ Todas las versiones relevantes de IA Guardian. El detalle técnico vive en
 - Regla permanente en `AGENTS.md` y script `scripts/publish-atlas.ps1` para
   actualizar y publicar el atlas de arquitectura después de cada cambio.
 
+## 1.7.15 - 2026-11-09
+
+### Iconos
+
+- Android: el launcher usa directamente la imagen
+  `brand/web-icons/apple-touch-icon.png` como capa del icono adaptativo,
+  escalada a la zona segura para conservar el satélite.
+- Se reemplaza la recreación vectorial de 1.7.14 por los PNG del icono en cada
+  densidad.
+- La web conserva el enlace y la ruta `/apple-touch-icon.png`.
+
+### Verificación
+
+- 117 pruebas backend y 75 pruebas Android.
+- Icono revisado en el launcher circular del emulador; release 1.7.15 sin
+  crashes.
+- Android `1.7.15` (`versionCode` 24); backend `1.7.15`.
+
 ## 1.7.14 - 2026-11-09
 
 ### Iconos
