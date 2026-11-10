@@ -8,13 +8,13 @@
 
 | Versión | Cuándo | Archivo |
 |---|---|---|
-| Símbolo completo | Banner, lockups, app icon, piezas grandes | `source/b-vinculo-symbol.svg` |
-| Corte pequeño | Favicon, marca de UI, 16–32 px | `source/b-vinculo-symbol-small.svg` |
+| Símbolo completo | Lockups y piezas grandes | `source/b-vinculo-symbol.svg` |
+| Corte pequeño | Favicon, app icon, banner y marca de UI | `source/b-vinculo-symbol-small.svg` |
 | Horizontal | Cabeceras y README | `source/b-vinculo-horizontal.svg` |
 | Stacked | Formatos cuadrados y sociales | `source/b-vinculo-stacked.svg` |
 | Wordmark | Cuando el símbolo ya se reconoce | `source/b-vinculo-wordmark.svg` |
 
-Usa el **corte pequeño** por debajo de 32 px. Usa el **símbolo completo** desde 32 px. No uses el símbolo completo como favicon: se embota.
+Usa el **corte pequeño** en favicon, app icon, banner y UI. Reserva el **símbolo completo** para lockups y piezas grandes. No uses el símbolo completo como favicon: se embota.
 
 ## 3. Espacio libre y tamaño mínimo
 
@@ -53,7 +53,7 @@ Los Pantone deben verificarse contra una guía física antes de imprimir. Para w
 
 - **Horizontal:** símbolo a la izquierda, wordmark a la derecha; el símbolo mide ~2,5 veces la altura de mayúscula del wordmark.
 - **Stacked:** símbolo arriba, wordmark centrado abajo; usa esta versión en avatares y formatos cuadrados.
-- **Símbolo solo:** app icon, favicon, avatar.
+- **Corte pequeño solo:** app icon, favicon, avatar.
 - No reorganices las partes, no cambies la distancia símbolo–wordmark y no agregues tagline dentro del lockup: la tagline va aparte.
 
 ## 7. Usos incorrectos
@@ -66,12 +66,12 @@ No rotar, estirar, comprimir, recolorear fuera de la paleta, agregar sombras, bi
 - `web-icons/`: favicon.ico, favicon-16/32/48, apple-touch-icon, icon-192/512, maskable-512, `site.webmanifest`.
 - `banner/github-banner.png`: banner de README, 1600 × 500.
 - `banner/github-social-preview.png`: vista previa social, 1200 × 630.
-- `docs/screenshots/banner.png`: copia publicada del banner.
+- `docs/screenshots/banner-1.7.15.png`: copia publicada del banner.
 - `docs/screenshots/logo.png`: símbolo en color para documentación.
 
 ## 9. GitHub
 
-El README usa `docs/screenshots/banner.png`. La vista previa social se sube en **Settings → Social preview** del repositorio (1200 × 630). Mantén el símbolo y el wordmark dentro del área central segura; no recortes los puntos.
+El README usa `docs/screenshots/banner-1.7.15.png`. La vista previa social se sube en **Settings → Social preview** del repositorio (1200 × 630). Mantén el símbolo y el wordmark dentro del área central segura; no recortes los puntos.
 
 ## 10. Registro
 

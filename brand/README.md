@@ -21,9 +21,9 @@
 
 ## Uso rápido
 
-- App icon: símbolo completo sobre Pine 950.
+- App icon: corte pequeño sobre Pine 950.
 - Favicon y marca de UI: corte pequeño.
-- Banner y README: lockup horizontal reverso.
+- Banner y README: corte pequeño blanco y wordmark.
 - Wordmark: nunca reescribir con otra fuente; usar el SVG en curvas.
 
-La versión de marca se publica con IA Guardian **1.7.8**.
+La versión de marca se publica con IA Guardian **1.7.15**.

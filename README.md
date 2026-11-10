@@ -1,6 +1,6 @@
 # IA Guardian
 
-![IA Guardian](docs/screenshots/banner-1.7.8.png)
+![IA Guardian](docs/screenshots/banner-1.7.15.png)
 
 > **APK Android 1.7.15:** [descargar desde GitHub Releases](https://github.com/roninwuajkja/guardiania/releases/tag/v1.7.15) · [changelog](CHANGELOG.md)
 
