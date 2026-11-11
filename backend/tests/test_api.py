@@ -34,7 +34,7 @@ def tutor(client):
             "email": email,
             "password": "ClaveSegura2026",
             "alias": "Tutora de prueba",
-            "consent": True,
+            "consent": True, "guardian_declaration": True,
         },
     )
     assert response.status_code == 201, response.text
@@ -45,6 +45,39 @@ def tutor(client):
 @pytest.fixture
 def auth_headers(tutor):
     return {"Authorization": f"Bearer {tutor['token']}"}
+
+
+def test_register_requires_guardian_declaration(client):
+    email = f"sin-tutoria-{uuid.uuid4().hex[:8]}@guardiania.cl"
+    response = client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": email,
+            "password": "ClaveSegura2026",
+            "alias": "Sin declaración",
+            "consent": True,
+            "guardian_declaration": False,
+        },
+    )
+    assert response.status_code == 422
+
+
+def test_register_records_terms_privacy_and_tutoria(client):
+    email = f"consentimientos-{uuid.uuid4().hex[:8]}@guardiania.cl"
+    response = client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": email,
+            "password": "ClaveSegura2026",
+            "alias": "Consentimientos",
+            "consent": True,
+            "guardian_declaration": True,
+        },
+    )
+    assert response.status_code == 201, response.text
+    headers = {"Authorization": f"Bearer {response.json()['access_token']}"}
+    consents = client.get("/api/v1/account/consents", headers=headers).json()
+    assert {"terminos", "privacidad", "tutoria"} <= {item["tipo"] for item in consents}
 
 
 def device_payload(install_id: uuid.UUID | None = None) -> dict:
@@ -373,7 +406,7 @@ def test_cookie_session_and_csrf(client):
             "email": email,
             "password": "ClaveSegura2026",
             "alias": "Tutora cookie",
-            "consent": True,
+            "consent": True, "guardian_declaration": True,
         },
         headers={"X-CSRF-Token": csrf},
     )
@@ -398,7 +431,7 @@ def test_tutor_refresh_rotates_and_invalidates_old_token(client):
             "email": email,
             "password": "ClaveSegura2026",
             "alias": "Tutora refresh",
-            "consent": True,
+            "consent": True, "guardian_declaration": True,
         },
     )
     assert response.status_code == 201, response.text
@@ -436,7 +469,7 @@ def test_account_export_and_deletion(client):
     password = "ClaveSegura2026"
     registered = client.post(
         "/api/v1/auth/register",
-        json={"email": email, "password": password, "alias": "Cuenta borrable", "consent": True},
+        json={"email": email, "password": password, "alias": "Cuenta borrable", "consent": True, "guardian_declaration": True},
     )
     assert registered.status_code == 201
     headers = {"Authorization": f"Bearer {registered.json()['access_token']}"}
@@ -469,7 +502,7 @@ def test_password_reset_uses_fragment_and_revokes_sessions(client, monkeypatch):
     new_password = "ClaveNuevaSegura2026"
     registered = client.post(
         "/api/v1/auth/register",
-        json={"email": email, "password": old_password, "alias": "Cuenta recuperable", "consent": True},
+        json={"email": email, "password": old_password, "alias": "Cuenta recuperable", "consent": True, "guardian_declaration": True},
     )
     assert registered.status_code == 201, registered.text
     old_refresh = registered.json()["refresh_token"]
@@ -523,7 +556,7 @@ def test_email_verification_link_and_single_use(client, monkeypatch):
 
     registered = client.post(
         "/api/v1/auth/register",
-        json={"email": email, "password": password, "alias": "Cuenta por verificar", "consent": True},
+        json={"email": email, "password": password, "alias": "Cuenta por verificar", "consent": True, "guardian_declaration": True},
     )
     assert registered.status_code == 202, registered.text
     assert len(sent) == 1
@@ -564,7 +597,7 @@ def evaluate_payload(device_id, *, flags=("self_harm",), event_id=None, age_minu
         "lexical_flag_count": len(flags),
         "flags": list(flags),
         "usage_duration_minutes": 15,
-        "integrity": {"attestation_ok": True, "app_version": "1.7.15"},
+        "integrity": {"attestation_ok": True, "app_version": "1.7.16"},
     }
 
 
@@ -705,7 +738,7 @@ def test_sync_publishes_medium_rule_alert_to_stream(client, auth_headers):
                 "usage_duration_minutes": 12,
                 "notification_count": 3,
                 "event_count": 3,
-                "integrity": {"attestation_ok": True, "app_version": "1.7.15"},
+                "integrity": {"attestation_ok": True, "app_version": "1.7.16"},
             }
         ],
     }
@@ -894,7 +927,7 @@ def _sync_payload(device_id: str, *, flags: list[str] | None = None) -> dict:
                 "usage_duration_minutes": 5,
                 "notification_count": 1,
                 "event_count": 1,
-                "integrity": {"attestation_ok": True, "app_version": "1.7.15"},
+                "integrity": {"attestation_ok": True, "app_version": "1.7.16"},
             }
         ],
     }

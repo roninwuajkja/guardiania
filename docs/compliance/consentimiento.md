@@ -11,6 +11,8 @@ IA Guardian exige dos actos distintos:
 
 El asentimiento no reemplaza la autorización del tutor; la complementa.
 
+El registro exige dos aceptaciones separadas: (a) términos y privacidad; y (b) declaración de tutoría, información al menor y monitoreo de señales derivadas (`guardian_declaration`). Ambas se guardan con la versión legal vigente.
+
 ## 2. Contenido mínimo explicado al menor
 
 - Qué se comparte: categorías de uso, minutos, conteos de indicadores y ventana temporal.

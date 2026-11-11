@@ -29,10 +29,23 @@ class TutorRepository(private val store: SecureStore) {
         return persist(normalized, response)
     }
 
-    suspend fun register(baseUrl: String, email: String, password: String, alias: String): TutorRegistrationResult {
+    suspend fun register(
+        baseUrl: String,
+        email: String,
+        password: String,
+        alias: String,
+        consent: Boolean,
+        guardianDeclaration: Boolean,
+    ): TutorRegistrationResult {
         val normalized = ApiFactory.normalizeBaseUrl(baseUrl)
         val response = ApiFactory.create(normalized).tutorRegister(
-            TutorRegisterRequest(email.trim().lowercase(), password, alias.trim(), consent = true),
+            TutorRegisterRequest(
+                email = email.trim().lowercase(),
+                password = password,
+                alias = alias.trim(),
+                consent = consent,
+                guardianDeclaration = guardianDeclaration,
+            ),
         )
         val tutor = response.tutor
         val access = response.accessToken

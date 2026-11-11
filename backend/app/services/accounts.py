@@ -55,6 +55,7 @@ async def create_account(
     password: str,
     alias: str,
     consent: bool,
+    guardian_declaration: bool,
 ) -> tuple[User, AccountSecurity]:
     user = User(
         rol=Rol.TUTOR.value,
@@ -81,14 +82,30 @@ async def create_account(
             tutor_id=user.id,
             tipo="terminos",
             version=settings.legal_version,
-            detalle={"origen": "registro"},
+            detalle={"origen": "registro", "marco_legal": "Ley 21.719"},
         )
         await record_consent(
             db,
             tutor_id=user.id,
             tipo="privacidad",
             version=settings.legal_version,
-            detalle={"origen": "registro"},
+            detalle={"origen": "registro", "marco_legal": "Ley 21.719"},
+        )
+    if guardian_declaration:
+        from .audit import record_consent
+
+        await record_consent(
+            db,
+            tutor_id=user.id,
+            tipo="tutoria",
+            version=settings.legal_version,
+            detalle={
+                "origen": "registro",
+                "marco_legal": "Ley 21.719",
+                "monitoreo_menor": "senales_derivadas",
+                "contenido_conversaciones": False,
+                "asentimiento_menor": "se_registra_al_vincular",
+            },
         )
     return user, security
 

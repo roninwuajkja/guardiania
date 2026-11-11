@@ -124,6 +124,7 @@ async def register(body: RegisterRequest, request: Request, response: Response, 
         password=body.password,
         alias=body.alias,
         consent=body.consent,
+        guardian_declaration=body.guardian_declaration,
     )
     await record(db, "auth.register", usuario_id=user.id, request=request, detalle={"legal": settings.legal_version})
 

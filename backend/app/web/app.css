@@ -417,6 +417,79 @@ svg {
   flex: none;
 }
 
+.check[hidden],
+.legal-brief[hidden] {
+  display: none;
+}
+
+.check a,
+.legal-brief a {
+  color: var(--pine-700);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+[data-theme='dark'] .check a,
+[data-theme='dark'] .legal-brief a,
+[data-theme='dark'] .legal-brief-title {
+  color: var(--sage-300);
+}
+
+.legal-brief {
+  margin: 4px 0 16px;
+  padding: 13px 14px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--card-2);
+}
+
+.legal-brief-title {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--pine-700);
+}
+
+.legal-brief ul {
+  display: grid;
+  gap: 6px;
+  margin: 9px 0 0;
+  padding-left: 16px;
+}
+
+.legal-brief li {
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+
+.legal-brief strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.legal-brief-meta {
+  margin-top: 9px;
+  font-size: 10.5px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.legal-brief-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px 12px;
+  margin-top: 8px;
+  font-size: 11px;
+}
+
+[data-theme='dark'] .legal-brief {
+  background: var(--card);
+}
+
 .form-error {
   min-height: 20px;
   margin: 0 0 10px;
@@ -568,7 +641,7 @@ svg {
 
 .auth-card {
   width: 100%;
-  max-width: 400px;
+  max-width: 460px;
   padding: 32px;
   border: 1px solid var(--line);
   border-radius: 18px;
@@ -647,7 +720,7 @@ svg {
 }
 
 .auth-legal {
-  max-width: 400px;
+  max-width: 460px;
   font-size: 11.5px;
   line-height: 1.5;
   color: var(--muted);

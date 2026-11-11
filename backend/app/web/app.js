@@ -268,7 +268,9 @@ function setAuthMode(mode) {
     ? 'Crea tu cuenta de tutor para vincular el primer dispositivo.'
     : 'Tu panel de tutor. Sin contenido de conversaciones.';
   $('#alias-field').hidden = !registering;
+  $('#legal-brief').hidden = !registering;
   $('#consent-field').hidden = !registering;
+  $('#guardian-field').hidden = !registering;
   $('#auth-submit').textContent = registering ? 'Crear cuenta' : 'Entrar';
   const errorBox = $('#auth-error');
   errorBox.textContent = '';
@@ -326,6 +328,7 @@ async function submitAuth(event) {
   const password = String(data.get('password') || '');
   const alias = String(data.get('alias') || '').trim();
   const consent = Boolean(data.get('consent'));
+  const guardian = Boolean(data.get('guardian_declaration'));
 
   if (!email.includes('@')) {
     errorBox.textContent = 'Escribe un correo válido.';
@@ -340,7 +343,11 @@ async function submitAuth(event) {
     return;
   }
   if (authMode === 'register' && !consent) {
-    errorBox.textContent = 'Necesitamos tu consentimiento para crear la cuenta.';
+    errorBox.textContent = 'Debes aceptar los términos y la política de privacidad.';
+    return;
+  }
+  if (authMode === 'register' && !guardian) {
+    errorBox.textContent = 'Debes declarar la tutoría y el monitoreo del menor.';
     return;
   }
 
@@ -348,7 +355,7 @@ async function submitAuth(event) {
   submit.textContent = authMode === 'register' ? 'Creando…' : 'Entrando…';
   try {
     const payload = authMode === 'register'
-      ? { email, password, alias, consent }
+      ? { email, password, alias, consent, guardian_declaration: guardian }
       : { email, password };
     const response = await api(`/auth/${authMode === 'register' ? 'register' : 'login'}`, {
       method: 'POST',

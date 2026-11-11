@@ -13,6 +13,29 @@ Todas las versiones relevantes de IA Guardian. El detalle técnico vive en
 - Regla permanente en `AGENTS.md` y script `scripts/publish-atlas.ps1` para
   actualizar y publicar el atlas de arquitectura después de cada cambio.
 
+## 1.7.16 - 2026-11-11
+
+### Registro legal
+
+- Web y Android: al crear la cuenta se muestra un resumen del monitoreo del
+  menor con marco de referencia (Ley N.° 21.719, Ley N.° 19.496 y normativa
+  sobre patria potestad, tutela y cuidado personal).
+- Se exigen dos aceptaciones separadas: términos y privacidad, y declaración de
+  tutoría, información al menor, asentimiento al vincular y monitoreo de
+  señales derivadas.
+- Backend: `guardian_declaration` es obligatorio al registrar. Se guardan
+  `terminos`, `privacidad` y `tutoria` en la misma operación, con detalle de
+  marco legal y alcance del monitoreo.
+- La versión legal no cambia; el resumen enlaza los documentos vigentes.
+
+### Verificación
+
+- 119 pruebas backend y 75 pruebas Android.
+- Registro web probado de extremo a extremo: sin aceptar, solo términos y con
+  ambos consentimientos; los tres registros quedan en la cuenta.
+- Pantalla de registro Android revisada en el emulador.
+- Android `1.7.16` (`versionCode` 25); backend `1.7.16`.
+
 ## 1.7.15 - 2026-11-09
 
 ### Iconos

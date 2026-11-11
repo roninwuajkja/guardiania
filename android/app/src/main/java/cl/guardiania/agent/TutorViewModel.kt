@@ -48,6 +48,7 @@ data class TutorUiState(
     val pairing: TutorPairingDto? = null,
     val pairingStatus: TutorPairingStatusDto? = null,
     val consentChecked: Boolean = false,
+    val guardianConsentChecked: Boolean = false,
     val registrationPending: String? = null,
 )
 
@@ -134,6 +135,8 @@ class TutorViewModel(application: Application) : AndroidViewModel(application) {
 
     fun setConsent(value: Boolean) = _ui.update { it.copy(consentChecked = value) }
 
+    fun setGuardianConsent(value: Boolean) = _ui.update { it.copy(guardianConsentChecked = value) }
+
     fun login(baseUrl: String, email: String, password: String) {
         if (_ui.value.busy) return
         viewModelScope.launch {
@@ -155,10 +158,23 @@ class TutorViewModel(application: Application) : AndroidViewModel(application) {
             _ui.update { it.copy(error = "Debes aceptar los términos y la política de privacidad.") }
             return
         }
+        if (!_ui.value.guardianConsentChecked) {
+            _ui.update { it.copy(error = "Debes declarar la tutoría y el monitoreo del menor.") }
+            return
+        }
         viewModelScope.launch {
             _ui.update { it.copy(busy = true, error = null, registrationPending = null) }
             try {
-                val result = withContext(Dispatchers.IO) { repo.register(baseUrl, email, password, alias) }
+                val result = withContext(Dispatchers.IO) {
+                    repo.register(
+                        baseUrl = baseUrl,
+                        email = email,
+                        password = password,
+                        alias = alias,
+                        consent = _ui.value.consentChecked,
+                        guardianDeclaration = _ui.value.guardianConsentChecked,
+                    )
+                }
                 if (result.session != null) {
                     _ui.update {
                         it.copy(
@@ -166,6 +182,8 @@ class TutorViewModel(application: Application) : AndroidViewModel(application) {
                             session = result.session,
                             baseUrl = result.session.baseUrl,
                             message = "Cuenta creada",
+                            consentChecked = false,
+                            guardianConsentChecked = false,
                         )
                     }
                     loadDashboard()
@@ -176,6 +194,8 @@ class TutorViewModel(application: Application) : AndroidViewModel(application) {
                             busy = false,
                             registrationPending = result.message,
                             authMode = TutorAuthMode.LOGIN,
+                            consentChecked = false,
+                            guardianConsentChecked = false,
                         )
                     }
                 }
