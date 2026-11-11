@@ -66,12 +66,12 @@ No rotar, estirar, comprimir, recolorear fuera de la paleta, agregar sombras, bi
 - `web-icons/`: favicon.ico, favicon-16/32/48, apple-touch-icon, icon-192/512, maskable-512, `site.webmanifest`.
 - `banner/github-banner.png`: banner de README, 1600 × 500.
 - `banner/github-social-preview.png`: vista previa social, 1200 × 630.
-- `docs/screenshots/banner-1.7.15.png`: copia publicada del banner.
+- `docs/screenshots/banner.png`: copia publicada del banner.
 - `docs/screenshots/logo.png`: símbolo en color para documentación.
 
 ## 9. GitHub
 
-El README usa `docs/screenshots/banner-1.7.15.png`. La vista previa social se sube en **Settings → Social preview** del repositorio (1200 × 630). Mantén el símbolo y el wordmark dentro del área central segura; no recortes los puntos.
+El README usa `docs/screenshots/banner.png`. La vista previa social se sube en **Settings → Social preview** del repositorio (1200 × 630). Mantén el símbolo y el wordmark dentro del área central segura; no recortes los puntos.
 
 ## 10. Registro
 
