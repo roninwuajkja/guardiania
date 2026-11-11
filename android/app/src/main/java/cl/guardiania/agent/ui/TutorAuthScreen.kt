@@ -8,6 +8,7 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -24,6 +25,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -42,6 +44,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -53,6 +56,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -69,8 +73,11 @@ fun TutorAuthScreen(
     busy: Boolean,
     error: String?,
     registrationPending: String?,
+    consentChecked: Boolean,
+    guardianConsentChecked: Boolean,
     onModeChange: (TutorAuthMode) -> Unit,
     onConsentChange: (Boolean) -> Unit,
+    onGuardianConsentChange: (Boolean) -> Unit,
     onLogin: (String, String, String) -> Unit,
     onRegister: (String, String, String, String) -> Unit,
     onClearPending: () -> Unit,
@@ -79,7 +86,6 @@ fun TutorAuthScreen(
     var email by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
     var alias by rememberSaveable { mutableStateOf("") }
-    var consent by rememberSaveable { mutableStateOf(false) }
     var reveal by rememberSaveable { mutableStateOf(false) }
     var localError by rememberSaveable { mutableStateOf<String?>(null) }
     val uriHandler = LocalUriHandler.current
@@ -102,8 +108,12 @@ fun TutorAuthScreen(
                 localError = "Escribe un alias para el panel."
                 return
             }
-            if (!consent) {
-                localError = "Debes aceptar los términos, la privacidad y declarar la tutoría."
+            if (!consentChecked) {
+                localError = "Debes aceptar los términos y la política de privacidad."
+                return
+            }
+            if (!guardianConsentChecked) {
+                localError = "Debes declarar la tutoría y el monitoreo del menor."
                 return
             }
             onRegister(server, email, password, alias)
@@ -238,17 +248,56 @@ fun TutorAuthScreen(
                         colors = fieldColors(),
                     )
                     Spacer(Modifier.height(10.dp))
-                    Row(verticalAlignment = Alignment.Top) {
+                    LegalBriefCard()
+                    Spacer(Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .toggleable(
+                                value = consentChecked,
+                                onValueChange = onConsentChange,
+                                role = Role.Checkbox,
+                            )
+                            .padding(vertical = 2.dp),
+                        verticalAlignment = Alignment.Top,
+                    ) {
                         Checkbox(
-                            checked = consent,
-                            onCheckedChange = { consent = it; onConsentChange(it) },
+                            checked = consentChecked,
+                            onCheckedChange = null,
                             colors = CheckboxDefaults.colors(checkedColor = Pine700),
                         )
                         Text(
-                            text = "Acepto los términos y la política de privacidad, y declaro que ejerzo la patria potestad, tutela o cuidado personal del menor.",
+                            text = "He leído y acepto los términos y la política de privacidad vigentes.",
                             modifier = Modifier
                                 .weight(1f)
-                                .padding(top = 10.dp),
+                                .padding(start = 4.dp, top = 10.dp),
+                            color = Ink2,
+                            fontSize = 12.sp,
+                            lineHeight = 18.sp,
+                        )
+                    }
+                    Spacer(Modifier.height(2.dp))
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .toggleable(
+                                value = guardianConsentChecked,
+                                onValueChange = onGuardianConsentChange,
+                                role = Role.Checkbox,
+                            )
+                            .padding(vertical = 2.dp),
+                        verticalAlignment = Alignment.Top,
+                    ) {
+                        Checkbox(
+                            checked = guardianConsentChecked,
+                            onCheckedChange = null,
+                            colors = CheckboxDefaults.colors(checkedColor = Pine700),
+                        )
+                        Text(
+                            text = "Declaro que ejerzo la patria potestad, tutela o cuidado personal, que informé al menor y registraré su asentimiento, y que entiendo el monitoreo de señales derivadas, no de conversaciones.",
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(start = 4.dp, top = 10.dp),
                             color = Ink2,
                             fontSize = 12.sp,
                             lineHeight = 18.sp,
@@ -309,9 +358,10 @@ fun TutorAuthScreen(
                 Spacer(Modifier.height(4.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     listOf(
-                        "privacidad" to "Privacidad",
                         "terminos" to "Términos",
+                        "privacidad" to "Privacidad",
                         "consentimiento" to "Consentimiento",
+                        "retencion" to "Retención",
                         "seguridad" to "Seguridad",
                     ).forEach { (path, label) ->
                         TextButton(
@@ -322,6 +372,40 @@ fun TutorAuthScreen(
                 }
                 Spacer(Modifier.height(24.dp))
             }
+        }
+    }
+}
+
+@Composable
+private fun LegalBriefCard() {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        color = Card2,
+        border = BorderStroke(1.dp, Line),
+    ) {
+        Column(Modifier.padding(12.dp)) {
+            Text(
+                text = "ANTES DE CREAR LA CUENTA",
+                color = Pine700,
+                fontFamily = Mono,
+                fontSize = 8.5.sp,
+                letterSpacing = 1.sp,
+            )
+            Spacer(Modifier.height(6.dp))
+            Text(
+                text = "Declaras ser mayor de 18 años y ejercer la patria potestad, tutela o cuidado personal. IA Guardian comparte señales derivadas, no mensajes, fotos, audio ni ubicación precisa. El asentimiento del menor se registra al vincular el teléfono. Las alertas son heurísticas, no diagnóstico.",
+                color = Ink2,
+                fontSize = 11.5.sp,
+                lineHeight = 17.sp,
+            )
+            Spacer(Modifier.height(6.dp))
+            Text(
+                text = "Marco de referencia: Ley N.° 21.719, Ley N.° 19.496 y normativa chilena sobre patria potestad, tutela y cuidado personal. Este resumen no reemplaza los documentos completos.",
+                color = Muted,
+                fontSize = 10.5.sp,
+                lineHeight = 15.sp,
+            )
         }
     }
 }

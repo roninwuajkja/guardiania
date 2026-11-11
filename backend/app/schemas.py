@@ -20,6 +20,7 @@ class RegisterRequest(BaseModel):
     password: str = Field(min_length=12, max_length=128)
     alias: str = Field(min_length=2, max_length=60)
     consent: bool
+    guardian_declaration: bool
 
     @field_validator("email")
     @classmethod
@@ -32,7 +33,9 @@ class RegisterRequest(BaseModel):
     @model_validator(mode="after")
     def validate_consent(self):
         if not self.consent:
-            raise ValueError("Debes aceptar el consentimiento informado")
+            raise ValueError("Debes aceptar los términos y la política de privacidad")
+        if not self.guardian_declaration:
+            raise ValueError("Debes declarar la tutoría y el monitoreo del menor")
         return self
 
 

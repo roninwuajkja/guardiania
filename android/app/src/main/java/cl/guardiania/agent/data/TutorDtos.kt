@@ -14,7 +14,8 @@ data class TutorRegisterRequest(
     val email: String,
     val password: String,
     val alias: String,
-    val consent: Boolean = true,
+    val consent: Boolean = false,
+    @SerialName("guardian_declaration") val guardianDeclaration: Boolean = false,
 )
 
 @Serializable

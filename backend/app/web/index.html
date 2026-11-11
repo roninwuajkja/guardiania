@@ -90,9 +90,28 @@
             <span>Tu nombre</span>
             <input type="text" name="alias" autocomplete="name" maxlength="60" placeholder="Cómo quieres aparecer">
           </label>
+          <div class="legal-brief" id="legal-brief" hidden>
+            <p class="legal-brief-title">Antes de crear la cuenta</p>
+            <ul>
+              <li><strong>Autorización:</strong> declaras ser mayor de 18 años y ejercer la patria potestad, tutela o cuidado personal del menor.</li>
+              <li><strong>Monitoreo:</strong> señales derivadas (categorías, minutos y conteos), nunca mensajes, fotos, audio ni ubicación precisa.</li>
+              <li><strong>Menor y límites:</strong> explícale qué se comparte y registra su asentimiento al vincular; las alertas son heurísticas, no diagnóstico.</li>
+            </ul>
+            <p class="legal-brief-meta">Marco de referencia: Ley N.° 21.719, Ley N.° 19.496 y normativa sobre patria potestad, tutela y cuidado personal. No reemplaza los documentos completos.</p>
+            <p class="legal-brief-links">
+              <a href="/legal/terminos" target="_blank" rel="noopener">Términos</a>
+              <a href="/legal/privacidad" target="_blank" rel="noopener">Privacidad</a>
+              <a href="/legal/consentimiento" target="_blank" rel="noopener">Consentimiento informado</a>
+              <a href="/legal/retencion" target="_blank" rel="noopener">Retención</a>
+            </p>
+          </div>
           <label class="check" id="consent-field" hidden>
             <input type="checkbox" name="consent">
-            <span>Acepto los <a href="/legal/terminos" target="_blank" rel="noopener">Términos</a> y la <a href="/legal/privacidad" target="_blank" rel="noopener">Política de privacidad</a>, y declaro que ejerzo la patria potestad, tutela o cuidado personal del menor.</span>
+            <span>He leído y acepto los <a href="/legal/terminos" target="_blank" rel="noopener">Términos de uso</a> y la <a href="/legal/privacidad" target="_blank" rel="noopener">Política de privacidad</a> vigentes.</span>
+          </label>
+          <label class="check" id="guardian-field" hidden>
+            <input type="checkbox" name="guardian_declaration">
+            <span>Declaro que ejerzo la patria potestad, tutela o cuidado personal, que informé al menor y registraré su asentimiento, y que entiendo el monitoreo de señales derivadas.</span>
           </label>
           <p class="form-error" id="auth-error" role="alert"></p>
           <button class="btn btn-primary btn-block" type="submit" id="auth-submit">Entrar</button>
