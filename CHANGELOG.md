@@ -12,6 +12,7 @@ Todas las versiones relevantes de IA Guardian. El detalle técnico vive en
 
 - Regla permanente en `AGENTS.md` y script `scripts/publish-atlas.ps1` para
   actualizar y publicar el atlas de arquitectura después de cada cambio.
+- Corregida la ruta del banner del README a `docs/screenshots/banner.png`.
 
 ## 1.7.16 - 2026-11-11
 
