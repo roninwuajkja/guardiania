@@ -539,6 +539,30 @@ def test_password_reset_uses_fragment_and_revokes_sessions(client, monkeypatch):
     ).status_code == 400
 
 
+def test_password_reset_send_failure_is_generic(client, monkeypatch):
+    email = f"fallo-correo-{uuid.uuid4().hex[:8]}@guardiania.cl"
+    registered = client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": email,
+            "password": "ClaveSegura2026",
+            "alias": "Fallo de correo",
+            "consent": True,
+            "guardian_declaration": True,
+        },
+    )
+    assert registered.status_code == 201, registered.text
+
+    async def fail_send(*args, **kwargs):
+        raise RuntimeError("proveedor de correo no disponible")
+
+    monkeypatch.setattr("app.services.accounts.send_email", fail_send)
+
+    response = client.post("/api/v1/auth/password/forgot", json={"email": email})
+    assert response.status_code == 202
+    assert response.json()["message"] == "Si el correo existe, enviamos instrucciones."
+
+
 def test_email_verification_link_and_single_use(client, monkeypatch):
     from app.config import settings
 

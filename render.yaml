@@ -35,7 +35,7 @@ services:
       - key: REQUIRE_EMAIL_VERIFICATION
         value: "false"
       - key: EMAIL_DELIVERY
-        value: console
+        value: brevo
 
       # --- Motor de IA (Groq) ------------------------------------------------
       - key: AI_ENABLED

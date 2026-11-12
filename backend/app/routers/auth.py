@@ -263,7 +263,10 @@ async def resend_verification(body: ForgotPasswordRequest, request: Request, db:
     if user is not None:
         security = await accounts.get_security(db, user)
         if security.email_verificado_en is None:
-            await accounts.send_verification_email(db, user)
+            try:
+                await accounts.send_verification_email(db, user)
+            except Exception:
+                logger.exception("No se pudo enviar el correo de verificación")
     return {"message": "Si corresponde, enviamos un nuevo enlace."}
 
 
@@ -272,7 +275,10 @@ async def forgot_password(body: ForgotPasswordRequest, request: Request, db: Asy
     await enforce(f"auth:forgot:ip:{client_ip(request)}", 5, 3600)
     user = await db.scalar(select(User).where(User.email == body.email, User.eliminado_en.is_(None)))
     if user is not None:
-        await accounts.send_password_reset(db, user)
+        try:
+            await accounts.send_password_reset(db, user)
+        except Exception:
+            logger.exception("No se pudo enviar el correo de recuperación")
     return {"message": "Si el correo existe, enviamos instrucciones."}
 
 
