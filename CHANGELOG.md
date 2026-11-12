@@ -16,7 +16,10 @@ Todas las versiones relevantes de IA Guardian. El detalle técnico vive en
   `EMAIL_FROM`.
 - Si el proveedor falla, `/password/forgot` conserva la respuesta genérica 202
   y registra el error, sin revelar si la cuenta existe.
-- 122 pruebas backend.
+- Correos de recuperación y verificación con plantilla HTML de la marca
+  Vínculo: cabecera pino, botón, enlace de respaldo y aviso de seguridad.
+  Se envía también una versión en texto plano.
+- 124 pruebas backend.
 
 ### Documentación
 

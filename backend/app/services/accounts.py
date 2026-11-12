@@ -18,6 +18,7 @@ from ..security import (
     new_refresh_token,
     verify_password,
 )
+from .email_templates import password_reset_email, verification_email
 from .mail import send_email
 
 logger = logging.getLogger("guardiania.accounts")
@@ -351,14 +352,10 @@ async def consume_auth_token(
 async def send_verification_email(db: AsyncSession, user: User) -> None:
     raw = await create_auth_token(db, user=user, purpose="verify_email", ttl_hours=24)
     # Keep the token in the fragment so it never reaches server access logs or Referer.
-    link = f"{settings.public_base_url.rstrip('/')}/verificar-correo#token={raw}"
-    await send_email(
-        user.email or "",
-        "Verifica tu correo en IA Guardian",
-        "Confirma tu correo para activar tu cuenta de tutor:\n\n"
-        f"{link}\n\n"
-        "Si no creaste esta cuenta, ignora este mensaje. El enlace vence en 24 horas.",
-    )
+    base_url = settings.public_base_url.rstrip("/")
+    link = f"{base_url}/verificar-correo#token={raw}"
+    subject, text, html = verification_email(user.alias, link, base_url)
+    await send_email(user.email or "", subject, text, html=html)
 
 
 async def verify_email(db: AsyncSession, raw_token: str) -> User:
@@ -375,14 +372,10 @@ async def verify_email(db: AsyncSession, raw_token: str) -> User:
 async def send_password_reset(db: AsyncSession, user: User) -> None:
     raw = await create_auth_token(db, user=user, purpose="reset_password", ttl_hours=1)
     # Keep the token in the fragment so it never reaches server access logs or Referer.
-    link = f"{settings.public_base_url.rstrip('/')}/restablecer#token={raw}"
-    await send_email(
-        user.email or "",
-        "Restablece tu contraseña de IA Guardian",
-        "Usa este enlace para crear una contraseña nueva. Vence en 1 hora:\n\n"
-        f"{link}\n\n"
-        "Si no lo solicitaste, ignora este mensaje y cambia tu contraseña si sospechas un acceso.",
-    )
+    base_url = settings.public_base_url.rstrip("/")
+    link = f"{base_url}/restablecer#token={raw}"
+    subject, text, html = password_reset_email(user.alias, link, base_url)
+    await send_email(user.email or "", subject, text, html=html)
 
 
 async def reset_password(db: AsyncSession, raw_token: str, new_password: str) -> User:
