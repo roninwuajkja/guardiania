@@ -8,6 +8,16 @@ Todas las versiones relevantes de IA Guardian. El detalle técnico vive en
 
 ## Unreleased
 
+### Correo
+
+- Recuperación de cuentas por Brevo API HTTPS en el puerto 443, para evitar el
+  bloqueo de SMTP de Render Free.
+- `EMAIL_DELIVERY=brevo` usa `BREVO_API_KEY` y mantiene el remitente de
+  `EMAIL_FROM`.
+- Si el proveedor falla, `/password/forgot` conserva la respuesta genérica 202
+  y registra el error, sin revelar si la cuenta existe.
+- 122 pruebas backend.
+
 ### Documentación
 
 - Regla permanente en `AGENTS.md` y script `scripts/publish-atlas.ps1` para

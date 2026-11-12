@@ -73,7 +73,7 @@ class Settings(BaseSettings):
     security_email: str = "seguridad@guardiania.cl"
     support_email: str = "soporte@guardiania.cl"
 
-    email_delivery: str = "console"  # console | smtp
+    email_delivery: str = "console"  # console | smtp | brevo
     email_from: str = "IA Guardian <no-reply@guardiania.cl>"
     smtp_host: str | None = None
     smtp_port: int = 587
@@ -81,6 +81,8 @@ class Settings(BaseSettings):
     smtp_password: str | None = None
     smtp_starttls: bool = True
     smtp_ssl: bool = False
+    brevo_api_key: str | None = None
+    brevo_api_url: str = "https://api.brevo.com/v3/smtp/email"
     require_email_verification: bool = False
 
     require_attestation: bool = False
@@ -314,10 +316,16 @@ class Settings(BaseSettings):
             problems.append("TRUSTED_HOSTS debe listar los dominios explícitos")
         if self.docs_enabled:
             problems.append("DOCS_ENABLED debe ser false")
-        if self.email_delivery != "smtp" or not self.smtp_host:
-            problems.append("EMAIL_DELIVERY=smtp y SMTP_HOST son obligatorios")
-        if not self.smtp_ssl and not self.smtp_starttls:
-            problems.append("El correo debe usar SMTP_SSL o SMTP_STARTTLS con validación de certificado")
+        if self.email_delivery == "smtp":
+            if not self.smtp_host:
+                problems.append("SMTP_HOST es obligatorio con EMAIL_DELIVERY=smtp")
+            if not self.smtp_ssl and not self.smtp_starttls:
+                problems.append("El correo debe usar SMTP_SSL o SMTP_STARTTLS con validación de certificado")
+        elif self.email_delivery == "brevo":
+            if not self.brevo_api_key:
+                problems.append("BREVO_API_KEY es obligatorio con EMAIL_DELIVERY=brevo")
+        else:
+            problems.append("EMAIL_DELIVERY debe ser smtp o brevo en producción")
         if not self.require_email_verification:
             problems.append("REQUIRE_EMAIL_VERIFICATION debe ser true")
         if self.fcm_enabled and not self.firebase_credentials_file.exists():

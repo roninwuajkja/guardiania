@@ -556,7 +556,7 @@ Son señales para conversar, no pruebas ni diagnósticos. Los falsos positivos s
 - Web: cookies `httpOnly`/`SameSite`/`Secure`, CSRF, CSP, `nosniff`, `X-Frame-Options`, `Referrer-Policy` y límite de request.
 - Android release: sin cleartext, R8/shrink, backup deshabilitado, tokens en SQLCipher, red solo HTTPS. La build debug permite HTTP local.
 - Pairing: declaración de tutoría, asentimiento, HMAC con pepper, límite de intentos y ticket WS fuera de la URL.
-- Correo: TLS con validación de certificado (`SMTP_SSL` o `STARTTLS` con `ssl.create_default_context`); enlaces en fragmento.
+- Correo: Brevo API por HTTPS en el puerto 443 (recomendado en Render Free, que bloquea SMTP 25/465/587) o SMTP con TLS validado; enlaces en fragmento.
 - Retención automática de capturas/alertas, tokens, sesiones, outbox y auditoría según `RETENTION_DAYS` y `AUDIT_RETENTION_DAYS`.
 - IA: solo vector derivado, `AI_SEND_SNIPPET=false`, presupuesto de 1500 ms, caché por hash y circuit breaker por proveedor; las claves viven fuera del repositorio.
 - Push: cuenta de servicio fuera del repositorio, payload data-only mínimo, tokens reasignados al tutor que inicia sesión y desactivados al cerrar sesión.
