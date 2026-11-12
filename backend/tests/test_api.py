@@ -509,7 +509,7 @@ def test_password_reset_uses_fragment_and_revokes_sessions(client, monkeypatch):
 
     sent = []
 
-    async def fake_send(to, subject, body):
+    async def fake_send(to, subject, body, html=None):
         sent.append({"to": to, "subject": subject, "body": body})
 
     monkeypatch.setattr("app.services.accounts.send_email", fake_send)
@@ -573,7 +573,7 @@ def test_email_verification_link_and_single_use(client, monkeypatch):
 
     sent = []
 
-    async def fake_send(to, subject, body):
+    async def fake_send(to, subject, body, html=None):
         sent.append({"to": to, "subject": subject, "body": body})
 
     monkeypatch.setattr("app.services.accounts.send_email", fake_send)

@@ -17,23 +17,26 @@ def _sender_parts() -> tuple[str, str]:
     return name or "IA Guardian", address
 
 
-def brevo_payload(to: str, subject: str, body: str) -> dict:
+def brevo_payload(to: str, subject: str, body: str, html: str | None = None) -> dict:
     name, address = _sender_parts()
-    return {
+    payload = {
         "sender": {"name": name, "email": address},
         "to": [{"email": to}],
         "subject": subject,
         "textContent": body,
     }
+    if html:
+        payload["htmlContent"] = html
+    return payload
 
 
-async def _send_brevo(to: str, subject: str, body: str) -> None:
+async def _send_brevo(to: str, subject: str, body: str, html: str | None = None) -> None:
     if not settings.brevo_api_key:
         raise RuntimeError("BREVO_API_KEY no configurada")
     async with httpx.AsyncClient(timeout=15.0) as client:
         response = await client.post(
             settings.brevo_api_url,
-            json=brevo_payload(to, subject, body),
+            json=brevo_payload(to, subject, body, html),
             headers={"api-key": settings.brevo_api_key, "accept": "application/json"},
         )
         if response.is_error:
@@ -42,12 +45,14 @@ async def _send_brevo(to: str, subject: str, body: str) -> None:
     logger.info("Brevo aceptó el correo con estado %s", response.status_code)
 
 
-def _send_sync(to: str, subject: str, body: str) -> None:
+def _send_sync(to: str, subject: str, body: str, html: str | None = None) -> None:
     message = EmailMessage()
     message["From"] = settings.email_from
     message["To"] = to
     message["Subject"] = subject
     message.set_content(body)
+    if html:
+        message.add_alternative(html, subtype="html")
     context = ssl.create_default_context()
     host = settings.smtp_host or "localhost"
     if settings.smtp_ssl:
@@ -63,11 +68,11 @@ def _send_sync(to: str, subject: str, body: str) -> None:
         smtp.send_message(message)
 
 
-async def send_email(to: str, subject: str, body: str) -> None:
+async def send_email(to: str, subject: str, body: str, html: str | None = None) -> None:
     if settings.email_delivery == "console":
         logger.info("CORREO (modo consola) para %s | %s\n%s", to, subject, body)
         return
     if settings.email_delivery == "brevo":
-        await _send_brevo(to, subject, body)
+        await _send_brevo(to, subject, body, html)
         return
-    await asyncio.to_thread(_send_sync, to, subject, body)
+    await asyncio.to_thread(_send_sync, to, subject, body, html)
