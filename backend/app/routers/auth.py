@@ -302,8 +302,25 @@ async def change_password(
     if not tutor.password_hash or not verify_password(body.current_password, tutor.password_hash):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="La contraseña actual no es correcta")
     tutor.password_hash = hash_password(body.new_password)
-    await accounts.revoke_all_sessions(db, tutor, bump_version=True, password_changed=True)
-    await record(db, "auth.password_changed", usuario_id=tutor.id, request=request, commit=True)
-    clear_auth_cookies(response)
+    session_id = _session_from_access(request)
+    if body.revoke_all or session_id is None:
+        await accounts.revoke_all_sessions(db, tutor, bump_version=True, password_changed=True)
+        clear_auth_cookies(response)
+    else:
+        await accounts.revoke_all_sessions(
+            db,
+            tutor,
+            keep_current=session_id,
+            bump_version=False,
+            password_changed=True,
+        )
+    await record(
+        db,
+        "auth.password_changed",
+        usuario_id=tutor.id,
+        request=request,
+        detalle={"revoke_all": body.revoke_all},
+        commit=True,
+    )
     response.status_code = status.HTTP_204_NO_CONTENT
     return response

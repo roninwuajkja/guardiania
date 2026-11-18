@@ -304,7 +304,7 @@ class TutorViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun changePassword(currentPassword: String, newPassword: String) {
+    fun changePassword(currentPassword: String, newPassword: String, revokeAll: Boolean) {
         if (_ui.value.busy) return
         if (newPassword.length < 12) {
             _ui.update { it.copy(error = "La contraseña nueva debe tener al menos 12 caracteres.") }
@@ -314,20 +314,29 @@ class TutorViewModel(application: Application) : AndroidViewModel(application) {
             _ui.update { it.copy(busy = true, error = null) }
             try {
                 withContext(Dispatchers.IO) {
-                    container.pushRegistrar.unregister()
-                    repo.changePassword(currentPassword, newPassword)
+                    if (revokeAll) container.pushRegistrar.unregister()
+                    repo.changePassword(currentPassword, newPassword, revokeAll)
                 }
-                _ui.update {
-                    it.copy(
-                        busy = false,
-                        session = null,
-                        consents = emptyList(),
-                        authMode = TutorAuthMode.LOGIN,
-                        message = "Contraseña cambiada. Entra con la nueva contraseña.",
-                        overview = null,
-                        alerts = emptyList(),
-                        devices = emptyList(),
-                    )
+                if (revokeAll) {
+                    _ui.update {
+                        it.copy(
+                            busy = false,
+                            session = null,
+                            consents = emptyList(),
+                            authMode = TutorAuthMode.LOGIN,
+                            message = "Contraseña cambiada. Entra con la nueva contraseña.",
+                            overview = null,
+                            alerts = emptyList(),
+                            devices = emptyList(),
+                        )
+                    }
+                } else {
+                    _ui.update {
+                        it.copy(
+                            busy = false,
+                            message = "Contraseña cambiada. Se cerraron las otras sesiones.",
+                        )
+                    }
                 }
             } catch (error: Exception) {
                 _ui.update { it.copy(busy = false, error = error.tutorMessage()) }

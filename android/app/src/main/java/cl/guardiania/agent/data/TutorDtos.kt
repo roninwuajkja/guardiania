@@ -27,6 +27,7 @@ data class TutorRefreshRequest(
 data class TutorChangePasswordRequest(
     @SerialName("current_password") val currentPassword: String,
     @SerialName("new_password") val newPassword: String,
+    @SerialName("revoke_all") val revokeAll: Boolean = false,
 )
 
 @Serializable

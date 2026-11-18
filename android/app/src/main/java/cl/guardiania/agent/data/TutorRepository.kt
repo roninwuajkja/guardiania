@@ -158,15 +158,15 @@ class TutorRepository(private val store: SecureStore) {
      * Changing the password revokes every session server-side, so the local
      * credentials are cleared right after a successful call.
      */
-    suspend fun changePassword(currentPassword: String, newPassword: String) {
+    suspend fun changePassword(currentPassword: String, newPassword: String, revokeAll: Boolean) {
         authorized { api, token ->
             val response = api.tutorChangePassword(
                 "Bearer $token",
-                TutorChangePasswordRequest(currentPassword, newPassword),
+                TutorChangePasswordRequest(currentPassword, newPassword, revokeAll),
             )
             if (!response.isSuccessful) throw HttpException(response)
         }
-        store.clearTutorSession()
+        if (revokeAll) store.clearTutorSession()
     }
 
     /** Revokes this and every other tutor session; the phone returns to the login screen. */

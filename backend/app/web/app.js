@@ -271,6 +271,7 @@ function setAuthMode(mode) {
   $('#legal-brief').hidden = !registering;
   $('#consent-field').hidden = !registering;
   $('#guardian-field').hidden = !registering;
+  $('#recover-shortcut').hidden = registering;
   $('#auth-submit').textContent = registering ? 'Crear cuenta' : 'Entrar';
   const errorBox = $('#auth-error');
   errorBox.textContent = '';
@@ -2051,18 +2052,24 @@ async function changePassword(event) {
   const data = new FormData(form);
   const errorBox = $('#password-error');
   errorBox.textContent = '';
+  const revokeAll = String(data.get('session_scope') || 'keep') === 'all';
   try {
     await api('/auth/password/change', {
       method: 'POST',
       body: {
         current_password: String(data.get('current_password') || ''),
         new_password: String(data.get('new_password') || ''),
+        revoke_all: revokeAll,
       },
     });
     form.reset();
-    toast('Contraseña actualizada. Vuelve a entrar.');
     $('#privacy-dialog').close();
-    await logout(false, false);
+    if (revokeAll) {
+      toast('Contraseña actualizada. Vuelve a entrar.');
+      await logout(false, false);
+    } else {
+      toast('Contraseña actualizada. Se cerraron las otras sesiones.');
+    }
   } catch (error) {
     errorBox.textContent = error.message;
   }

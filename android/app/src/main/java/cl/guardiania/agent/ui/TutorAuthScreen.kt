@@ -42,6 +42,7 @@ import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
@@ -344,6 +345,18 @@ fun TutorAuthScreen(
                         Text(if (registering) "Crear cuenta" else "Entrar al panel", fontWeight = FontWeight.SemiBold)
                     }
                 }
+                if (!registering) {
+                    Spacer(Modifier.height(10.dp))
+                    OutlinedButton(
+                        onClick = { runCatching { uriHandler.openUri("$legalBase/recuperar") } },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp),
+                        shape = RoundedCornerShape(12.dp),
+                    ) {
+                        Text("Recuperar acceso", fontWeight = FontWeight.SemiBold)
+                    }
+                }
                 Spacer(Modifier.height(16.dp))
                 Text(
                     text = "Nunca pediremos la contraseña del correo ni acceso a tus conversaciones.",
@@ -351,10 +364,6 @@ fun TutorAuthScreen(
                     fontSize = 11.5.sp,
                     lineHeight = 17.sp,
                 )
-                TextButton(
-                    onClick = { runCatching { uriHandler.openUri("$legalBase/recuperar") } },
-                    contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 0.dp),
-                ) { Text("Recuperar contraseña", fontSize = 11.5.sp) }
                 Spacer(Modifier.height(4.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     listOf(

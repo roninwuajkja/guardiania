@@ -115,13 +115,14 @@
           </label>
           <p class="form-error" id="auth-error" role="alert"></p>
           <button class="btn btn-primary btn-block" type="submit" id="auth-submit">Entrar</button>
+          <a class="btn btn-secondary btn-block recover-shortcut" id="recover-shortcut" href="/recuperar">Recuperar acceso</a>
         </form>
 
         <div class="auth-divider"><span>o</span></div>
         <button class="btn btn-secondary btn-block" id="demo-login" type="button">Entrar con la cuenta demo</button>
         <p class="fine">La cuenta demo trae dos dispositivos y alertas de ejemplo. Todo es sintético.</p>
       </div>
-      <p class="auth-legal">Puedes exportar o eliminar tus datos desde Privacidad. <a href="/recuperar">Recuperar acceso</a> · <a href="/legal/consentimiento">Consentimiento informado</a> · <a href="/legal/retencion">Retención</a>.</p>
+      <p class="auth-legal">Puedes exportar o eliminar tus datos desde Privacidad. <a href="/legal/consentimiento">Consentimiento informado</a> · <a href="/legal/retencion">Retención</a>.</p>
     </section>
   </div>
 
@@ -213,8 +214,19 @@
         <form id="password-form" class="stack">
           <label class="field"><span>Contraseña actual</span><input type="password" name="current_password" autocomplete="current-password" required></label>
           <label class="field"><span>Contraseña nueva</span><input type="password" name="new_password" autocomplete="new-password" minlength="12" required placeholder="Mínimo 12 caracteres"></label>
+          <fieldset class="choice-group">
+            <legend>Al cambiarla</legend>
+            <label class="choice-card">
+              <input type="radio" name="session_scope" value="keep" checked>
+              <span><strong>Mantener mi sesión</strong><small>La contraseña cambia en todos los equipos. Se cierran las demás sesiones.</small></span>
+            </label>
+            <label class="choice-card">
+              <input type="radio" name="session_scope" value="all">
+              <span><strong>Cerrar todas las sesiones</strong><small>Tendrás que entrar de nuevo en este y otros dispositivos.</small></span>
+            </label>
+          </fieldset>
           <p class="form-error" id="password-error" role="alert"></p>
-          <button class="btn btn-secondary" type="submit">Actualizar contraseña</button>
+          <button class="btn btn-secondary" type="submit">Cambiar contraseña</button>
         </form>
       </section>
 

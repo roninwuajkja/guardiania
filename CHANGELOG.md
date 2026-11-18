@@ -6,7 +6,30 @@ Todas las versiones relevantes de IA Guardian. El detalle técnico vive en
 
 > Las notas de cada versión se publican en [GitHub Releases](https://github.com/roninwuajkja/guardiania/releases). Este archivo conserva el historial completo.
 
-## Unreleased
+## 1.7.17 - 2026-11-18
+
+### Contraseña y sesiones
+
+- Al cambiar la contraseña se elige entre **mantener la sesión actual** (se
+  cierran las demás) o **cerrar todas las sesiones**, incluida la del equipo
+  donde se hace el cambio.
+- Backend: `revoke_all` en `/auth/password/change`. Por defecto conserva la
+  sesión actual con `bump_version=False` y revoca el resto; si se pide cerrar
+  todo, sube `token_version`, revoca todas y limpia cookies.
+- La auditoría distingue si se cerraron todas las sesiones o solo las demás.
+- Web y Android muestran la elección con textos cortos y el botón cambia según
+  la opción. Mantener la sesión ya no obliga a volver a entrar.
+- Android no borra el token local ni desregistra push si la sesión se mantiene.
+- Pruebas: sesión actual válida, segunda sesión revocada, clave antigua
+  rechazada y clave nueva aceptada en ambos caminos. 126 pruebas backend.
+
+### Recuperar acceso
+
+- Web: botón secundario de ancho completo bajo “Entrar”, visible solo en modo
+  login. Se quitó el enlace diminuto del pie legal para no duplicar.
+- Android: botón outlined de ancho completo bajo “Entrar al panel”, visible
+  solo en login.
+- La recuperación por correo con Brevo API sigue igual.
 
 ### Correo
 
@@ -19,7 +42,6 @@ Todas las versiones relevantes de IA Guardian. El detalle técnico vive en
 - Correos de recuperación y verificación con plantilla HTML de la marca
   Vínculo: cabecera pino, botón, enlace de respaldo y aviso de seguridad.
   Se envía también una versión en texto plano.
-- 124 pruebas backend.
 
 ### Documentación
 

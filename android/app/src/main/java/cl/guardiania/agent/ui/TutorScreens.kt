@@ -20,6 +20,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -134,7 +135,7 @@ fun TutorShell(
     onSwitchToChild: () -> Unit,
     onOpenLegal: (String) -> Unit,
     onResendVerification: () -> Unit,
-    onChangePassword: (String, String) -> Unit,
+    onChangePassword: (String, String, Boolean) -> Unit,
     onExport: () -> Unit,
     onTestPush: () -> Unit,
 ) {
@@ -1423,7 +1424,7 @@ private fun TutorSettings(
     onSwitchToChild: () -> Unit,
     onOpenLegal: (String) -> Unit,
     onResendVerification: () -> Unit,
-    onChangePassword: (String, String) -> Unit,
+    onChangePassword: (String, String, Boolean) -> Unit,
     onExport: () -> Unit,
     onTestPush: () -> Unit,
     bottomPadding: Dp,
@@ -1700,6 +1701,7 @@ private fun TutorSettings(
         var current by remember { mutableStateOf("") }
         var next by remember { mutableStateOf("") }
         var confirm by remember { mutableStateOf("") }
+        var revokeAll by remember { mutableStateOf(false) }
         var dialogError by remember { mutableStateOf<String?>(null) }
         GuardianDialog(
             icon = Icons.Outlined.Lock,
@@ -1709,7 +1711,11 @@ private fun TutorSettings(
             iconBackground = SageSoft,
             content = {
                 DialogBodyText(
-                    "Al cambiarla se cierran todas las sesiones del tutor, incluida esta. Vuelve a entrar con la nueva.",
+                    if (revokeAll) {
+                        "La contraseña cambia en todos los equipos y se cierran todas las sesiones, incluida esta. Vuelve a entrar con la nueva."
+                    } else {
+                        "La contraseña cambia en todos los equipos. Tu sesión actual sigue abierta y se cierran las demás."
+                    },
                 )
                 Spacer(Modifier.height(12.dp))
                 OutlinedTextField(
@@ -1744,6 +1750,32 @@ private fun TutorSettings(
                     shape = RoundedCornerShape(11.dp),
                     colors = dialogFieldColors(),
                 )
+                Spacer(Modifier.height(4.dp))
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            revokeAll = !revokeAll
+                            dialogError = null
+                        },
+                    verticalAlignment = Alignment.Top,
+                ) {
+                    Checkbox(
+                        checked = revokeAll,
+                        onCheckedChange = {
+                            revokeAll = it
+                            dialogError = null
+                        },
+                        colors = CheckboxDefaults.colors(checkedColor = Pine700),
+                    )
+                    Text(
+                        text = "Cerrar sesión también en este dispositivo",
+                        modifier = Modifier.padding(top = 10.dp),
+                        color = Ink2,
+                        fontSize = 12.sp,
+                        lineHeight = 18.sp,
+                    )
+                }
                 if (dialogError != null) {
                     Spacer(Modifier.height(8.dp))
                     DialogErrorText(dialogError.orEmpty())
@@ -1751,7 +1783,7 @@ private fun TutorSettings(
             },
             actions = {
                 DialogPrimaryButton(
-                    text = "Cambiar contraseña",
+                    text = if (revokeAll) "Cambiar y cerrar sesiones" else "Cambiar contraseña",
                     onClick = {
                         when {
                             current.isBlank() -> dialogError = "Escribe tu contraseña actual."
@@ -1760,7 +1792,7 @@ private fun TutorSettings(
                             current == next -> dialogError = "La nueva debe ser distinta de la actual."
                             else -> {
                                 changePasswordOpen = false
-                                onChangePassword(current, next)
+                                onChangePassword(current, next, revokeAll)
                             }
                         }
                     },

@@ -47,6 +47,53 @@ def auth_headers(tutor):
     return {"Authorization": f"Bearer {tutor['token']}"}
 
 
+def test_password_change_keeps_current_session(client, tutor):
+    email = tutor["email"]
+    first = tutor["token"]
+    second = client.post(
+        "/api/v1/auth/login",
+        json={"email": email, "password": "ClaveSegura2026"},
+    ).json()["access_token"]
+
+    changed = client.post(
+        "/api/v1/auth/password/change",
+        json={
+            "current_password": "ClaveSegura2026",
+            "new_password": "ClaveNueva2026",
+            "revoke_all": False,
+        },
+        headers={"Authorization": f"Bearer {first}"},
+    )
+    assert changed.status_code == 204, changed.text
+    assert client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {first}"}).status_code == 200
+    assert client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {second}"}).status_code == 401
+    assert client.post("/api/v1/auth/login", json={"email": email, "password": "ClaveSegura2026"}).status_code == 401
+    assert client.post("/api/v1/auth/login", json={"email": email, "password": "ClaveNueva2026"}).status_code == 200
+
+
+def test_password_change_can_revoke_all_sessions(client, tutor):
+    email = tutor["email"]
+    first = tutor["token"]
+    second = client.post(
+        "/api/v1/auth/login",
+        json={"email": email, "password": "ClaveSegura2026"},
+    ).json()["access_token"]
+
+    changed = client.post(
+        "/api/v1/auth/password/change",
+        json={
+            "current_password": "ClaveSegura2026",
+            "new_password": "ClaveNueva2026",
+            "revoke_all": True,
+        },
+        headers={"Authorization": f"Bearer {first}"},
+    )
+    assert changed.status_code == 204, changed.text
+    assert client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {first}"}).status_code == 401
+    assert client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {second}"}).status_code == 401
+    assert client.post("/api/v1/auth/login", json={"email": email, "password": "ClaveNueva2026"}).status_code == 200
+
+
 def test_register_requires_guardian_declaration(client):
     email = f"sin-tutoria-{uuid.uuid4().hex[:8]}@guardiania.cl"
     response = client.post(
