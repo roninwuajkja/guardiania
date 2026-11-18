@@ -103,7 +103,7 @@ flowchart TB
    - `guardiania_csrf` (legible por JS, no `httpOnly`)
 4. Los métodos mutables autenticados por cookie exigen el header `X-CSRF-Token` con el valor de la cookie CSRF. Android usa `Authorization: Bearer`, que no depende de cookies.
 5. `POST /api/v1/auth/refresh` rota el refresh token con **compare-and-swap atómico**: dos refreshes concurrentes no pueden rotar la misma sesión. El panel serializa refreshes con una promesa compartida y `navigator.locks`; Android usa un `Mutex`.
-6. `POST /api/v1/auth/logout` revoca la sesión actual; `logout-all` y los cambios de contraseña revocan todas y suben `token_version`.
+6. `POST /api/v1/auth/logout` revoca la sesión actual; `logout-all` y el reset de contraseña revocan todas y suben `token_version`. El cambio de contraseña con la clave actual conserva la sesión que lo solicita y revoca las demás; si se pide `revoke_all`, revoca todas y sube `token_version`.
 
 Cookies: `SameSite=Lax`, `Secure` en producción, `__Host-` cuando `COOKIE_SECURE=true`. La CSP permite scripts solo del mismo origen y `connect-src` únicamente al backend configurado.
 
